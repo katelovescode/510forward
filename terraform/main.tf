@@ -22,7 +22,6 @@ provider "proxmox" {
 provider "proxmox" {
   alias     = "root"
   endpoint  = var.proxmox_endpoint
-  api_token = var.proxmox_root_api_token
   insecure  = false
 }
 
