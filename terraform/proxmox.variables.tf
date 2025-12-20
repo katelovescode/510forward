@@ -5,12 +5,6 @@ variable "proxmox_api_token" {
   sensitive   = true
 }
 
-variable "proxmox_root_api_token" {
-  type        = string
-  description = "API Token to access Proxmox with root account"
-  sensitive   = true
-}
-
 variable "proxmox_endpoint" {
   type        = string
   description = "IP address to access Proxmox (including Port)"
