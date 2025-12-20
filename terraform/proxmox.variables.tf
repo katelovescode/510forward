@@ -51,7 +51,7 @@ variable "proxmox_gateway" {
   description = "IP Address for the parent Proxmox gateway"
 }
 
-variable "import_enabled" {
+variable "proxmox_import_enabled" {
   type        = bool
   description = "For use with test environments vs production during import phase"
 }

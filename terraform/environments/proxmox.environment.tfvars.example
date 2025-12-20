@@ -1,0 +1,8 @@
+proxmox_ip_address = ""               # "0.0.0.0"
+proxmox_api_token = ""                # "user@realm!token_id=token_secret"
+proxmox_root_api_token = ""           # "user@realm!token_id=token_secret"
+proxmox_endpoint = ""                 # "https://IP:8006/"
+proxmox_node = ""                     # "proxmox"
+proxmox_bridge_port = ""              # "enp5s0"
+proxmox_import_enabled = false        # true/false
+proxmox_root_password  = ""           # "passwordhere"

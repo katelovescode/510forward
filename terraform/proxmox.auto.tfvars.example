@@ -1,9 +1,4 @@
-proxmox_ip_address = ""               # "0.0.0.0"
-proxmox_api_token = ""                # "user@realm!token_id=token_secret"
-proxmox_endpoint = ""                 # "https://IP:8006/"
-proxmox_node = ""                     # "proxmox"
+proxmox_gateway = ""                  # "0.0.0.0"
 proxmox_image_datastore = ""          # e.g. "local"
 proxmox_vm_ct_datastore =             # e.g. "local-lvm"
 kate_email = ""                       # "user@email.com"
-import_enabled = false                # true/false
-proxmox_gateway = ""                  # "0.0.0.0"
