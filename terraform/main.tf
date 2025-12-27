@@ -26,10 +26,32 @@ module "proxmox_root" {
   providers = {
     proxmox = proxmox.root
   }
+
+  kate_email            = var.kate_email
+  proxmox_root_password = var.proxmox_root_password
 }
 
 module "proxmox_opentofu" {
-  source = "./modules/proxmox_opentofu"
+  source     = "./modules/proxmox_opentofu"
+  depends_on = [module.proxmox_root]
+
+  proxmox_import_enabled                            = var.proxmox_import_enabled
+  proxmox_node_1                                    = var.proxmox_node_1
+  proxmox_gateway                                   = var.proxmox_gateway
+  proxmox_ip_address                                = var.proxmox_ip_address
+  proxmox_bridge_port                               = var.proxmox_bridge_port
+  kate_email                                        = var.kate_email
+  proxmox_image_datastore                           = var.proxmox_image_datastore
+  proxmox_vm_ct_datastore                           = var.proxmox_vm_ct_datastore
+  kate_public_key                                   = var.kate_public_key
+  proxmox_pihole_root_password                      = var.proxmox_pihole_root_password
+  proxmox_homepage_root_password                    = var.proxmox_homepage_root_password
+  proxmox_bookstack_root_password                   = var.proxmox_bookstack_root_password
+  proxmox_gitlab_root_password                      = var.proxmox_gitlab_root_password
+  proxmox_ubuntu_server_2024_template_root_password = var.proxmox_ubuntu_server_2024_template_root_password
+  proxmox_nginx_proxy_manager_root_password         = var.proxmox_nginx_proxy_manager_root_password
+  proxmox_mac_prefix                                = var.proxmox_mac_prefix
+  proxmox_dns_cf_token                              = var.proxmox_dns_cf_token
 }
 
 

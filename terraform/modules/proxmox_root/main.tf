@@ -1,3 +1,13 @@
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    proxmox = {
+      source                = "bpg/proxmox"
+      version               = "0.89.0"
+    }
+  }
+}
+
 resource "proxmox_virtual_environment_user" "root_user" {
   comment  = "Managed by OpenTofu"
   user_id  = "root@pam"

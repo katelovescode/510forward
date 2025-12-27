@@ -1,3 +1,13 @@
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    proxmox = {
+      source                = "bpg/proxmox"
+      version               = "0.89.0"
+    }
+  }
+}
+
 resource "proxmox_virtual_environment_time" "proxmox_time" {
   node_name = var.proxmox_node_1
   time_zone = "America/Chicago"
@@ -457,11 +467,6 @@ resource "proxmox_virtual_environment_vm" "bookstack" {
     type  = "x86-64-v2-AES"
     units = 1024
   }
-  # disk {
-  #   size         = 3
-  #   interface    = "ide2"
-  #   datastore_id = var.proxmox_image_datastore
-  # }
   disk {
     size         = 64
     interface    = "scsi0"

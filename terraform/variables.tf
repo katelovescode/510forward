@@ -1,13 +1,22 @@
-
-variable "proxmox_api_token" {
+variable "kate_email" {
   type        = string
-  description = "API Token to access Proxmox"
-  sensitive   = true
+  description = "Sarge's email"
+}
+
+variable "proxmox_root_password" {
+  type        = string
+  description = "Root password"
 }
 
 variable "proxmox_endpoint" {
   type        = string
   description = "IP address to access Proxmox (including Port)"
+}
+
+variable "proxmox_api_token" {
+  type        = string
+  description = "API Token to access Proxmox"
+  sensitive   = true
 }
 
 variable "proxmox_node_1" {
@@ -30,11 +39,6 @@ variable "proxmox_vm_ct_datastore" {
   description = "Name/ID of the datastore that retains VM and CT disks (i.e. 'local-lvm')"
 }
 
-variable "kate_email" {
-  type        = string
-  description = "Sarge's email"
-}
-
 variable "proxmox_ip_address" {
   type        = string
   description = "IP Address for the parent Proxmox instance"
@@ -48,11 +52,6 @@ variable "proxmox_gateway" {
 variable "proxmox_import_enabled" {
   type        = bool
   description = "For use with test environments vs production during import phase"
-}
-
-variable "proxmox_root_password" {
-  type        = string
-  description = "Root password"
 }
 
 variable "proxmox_dns_cf_token" {
