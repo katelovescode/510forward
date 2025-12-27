@@ -180,6 +180,12 @@ resource "proxmox_virtual_environment_role" "homepage_power_management_role" {
 }
 
 resource "proxmox_virtual_environment_group" "home_assistant_group" {
+  depends_on = [
+    proxmox_virtual_environment_role.home_assistant_audit_role,
+    proxmox_virtual_environment_role.home_assistant_node_power_management_role,
+    proxmox_virtual_environment_role.home_assistant_update_role,
+    proxmox_virtual_environment_role.home_assistant_vm_power_management_role
+  ]
   comment  = "Managed by OpenTofu - smart home server"
   group_id = "HomeAssistant"
   acl {
@@ -205,6 +211,10 @@ resource "proxmox_virtual_environment_group" "home_assistant_group" {
 }
 
 resource "proxmox_virtual_environment_group" "homepage_group" {
+  depends_on = [
+    proxmox_virtual_environment_role.homepage_audit_role,
+    proxmox_virtual_environment_role.homepage_power_management_role
+  ]
   comment  = "Managed by OpenTofu - dashboard"
   group_id = "Homepage"
   acl {
@@ -220,12 +230,18 @@ resource "proxmox_virtual_environment_group" "homepage_group" {
 }
 
 resource "proxmox_virtual_environment_user" "home_assistant_user" {
+  depends_on = [
+    proxmox_virtual_environment_group.home_assistant_group
+  ]
   comment = "Managed by OpenTofu - smart home server"
   user_id = "homeassistant@pve"
   groups  = ["HomeAssistant"]
 }
 
 resource "proxmox_virtual_environment_user" "homepage_user" {
+  depends_on = [
+    proxmox_virtual_environment_group.homepage_group
+  ]
   comment = "Managed by OpenTofu - dashboard"
   user_id = "homepage@pve"
   groups  = ["Homepage"]
@@ -246,6 +262,9 @@ resource "proxmox_virtual_environment_user" "kate_user" {
 }
 
 resource "proxmox_virtual_environment_user_token" "home_assistant_user_token" {
+  depends_on = [
+    proxmox_virtual_environment_user.home_assistant_user
+  ]
   token_name            = "homeassistant"
   user_id               = "homeassistant@pve"
   privileges_separation = false
@@ -253,46 +272,52 @@ resource "proxmox_virtual_environment_user_token" "home_assistant_user_token" {
 }
 
 resource "proxmox_virtual_environment_user_token" "homepage_user_token" {
+  depends_on = [
+    proxmox_virtual_environment_user.homepage_user
+  ]
   token_name            = "homepage"
   user_id               = "homepage@pve"
   privileges_separation = false
   comment               = "Managed by OpenTofu - dashboard"
 }
 
-resource "proxmox_virtual_environment_acl" "home_assistant_node_power_acl" {
-  path     = "/"
-  role_id  = proxmox_virtual_environment_role.home_assistant_node_power_management_role.role_id
-  group_id = "HomeAssistant"
-}
+# resource "proxmox_virtual_environment_acl" "home_assistant_node_power_acl" {
+#   depends_on [
 
-resource "proxmox_virtual_environment_acl" "home_assistant_vm_power_acl" {
-  role_id  = proxmox_virtual_environment_role.home_assistant_vm_power_management_role.role_id
-  path     = "/"
-  group_id = "HomeAssistant"
-}
+#   ]
+#   path     = "/"
+#   role_id  = proxmox_virtual_environment_role.home_assistant_node_power_management_role.role_id
+#   group_id = "HomeAssistant"
+# }
 
-resource "proxmox_virtual_environment_acl" "home_assistant_audit_acl" {
-  role_id  = proxmox_virtual_environment_role.home_assistant_audit_role.role_id
-  path     = "/"
-  group_id = "HomeAssistant"
-}
+# resource "proxmox_virtual_environment_acl" "home_assistant_vm_power_acl" {
+#   role_id  = proxmox_virtual_environment_role.home_assistant_vm_power_management_role.role_id
+#   path     = "/"
+#   group_id = "HomeAssistant"
+# }
 
-resource "proxmox_virtual_environment_acl" "home_assistant_update_acl" {
-  role_id  = proxmox_virtual_environment_role.home_assistant_update_role.role_id
-  path     = "/"
-  group_id = "HomeAssistant"
-}
-resource "proxmox_virtual_environment_acl" "homepage_power_acl" {
-  role_id  = proxmox_virtual_environment_role.homepage_power_management_role.role_id
-  path     = "/"
-  group_id = "Homepage"
-}
+# resource "proxmox_virtual_environment_acl" "home_assistant_audit_acl" {
+#   role_id  = proxmox_virtual_environment_role.home_assistant_audit_role.role_id
+#   path     = "/"
+#   group_id = "HomeAssistant"
+# }
 
-resource "proxmox_virtual_environment_acl" "homepage_audit_acl" {
-  role_id  = proxmox_virtual_environment_role.homepage_audit_role.role_id
-  path     = "/"
-  group_id = "Homepage"
-}
+# resource "proxmox_virtual_environment_acl" "home_assistant_update_acl" {
+#   role_id  = proxmox_virtual_environment_role.home_assistant_update_role.role_id
+#   path     = "/"
+#   group_id = "HomeAssistant"
+# }
+# resource "proxmox_virtual_environment_acl" "homepage_power_acl" {
+#   role_id  = proxmox_virtual_environment_role.homepage_power_management_role.role_id
+#   path     = "/"
+#   group_id = "Homepage"
+# }
+
+# resource "proxmox_virtual_environment_acl" "homepage_audit_acl" {
+#   role_id  = proxmox_virtual_environment_role.homepage_audit_role.role_id
+#   path     = "/"
+#   group_id = "Homepage"
+# }
 
 resource "proxmox_virtual_environment_download_file" "debian_13_trixie" {
   content_type = "vztmpl"
@@ -357,6 +382,7 @@ resource "proxmox_virtual_environment_container" "pihole" {
       keys = [
         var.kate_public_key
       ]
+      # username = "root"
       password = var.proxmox_pihole_root_password
     }
   }
@@ -435,6 +461,7 @@ resource "proxmox_virtual_environment_container" "homepage" {
       keys = [
         var.kate_public_key
       ]
+      # username = "root"
       password = var.proxmox_homepage_root_password
     }
   }
@@ -658,16 +685,26 @@ resource "proxmox_virtual_environment_vm" "ubuntu_server_2024_template" {
             - `passwd` to change user name
         EOT
   disk {
-    size         = 3
-    interface    = "ide2"
-    datastore_id = var.proxmox_image_datastore
-  }
-  disk {
     size         = 64
     interface    = "scsi0"
     iothread     = true
     datastore_id = var.proxmox_vm_ct_datastore
     file_format  = "raw"
+  }
+  disk {
+    aio               = "io_uring"
+    backup            = true
+    cache             = "none"
+    datastore_id      = var.proxmox_image_datastore
+    discard           = "ignore"
+    file_id           = ""
+    import_from       = ""
+    interface         = "ide2"
+    iothread          = false
+    replicate         = true
+    serial            = ""
+    size              = 3
+    ssd               = false
   }
   memory {
     dedicated = 4096

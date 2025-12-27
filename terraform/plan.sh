@@ -24,4 +24,7 @@ fi
 export PROXMOX_VE_AUTH_TICKET="${auth_ticket}"
 export PROXMOX_VE_CSRF_PREVENTION_TOKEN="${resp_csrf}"
 
+# using -generate-config-out=generated_resources.tf will generate all resources because everything is defined in the modules
+# so it always generates and then gets mad about the generated resources bc bpg/proxmox doesn't generate the resources
+# correctly all the time.  So only use that to test and check configuration but expect it to crash
 tofu plan -var-file="$PROXMOX_ENVIRONMENT_VAR_FILE" -generate-config-out=generated_resources.tf

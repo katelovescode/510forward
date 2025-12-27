@@ -83,5 +83,5 @@ resource "proxmox_virtual_environment_acme_account" "letsencrypt" {
 
 resource "proxmox_virtual_environment_acme_dns_plugin" "letsencrypt" {
   plugin = "letsencrypt"
-  api    = "letsencrypt"
+  api    = "cf"
 }
