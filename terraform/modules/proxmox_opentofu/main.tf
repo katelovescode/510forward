@@ -1,10 +1,10 @@
 resource "proxmox_virtual_environment_time" "proxmox_time" {
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   time_zone = "America/Chicago"
 }
 
 data "proxmox_virtual_environment_dns" "proxmox_dns" {
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
 }
 
 resource "proxmox_virtual_environment_dns" "proxmox_dns" {
@@ -17,7 +17,7 @@ resource "proxmox_virtual_environment_dns" "proxmox_dns" {
 }
 
 resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   name      = "vmbr0"
   address   = join("", [var.proxmox_ip_address, "/", "24"])
   gateway   = var.proxmox_gateway
@@ -28,7 +28,7 @@ resource "proxmox_virtual_environment_network_linux_bridge" "vmbr0" {
 }
 
 resource "proxmox_virtual_environment_hosts" "proxmox_hosts" {
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   entry {
     address = "127.0.0.1"
     hostnames = [
@@ -84,7 +84,7 @@ resource "proxmox_virtual_environment_hosts" "proxmox_hosts" {
 
 resource "proxmox_virtual_environment_apt_standard_repository" "no_subscription_repo" {
   handle = "no-subscription"
-  node   = var.proxmox_node
+  node   = var.proxmox_node_1
 }
 
 resource "proxmox_virtual_environment_apt_repository" "no_subscription_repo" {
@@ -96,7 +96,7 @@ resource "proxmox_virtual_environment_apt_repository" "no_subscription_repo" {
 
 resource "proxmox_virtual_environment_apt_standard_repository" "ceph_squid" {
   handle = "ceph-squid-enterprise"
-  node   = var.proxmox_node
+  node   = var.proxmox_node_1
 }
 
 resource "proxmox_virtual_environment_apt_repository" "ceph_squid_repo" {
@@ -108,7 +108,7 @@ resource "proxmox_virtual_environment_apt_repository" "ceph_squid_repo" {
 
 resource "proxmox_virtual_environment_apt_standard_repository" "enterprise" {
   handle = "enterprise"
-  node   = var.proxmox_node
+  node   = var.proxmox_node_1
 }
 
 resource "proxmox_virtual_environment_apt_repository" "enterprise_repo" {
@@ -235,14 +235,14 @@ resource "proxmox_virtual_environment_user" "kate_user" {
   }
 }
 
-resource "proxmox_virtual_environment_user_token" "home_assistant_api_token" {
+resource "proxmox_virtual_environment_user_token" "home_assistant_user_token" {
   token_name            = "homeassistant"
   user_id               = "homeassistant@pve"
   privileges_separation = false
   comment               = "Managed by OpenTofu - smart home"
 }
 
-resource "proxmox_virtual_environment_user_token" "homepage_api_token" {
+resource "proxmox_virtual_environment_user_token" "homepage_user_token" {
   token_name            = "homepage"
   user_id               = "homepage@pve"
   privileges_separation = false
@@ -288,7 +288,7 @@ resource "proxmox_virtual_environment_download_file" "debian_13_trixie" {
   content_type = "vztmpl"
   datastore_id = var.proxmox_image_datastore
   file_name    = "debian-13-generic-amd64.tar.zst"
-  node_name    = var.proxmox_node
+  node_name    = var.proxmox_node_1
   url          = "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
 }
 
@@ -296,21 +296,21 @@ resource "proxmox_virtual_environment_download_file" "debian_12_bookworm" {
   content_type = "vztmpl"
   datastore_id = var.proxmox_image_datastore
   file_name    = "debian-12-generic-amd64.tar.zst"
-  node_name    = var.proxmox_node
+  node_name    = var.proxmox_node_1
   url          = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
 }
 
 resource "proxmox_virtual_environment_download_file" "ubuntu_24_04_3_live_server_amd64" {
   content_type = "iso"
   datastore_id = var.proxmox_image_datastore
-  node_name    = var.proxmox_node
+  node_name    = var.proxmox_node_1
   url          = "https://releases.ubuntu.com/24.04.3/ubuntu-24.04.3-live-server-amd64.iso"
 }
 
 resource "proxmox_virtual_environment_download_file" "proxmox_9" {
   content_type = "iso"
   datastore_id = var.proxmox_image_datastore
-  node_name    = var.proxmox_node
+  node_name    = var.proxmox_node_1
   url          = "https://enterprise.proxmox.com/iso/proxmox-ve_9.1-1.iso"
 }
 
@@ -343,17 +343,22 @@ resource "proxmox_virtual_environment_container" "pihole" {
         address = "dhcp"
       }
     }
+    user_account {
+      keys = [
+        var.kate_public_key
+      ]
+      password = var.proxmox_pihole_root_password
+    }
   }
   memory {
     dedicated = 2048
     swap      = 512
   }
   network_interface {
-    mac_address = "BC:24:11:10:08:69"
-    name        = "eth0"
-    firewall    = true
+    name     = "eth0"
+    firewall = true
   }
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   operating_system {
     template_file_id = proxmox_virtual_environment_download_file.debian_12_bookworm.id
     type             = "debian"
@@ -416,16 +421,21 @@ resource "proxmox_virtual_environment_container" "homepage" {
         address = "dhcp"
       }
     }
+    user_account {
+      keys = [
+        var.kate_public_key
+      ]
+      password = var.proxmox_homepage_root_password
+    }
   }
   memory {
     dedicated = 4096
     swap      = 512
   }
   network_interface {
-    mac_address = "BC:24:11:67:74:72"
-    name        = "eth0"
+    name = "eth0"
   }
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   operating_system {
     template_file_id = proxmox_virtual_environment_download_file.debian_12_bookworm.id
     type             = "debian"
@@ -465,15 +475,26 @@ resource "proxmox_virtual_environment_vm" "bookstack" {
   }
   name = "bookstack"
   network_device {
-    mac_address = "BC:24:11:CF:07:24"
-    firewall    = true
+    firewall = true
   }
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   operating_system {
     type = "l26"
   }
   scsi_hardware = "virtio-scsi-single"
   vm_id         = 100
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+    user_account {
+      keys     = [var.kate_public_key]
+      password = var.proxmox_bookstack_root_password
+      username = "kate"
+    }
+  }
 }
 
 resource "proxmox_virtual_environment_vm" "homeassistant" {
@@ -535,10 +556,9 @@ resource "proxmox_virtual_environment_vm" "homeassistant" {
   }
   name = "homeassistant"
   network_device {
-    mac_address  = "02:0F:DA:89:13:57"
     disconnected = false
   }
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   operating_system {
     type = "l26"
   }
@@ -550,6 +570,16 @@ resource "proxmox_virtual_environment_vm" "homeassistant" {
     "community-script"
   ]
   vm_id = 102
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+    user_account {
+      username = "root"
+    }
+  }
 }
 
 resource "proxmox_virtual_environment_vm" "gitlab" {
@@ -583,15 +613,27 @@ resource "proxmox_virtual_environment_vm" "gitlab" {
   }
   name = "gitlab"
   network_device {
-    mac_address = "BC:24:11:59:EA:69"
-    firewall    = true
+    firewall = true
   }
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   operating_system {
     type = "l26"
   }
   scsi_hardware = "virtio-scsi-single"
   vm_id         = 105
+
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+    user_account {
+      keys     = [var.kate_public_key]
+      password = var.proxmox_gitlab_root_password
+      username = "kate"
+    }
+  }
 }
 
 resource "proxmox_virtual_environment_vm" "ubuntu_server_2024_template" {
@@ -626,10 +668,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_server_2024_template" {
     dedicated = 4096
   }
   name      = "ubuntu-server-2024-template"
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   network_device {
-    mac_address = "BC:24:11:DF:F2:0B"
-    firewall    = true
+    firewall = true
   }
   operating_system {
     type = "l26"
@@ -637,6 +678,19 @@ resource "proxmox_virtual_environment_vm" "ubuntu_server_2024_template" {
   scsi_hardware = "virtio-scsi-single"
   started       = false
   vm_id         = 999
+
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+    user_account {
+      keys     = [var.kate_public_key]
+      password = var.proxmox_ubuntu_server_2024_template_root_password
+      username = "kate"
+    }
+  }
 }
 
 resource "proxmox_virtual_environment_vm" "nginx_proxy_manager" {
@@ -665,13 +719,282 @@ resource "proxmox_virtual_environment_vm" "nginx_proxy_manager" {
   }
   name = "nginx-proxy-manager"
   network_device {
-    mac_address = "BC:24:11:DF:4D:13"
-    firewall    = true
+    firewall = true
   }
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_1
   operating_system {
     type = "l26"
   }
   scsi_hardware = "virtio-scsi-single"
   vm_id         = 103
+
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+    user_account {
+      keys     = [var.kate_public_key]
+      password = var.proxmox_nginx_proxy_manager_root_password
+      username = "kate"
+    }
+  }
+}
+
+resource "proxmox_virtual_environment_certificate" "cert" {
+  certificate = tls_self_signed_cert.proxmox_virtual_environment_certificate.cert_pem
+  node_name   = var.proxmox_node_1
+  private_key = tls_private_key.proxmox_virtual_environment_certificate.private_key_pem
+}
+
+resource "tls_private_key" "proxmox_virtual_environment_certificate" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
+  # key_algorithm   = tls_private_key.proxmox_virtual_environment_certificate.algorithm
+  private_key_pem = tls_private_key.proxmox_virtual_environment_certificate.private_key_pem
+
+  subject {
+    common_name  = "example.com"
+    organization = "Terraform Provider for Proxmox"
+  }
+
+  validity_period_hours = 8760
+
+  allowed_uses = [
+    "key_encipherment",
+    "digital_signature",
+    "server_auth",
+  ]
+}
+
+# __generated__ by OpenTofu from "default"
+resource "proxmox_virtual_environment_cluster_firewall" "default" {
+  ebtables       = null
+  enabled        = null
+  forward_policy = null
+  input_policy   = null
+  output_policy  = null
+}
+
+# __generated__ by OpenTofu from "Datacenter"
+resource "proxmox_virtual_environment_cluster_options" "default" {
+  bandwidth_limit_clone     = null
+  bandwidth_limit_default   = null
+  bandwidth_limit_migration = null
+  bandwidth_limit_move      = null
+  bandwidth_limit_restore   = null
+  console                   = null
+  crs_ha                    = null
+  crs_ha_rebalance_on_start = null
+  description               = null
+  email_from                = var.kate_email
+  ha_shutdown_policy        = null
+  http_proxy                = null
+  keyboard                  = "en-us"
+  language                  = null
+  mac_prefix                = var.proxmox_mac_prefix
+  max_workers               = null
+  migration_cidr            = null
+  migration_type            = null
+  next_id                   = null
+  notify                    = null
+}
+
+# __generated__ by OpenTofu
+resource "proxmox_virtual_environment_dns" "default" {
+  domain    = "local"
+  node_name = var.proxmox_node_1
+  servers   = ["192.168.30.1"]
+}
+
+# __generated__ by OpenTofu from "container/proxmox/101"
+resource "proxmox_virtual_environment_firewall_options" "pihole" {
+  container_id  = 101
+  dhcp          = null
+  enabled       = null
+  input_policy  = null
+  ipfilter      = null
+  log_level_in  = null
+  log_level_out = null
+  macfilter     = null
+  ndp           = null
+  node_name     = var.proxmox_node_1
+  output_policy = null
+  radv          = null
+  vm_id         = null
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/103"
+resource "proxmox_virtual_environment_firewall_options" "nginx_proxy_manager" {
+  container_id  = null
+  dhcp          = null
+  enabled       = null
+  input_policy  = null
+  ipfilter      = null
+  log_level_in  = null
+  log_level_out = null
+  macfilter     = null
+  ndp           = null
+  node_name     = var.proxmox_node_1
+  output_policy = null
+  radv          = null
+  vm_id         = 103
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/999"
+resource "proxmox_virtual_environment_firewall_options" "ubuntu_server_2024_template" {
+  container_id  = null
+  dhcp          = null
+  enabled       = null
+  input_policy  = null
+  ipfilter      = null
+  log_level_in  = null
+  log_level_out = null
+  macfilter     = null
+  ndp           = null
+  node_name     = var.proxmox_node_1
+  output_policy = null
+  radv          = null
+  vm_id         = 999
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/102"
+resource "proxmox_virtual_environment_firewall_options" "homeassistant" {
+  container_id  = null
+  dhcp          = null
+  enabled       = null
+  input_policy  = null
+  ipfilter      = null
+  log_level_in  = null
+  log_level_out = null
+  macfilter     = null
+  ndp           = null
+  node_name     = var.proxmox_node_1
+  output_policy = null
+  radv          = null
+  vm_id         = 102
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/101"
+resource "proxmox_virtual_environment_firewall_options" "bookstack" {
+  container_id  = null
+  dhcp          = null
+  enabled       = null
+  input_policy  = null
+  ipfilter      = null
+  log_level_in  = null
+  log_level_out = null
+  macfilter     = null
+  ndp           = null
+  node_name     = var.proxmox_node_1
+  output_policy = null
+  radv          = null
+  vm_id         = 101
+}
+
+# __generated__ by OpenTofu from "container/proxmox/104"
+resource "proxmox_virtual_environment_firewall_options" "homepage" {
+  container_id  = 104
+  dhcp          = null
+  enabled       = null
+  input_policy  = null
+  ipfilter      = null
+  log_level_in  = null
+  log_level_out = null
+  macfilter     = null
+  ndp           = null
+  node_name     = var.proxmox_node_1
+  output_policy = null
+  radv          = null
+  vm_id         = null
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/105"
+resource "proxmox_virtual_environment_firewall_options" "gitlab" {
+  container_id  = null
+  dhcp          = null
+  enabled       = null
+  input_policy  = null
+  ipfilter      = null
+  log_level_in  = null
+  log_level_out = null
+  macfilter     = null
+  ndp           = null
+  node_name     = var.proxmox_node_1
+  output_policy = null
+  radv          = null
+  vm_id         = 105
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/101"
+resource "proxmox_virtual_environment_firewall_rules" "bookstack" {
+  container_id = null
+  node_name    = var.proxmox_node_1
+  vm_id        = 101
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/999"
+resource "proxmox_virtual_environment_firewall_rules" "ubuntu_server_2024_template" {
+  container_id = null
+  node_name    = var.proxmox_node_1
+  vm_id        = 999
+}
+
+# __generated__ by OpenTofu from "node/proxmox"
+resource "proxmox_virtual_environment_firewall_rules" "node_1" {
+  container_id = null
+  node_name    = var.proxmox_node_1
+  vm_id        = null
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/103"
+resource "proxmox_virtual_environment_firewall_rules" "nginx_proxy_manager" {
+  container_id = null
+  node_name    = var.proxmox_node_1
+  vm_id        = 103
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/102"
+resource "proxmox_virtual_environment_firewall_rules" "homeassistant" {
+  container_id = null
+  node_name    = var.proxmox_node_1
+  vm_id        = 102
+}
+
+# __generated__ by OpenTofu from "container/proxmox/104"
+resource "proxmox_virtual_environment_firewall_rules" "homepage" {
+  container_id = 104
+  node_name    = var.proxmox_node_1
+  vm_id        = null
+}
+
+# __generated__ by OpenTofu from "cluster"
+resource "proxmox_virtual_environment_firewall_rules" "cluster" {
+  container_id = null
+  node_name    = null
+  vm_id        = null
+}
+
+# __generated__ by OpenTofu from "container/proxmox/101"
+resource "proxmox_virtual_environment_firewall_rules" "pihole" {
+  container_id = 101
+  node_name    = var.proxmox_node_1
+  vm_id        = null
+}
+
+# __generated__ by OpenTofu from "vm/proxmox/105"
+resource "proxmox_virtual_environment_firewall_rules" "gitlab" {
+  container_id = null
+  node_name    = var.proxmox_node_1
+  vm_id        = 105
+}
+
+# __generated__ by OpenTofu from "proxmox"
+resource "proxmox_virtual_environment_time" "node_1" {
+  node_name = var.proxmox_node_1
+  time_zone = "America/Chicago"
 }

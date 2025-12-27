@@ -44,14 +44,14 @@ import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_container.pihole
-  id = join("", [var.proxmox_node, "/101"])
+  id = join("", [var.proxmox_node_1, "/101"])
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_container.homepage
-  id = join("", [var.proxmox_node, "/104"])
+  id = join("", [var.proxmox_node_1, "/104"])
 }
 
 import {
@@ -72,14 +72,14 @@ import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_hosts.proxmox_hosts
-  id = var.proxmox_node
+  id = var.proxmox_node_1
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_dns.proxmox_dns
-  id = var.proxmox_node
+  id = var.proxmox_node_1
 }
 
 import {
@@ -87,35 +87,35 @@ import {
   # linux bridge should always be imported; new proxmox instances already have it configured
 
   to = proxmox_virtual_environment_network_linux_bridge.vmbr0
-  id = join("", [var.proxmox_node, ":", "vmbr0"])
+  id = join("", [var.proxmox_node_1, ":", "vmbr0"])
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_time.proxmox_time
-  id = var.proxmox_node
+  id = var.proxmox_node_1
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_apt_repository.no_subscription_repo
-  id = join("", [var.proxmox_node, ",", "/etc/apt/sources.list.d/proxmox.sources", ",", 0])
+  id = join("", [var.proxmox_node_1, ",", "/etc/apt/sources.list.d/proxmox.sources", ",", 0])
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_apt_repository.ceph_squid_repo
-  id = join("", [var.proxmox_node, ",", "/etc/apt/sources.list.d/ceph.sources", ",", 0])
+  id = join("", [var.proxmox_node_1, ",", "/etc/apt/sources.list.d/ceph.sources", ",", 0])
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_apt_repository.enterprise_repo
-  id = join("", [var.proxmox_node, ",", "/etc/apt/sources.list.d/pve-enterprise.sources", ",", 0])
+  id = join("", [var.proxmox_node_1, ",", "/etc/apt/sources.list.d/pve-enterprise.sources", ",", 0])
 }
 
 import {
@@ -163,14 +163,14 @@ import {
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
-  to = proxmox_virtual_environment_user_token.home_assistant_api_token
+  to = proxmox_virtual_environment_user_token.home_assistant_user_token
   id = "homeassistant@pve!homeassistant"
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
-  to = proxmox_virtual_environment_user_token.homepage_api_token
+  to = proxmox_virtual_environment_user_token.homepage_user_token
   id = "homepage@pve!homepage"
 }
 
@@ -199,34 +199,173 @@ import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_vm.bookstack
-  id = join("", [var.proxmox_node, "/100"])
+  id = join("", [var.proxmox_node_1, "/100"])
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_vm.homeassistant
-  id = join("", [var.proxmox_node, "/102"])
+  id = join("", [var.proxmox_node_1, "/102"])
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_vm.nginx_proxy_manager
-  id = join("", [var.proxmox_node, "/103"])
+  id = join("", [var.proxmox_node_1, "/103"])
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_vm.gitlab
-  id = join("", [var.proxmox_node, "/105"])
+  id = join("", [var.proxmox_node_1, "/105"])
 }
 
 import {
   for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
 
   to = proxmox_virtual_environment_vm.ubuntu_server_2024_template
-  id = join("", [var.proxmox_node, "/999"])
+  id = join("", [var.proxmox_node_1, "/999"])
 }
 
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_cluster_firewall.default
+  id = "default"
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_cluster_options.default
+  id = "Datacenter"
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_dns.default
+  id = var.proxmox_node_1
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_options.pihole
+  id = join("", ["container/", var.proxmox_node_1, "/101"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_options.homepage
+  id = join("", ["container/", var.proxmox_node_1, "/104"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_options.bookstack
+  id = join("", ["vm/", var.proxmox_node_1, "/101"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_options.homeassistant
+  id = join("", ["vm/", var.proxmox_node_1, "/102"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_options.nginx_proxy_manager
+  id = join("", ["vm/", var.proxmox_node_1, "/103"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_options.gitlab
+  id = join("", ["vm/", var.proxmox_node_1, "/105"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_options.ubuntu_server_2024_template
+  id = join("", ["vm/", var.proxmox_node_1, "/999"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.cluster
+  id = "cluster"
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.node_1
+  id = join("", ["node/", var.proxmox_node_1])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.pihole
+  id = join("", ["container/", var.proxmox_node_1, "/101"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.homepage
+  id = join("", ["container/", var.proxmox_node_1, "/104"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.bookstack
+  id = join("", ["vm/", var.proxmox_node_1, "/101"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.homeassistant
+  id = join("", ["vm/", var.proxmox_node_1, "/102"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.nginx_proxy_manager
+  id = join("", ["vm/", var.proxmox_node_1, "/103"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.gitlab
+  id = join("", ["vm/", var.proxmox_node_1, "/105"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_firewall_rules.ubuntu_server_2024_template
+  id = join("", ["vm/", var.proxmox_node_1, "/999"])
+}
+
+import {
+  for_each = var.proxmox_import_enabled ? toset(["enabled"]) : []
+
+  to = proxmox_virtual_environment_time.node_1
+  id = var.proxmox_node_1
+}

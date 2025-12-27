@@ -24,4 +24,4 @@ fi
 export PROXMOX_VE_AUTH_TICKET="${auth_ticket}"
 export PROXMOX_VE_CSRF_PREVENTION_TOKEN="${resp_csrf}"
 
-tofu plan -var-file="$PROXMOX_ENVIRONMENT_VAR_FILE" -generate-config-out=generated_resources.tf
+tofu apply -var-file="$PROXMOX_ENVIRONMENT_VAR_FILE"
