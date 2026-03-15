@@ -1,0 +1,12 @@
+---
+- name: Validate Variables
+  ansible.builtin.include_tasks: validate_variables.yml
+
+- name: Set resolved operation facts
+  ansible.builtin.set_fact:
+    onepassword_resolved_operation: "Create"
+    onepassword_resolved_item_id: ""
+  no_log: true
+
+- name: Create 1Password Item
+  ansible.builtin.include_tasks: item_operations.yml

@@ -1,0 +1,12 @@
+---
+- name: Authentication
+  ansible.builtin.command:
+    cmd: "op whoami"
+  register: onepassword_auth_result
+  become: true
+  become_user: "{{ onepassword_become_user }}"
+  delegate_to: localhost
+  changed_when: false
+  failed_when: onepassword_auth_result.rc != 0
+  ignore_errors: false
+  no_log: true

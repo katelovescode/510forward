@@ -1,0 +1,5 @@
+---
+pihole_dns_1: 1.1.1.1
+pihole_dns_2: 1.0.0.1
+pihole_query_logging: true
+pihole_installer_url: https://install.pi-hole.net

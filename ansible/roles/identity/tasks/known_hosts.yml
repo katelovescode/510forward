@@ -1,0 +1,20 @@
+---
+- name: Remove stale known_hosts entry
+  delegate_to: localhost
+  ansible.builtin.known_hosts:
+    name: "{{ identity_host_ip }}"
+    state: absent
+
+- name: Scan host key
+  delegate_to: localhost
+  ansible.builtin.command:
+    cmd: "ssh-keyscan -H {{ identity_host_ip }}"
+  register: identity_keyscan
+  changed_when: false
+
+- name: Add host to known_hosts
+  delegate_to: localhost
+  ansible.builtin.known_hosts:
+    name: "{{ identity_host_ip }}"
+    key: "{{ identity_keyscan.stdout }}"
+    state: present

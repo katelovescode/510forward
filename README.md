@@ -50,3 +50,11 @@ Steps for a new device:
 
 TODO: all things should be VMs, not LXCs - or run by docker inside a VM or whatever
 Maybe running my own DHCP will make it so I can assign fixed IPs?
+
+## Lab Bootstrap
+
+### Prerequisites
+
+- Proxmox installed and accessible at enterprise IP
+- 1Password CLI installed and authenticated on controller
+- Vault password file present at ./secrets/vault_password

@@ -1,0 +1,6 @@
+---
+ansible_host: 192.168.30.55
+ip_address: 192.168.30.55
+fqdn: andromeda.510forward.space
+mac_address: "dc:a6:32:30:04:47"
+root_user: kate # raspberry pi doesn't have a root user named "root"

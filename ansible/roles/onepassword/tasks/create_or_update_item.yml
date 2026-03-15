@@ -1,0 +1,49 @@
+---
+- name: Validate Variables
+  ansible.builtin.include_tasks: validate_variables.yml
+
+- name: Check Item Exists
+  ansible.builtin.include_tasks: item_exists.yml
+  vars:
+    full_details: true
+
+- name: Initialize flags for new items
+  ansible.builtin.set_fact:
+    onepassword_item_needs_update: true
+    onepassword_resolved_operation: "Create"
+    onepassword_resolved_item_id: ""
+  when: not onepassword_item_exists
+
+- name: Check if update is needed
+  ansible.builtin.set_fact:
+    onepassword_item_needs_update: >-
+      {{
+        (onepassword_found_item_details.title | default('')) != onepassword_item_title or
+        (onepassword_item_username is defined and
+          onepassword_item_username != (onepassword_found_item_details.fields |
+          selectattr('id', 'equalto', 'username') | map(attribute='value') | first | default(''))) or
+        (onepassword_item_password is defined and
+          onepassword_item_password != (onepassword_found_item_details.fields |
+          selectattr('id', 'equalto', 'password') | map(attribute='value') | first | default(''))) or
+        onepassword_custom_fields_changed | trim | bool
+      }}
+    onepassword_resolved_operation: "Update"
+    onepassword_resolved_item_id: "{{ onepassword_item_id }}"
+  vars:
+    onepassword_custom_fields_changed: >-
+      {% set ns = namespace(changed=false) %}
+      {% for field in onepassword_item_custom_fields | default([]) %}
+        {% set current_field_value = onepassword_found_item_details.fields |
+          selectattr('label', 'equalto', field.label) |
+          map(attribute='value') | first | default(none) %}
+        {% if current_field_value != field.value %}
+          {% set ns.changed = true %}
+        {% endif %}
+      {% endfor %}
+      {{ ns.changed }}
+  when: onepassword_item_exists
+  no_log: true
+
+- name: Create or update item
+  ansible.builtin.include_tasks: item_operations.yml
+  when: not onepassword_item_exists or onepassword_item_needs_update | bool

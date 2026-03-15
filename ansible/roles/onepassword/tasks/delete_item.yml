@@ -1,0 +1,25 @@
+---
+- name: Validate Variables
+  ansible.builtin.include_tasks: validate_variables.yml
+
+- name: Check Item Exists
+  ansible.builtin.include_tasks: item_exists.yml
+  vars:
+    full_details: false
+
+- name: Delete Item
+  ansible.builtin.command:
+    cmd: >-
+      op item delete
+      "{{ onepassword_item_id }}"
+      --vault "{{ onepassword_vault }}"
+  become: true
+  become_user: "{{ onepassword_become_user }}"
+  delegate_to: localhost
+  register: onepassword_operation_result
+  changed_when: true
+  no_log: true
+  retries: 3
+  delay: 2
+  until: onepassword_operation_result.rc == 0
+  when: onepassword_item_exists

@@ -1,0 +1,15 @@
+---
+argument_specs:
+  main:
+    short_description: Create ansible user and harden SSH
+    description: >
+      Creates the ansible system user with passwordless sudo and
+      authorizes the operator SSH key. On non-Proxmox hosts, also
+      locks the root account and disables root SSH login.
+    options:
+      operator_public_key:
+        type: str
+        required: true
+        description: >
+          SSH public key to authorize for the ansible user.
+          Defined in group_vars/all/secrets.yml.

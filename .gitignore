@@ -1,1 +1,15 @@
-secrets/**
+**/secrets/*
+
+roles/proxmox/files/container_templates
+
+**/.envrc
+__pycache__
+
+.windsurf/*
+.ansible/*
+.gemini/*
+
+# mid-process artifacts
+.defunct/*
+
+.DS_Store

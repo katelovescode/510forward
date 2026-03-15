@@ -1,0 +1,22 @@
+---
+- name: Validate Variables
+  ansible.builtin.include_tasks: validate_variables.yml
+
+- name: Check Item Exists
+  ansible.builtin.include_tasks: item_exists.yml
+  vars:
+    full_details: true
+
+- name: Fail if Item Not Found
+  ansible.builtin.fail:
+    msg: "1Password item '{{ onepassword_item_title }}' not found in vault '{{ onepassword_vault }}'"
+  when: not onepassword_item_exists
+
+- name: Set resolved operation facts
+  ansible.builtin.set_fact:
+    onepassword_resolved_operation: "Update"
+    onepassword_resolved_item_id: "{{ onepassword_item_id }}"
+  no_log: true
+
+- name: Update 1Password Item
+  ansible.builtin.include_tasks: item_operations.yml

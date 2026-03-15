@@ -1,0 +1,23 @@
+---
+ansible_host: 192.168.30.58
+ip_address: 192.168.30.58
+fqdn: norville.510forward.space
+mac_address: "42:17:01:FD:72:77"
+
+# VM provisioning
+vm_template: ubuntu-cloud-template
+vm_cores: 2
+vm_memory: 2048
+vm_disk: 30
+
+nginx_proxy_manager_proxy_hosts:
+  - subdomain: enterprise
+    host: "{{ hostvars['enterprise'].ip_address }}"
+    port: 8006
+    scheme: https
+  - subdomain: centaurus
+    host: "{{ hostvars['centaurus'].ip_address }}"
+    port: 80
+  - subdomain: nginx_proxy_manager
+    host: 127.0.0.1
+    port: 81

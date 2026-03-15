@@ -1,0 +1,53 @@
+{% set fields = [] %}
+{% if onepassword_item_username is defined and onepassword_item_username %}
+  {% set _ = fields.append({
+    "id": "username",
+    "type": "STRING",
+    "purpose": "USERNAME",
+    "label": "username",
+    "value": onepassword_item_username
+  }) %}
+{% endif %}
+{% if onepassword_item_password is defined and onepassword_item_password %}
+  {% set _ = fields.append({
+    "id": "password",
+    "type": "CONCEALED",
+    "purpose": "PASSWORD",
+    "label": "password",
+    "value": onepassword_item_password
+  }) %}
+{% endif %}
+{% set _ = fields.append({
+  "id": "notesPlain",
+  "type": "STRING",
+  "purpose": "NOTES",
+  "label": "notesPlain",
+  "value": ""
+}) %}
+{% for field in onepassword_item_custom_fields | default([]) %}
+  {% if field.field_type | upper == 'URL' %}
+    {% set purpose = 'URL' %}
+  {% elif field.field_type | upper == 'DATE' %}
+    {% set purpose = 'DATE' %}
+  {% elif field.field_type | upper == 'TOTP' %}
+    {% set purpose = 'TOTP' %}
+  {% else %}
+    {% set purpose = 'NOTES' %}
+  {% endif %}
+  {% set _ = fields.append({
+    "id": field.label | lower | replace(' ', '_') + '_custom_field',
+    "type": field.field_type | upper,
+    "purpose": purpose,
+    "label": field.label,
+    "value": field.value
+  }) %}
+{% endfor %}
+{
+  "title": "{{ onepassword_item_title | regex_replace('"', '\\"') }}",
+  "category": "LOGIN",
+  "fields": [
+    {% for field in fields %}
+    {{ field | to_json }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}

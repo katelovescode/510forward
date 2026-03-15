@@ -1,0 +1,20 @@
+---
+proxmox_api_node: enterprise
+
+proxmox_admin_system_user: kate
+proxmox_admin_api_user: "{{ proxmox_admin_system_user }}@pam"
+
+#################################
+# Proxmox repositories
+# Even though PVE is on Bookworm, the no-subscription repo is trixie.
+#################################
+proxmox_repo_uri: "http://download.proxmox.com/debian/pve"
+proxmox_repo_suite: trixie
+proxmox_repo_components: "pve-no-subscription"
+
+# Templates
+proxmox_debian_12_vztmpl_filename: "debian-12-standard_12.12-1_amd64.tar.zst"
+
+# Network Configuration
+proxmox_network_cidr: "24"
+proxmox_network_bridge_name: "vmbr0"

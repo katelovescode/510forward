@@ -1,0 +1,38 @@
+---
+- name: Set temp item path
+  ansible.builtin.set_fact:
+    _onepassword_temp_item_path: "/tmp/op-item-{{ onepassword_item_title | regex_replace('[^a-zA-Z0-9]', '_') }}.json"
+  no_log: true
+
+- name: Item Operations
+  block:
+    - name: Item Template
+      ansible.builtin.template:
+        src: item_template.j2
+        dest: "{{ _onepassword_temp_item_path }}"
+        mode: "0600"
+      delegate_to: localhost
+      no_log: true
+
+    - name: Item {{ onepassword_resolved_operation }}
+      ansible.builtin.command:
+        cmd: >-
+          {{ 'op item create' if onepassword_resolved_operation == 'Create'
+          else 'op item edit ' + onepassword_resolved_item_id }}
+          --template {{ _onepassword_temp_item_path }}
+          --vault "{{ onepassword_vault }}"
+      become: true
+      become_user: "{{ onepassword_become_user }}"
+      delegate_to: localhost
+      no_log: true
+      register: onepassword_operation_result
+      until: onepassword_operation_result.rc == 0
+      retries: 3
+      delay: 2
+      changed_when: onepassword_operation_result.rc == 0
+
+    - name: Temporary Template Cleanup
+      ansible.builtin.file:
+        path: "{{ _onepassword_temp_item_path }}"
+        state: absent
+      delegate_to: localhost

@@ -1,0 +1,44 @@
+{
+  "name": "ansible",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": "pre-commit install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.ansible",
+        "redhat.vscode-yaml",
+        "dhoeric.ansible-vault",
+        "jborean.ansibug",
+        "tortenairbag.ansible-template-ui",
+        "enrobots.vscode-ansible-variable-lookup",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.vscode-pylance",
+        "saltcoreyan.json-format-sortcore"
+      ],
+      "settings": {
+        "ansible.python.interpreterPath": "/usr/local/bin/python",
+        "ansible.validation.lint.enabled": true,
+        "ansible.ansible.useFullyQualifiedCollectionNames": true,
+        "python.envManager.enabled": false,
+        "editor.formatOnSave": true,
+        "[yaml]": {
+          "editor.defaultFormatter": "redhat.vscode-yaml"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "saltcoreyan.json-format-sortcore"
+        }
+      }
+    }
+  },
+  "remoteEnv": {
+    "OP_SERVICE_ACCOUNT_TOKEN": "${localEnv:OP_SERVICE_ACCOUNT_TOKEN}",
+    "ANSIBLE_VAULT_PASSWORD_FILE": "/workspaces/510forward/ansible/secrets/vault_password",
+    "GIT_AUTHOR_NAME": "${localEnv:GIT_AUTHOR_NAME}",
+    "GIT_AUTHOR_EMAIL": "${localEnv:GIT_AUTHOR_EMAIL}",
+    "GIT_COMMITTER_NAME": "${localEnv:GIT_AUTHOR_NAME}",
+    "GIT_COMMITTER_EMAIL": "${localEnv:GIT_AUTHOR_EMAIL}"
+  }
+}
