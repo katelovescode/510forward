@@ -17,16 +17,16 @@ Ansible playbook  →  ongoing config    (services, idempotent, safe to re-run)
 
 **Hosts:**
 
-| Host | Type | Role |
-|------|------|------|
-| enterprise | Physical (mini PC) | Proxmox VE node |
-| andromeda | Physical (Raspberry Pi 5) | Pi-hole secondary, desktop |
-| centaurus | QEMU VM | Pi-hole primary + nebula-sync |
-| norville | QEMU VM | NGINX Proxy Manager (Docker) |
-| dorothy | QEMU VM | Homepage dashboard |
-| codsworth | QEMU VM (HAOS) | Home Assistant |
-| memory-alpha | QEMU VM | GitLab CE |
-| hermes | QEMU VM | TBD |
+| Host         | Type                      | Role                          |
+| ------------ | ------------------------- | ----------------------------- |
+| enterprise   | Physical (mini PC)        | Proxmox VE node               |
+| andromeda    | Physical (Raspberry Pi 5) | Pi-hole secondary, desktop    |
+| centaurus    | QEMU VM                   | Pi-hole primary + nebula-sync |
+| norville     | QEMU VM                   | NGINX Proxy Manager (Docker)  |
+| dorothy      | QEMU VM                   | Homepage dashboard            |
+| codsworth    | QEMU VM (HAOS)            | Home Assistant                |
+| memory-alpha | QEMU VM                   | GitLab CE                     |
+| hermes       | QEMU VM                   | TBD                           |
 
 **DNS + reverse proxy pattern:** Pi-hole returns norville's IP for all `*.510forward.space` subdomains. NPM on norville handles TLS termination and proxies to backends. Pi-hole nodes resolve directly to their own IPs (FTL self-protection) and are accessed via HTTP by IP.
 
@@ -72,6 +72,7 @@ make edit-secret FILE=ansible/inventory/group_vars/all/secrets.yml  # Edit a vau
 Every service that needs a browser URL requires two changes, then `make play`:
 
 1. **NPM proxy host** — add to `nginx_proxy_manager_proxy_hosts` in `ansible/inventory/host_vars/norville/vars.yml`:
+
    ```yaml
    - subdomain: myservice
      host: "{{ hostvars['myservice']['ip_address'] }}"
@@ -92,11 +93,11 @@ That's it. `make play` applies both changes and every device on the network pick
 
 **Decision framework:**
 
-| | Secret | Not secret |
-|---|---|---|
-| **Multiple tools** | `.envrc` | `.envrc` or hardcoded |
-| **OpenTofu only** | gitignored `.tfvars` (escape hatch — currently unused, tofu secrets go via 1Password) | `.tf` variable defaults |
-| **Ansible only** | vault-encrypted file in `ansible/` | regular `vars.yml` |
+|                    | Secret                                                                                | Not secret              |
+| ------------------ | ------------------------------------------------------------------------------------- | ----------------------- |
+| **Multiple tools** | `.envrc`                                                                              | `.envrc` or hardcoded   |
+| **OpenTofu only**  | gitignored `.tfvars` (escape hatch — currently unused, tofu secrets go via 1Password) | `.tf` variable defaults |
+| **Ansible only**   | vault-encrypted file in `ansible/`                                                    | regular `vars.yml`      |
 
 **1Password is the canonical store for all secrets** except the `op` token itself (circular dependency — you need `op` to read from 1Password). Everything that can go in 1Password does. The layers above are access mechanisms, not separate secret stores.
 
