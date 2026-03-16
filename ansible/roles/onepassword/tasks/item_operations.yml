@@ -15,12 +15,14 @@
       no_log: true
 
     - name: Item {{ onepassword_resolved_operation }}
-      ansible.builtin.command:
+      ansible.builtin.shell: # noqa: command-instead-of-shell
         cmd: >-
           {{ 'op item create' if onepassword_resolved_operation == 'Create'
           else 'op item edit ' + onepassword_resolved_item_id }}
           --template {{ _onepassword_temp_item_path }}
           --vault "{{ onepassword_vault }}"
+          </dev/null
+        executable: /bin/bash
       become: true
       become_user: "{{ onepassword_become_user }}"
       delegate_to: localhost

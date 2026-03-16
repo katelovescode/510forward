@@ -20,3 +20,12 @@ ifdef VIRTUAL_ENV
 else
 	pipx uninstall ansible-core
 endif
+
+bootstrap:
+	cd ansible && ansible-playbook lab_bootstrap.yml
+
+play:
+	cd ansible && ansible-playbook playbook.yml
+
+lint:
+	cd ansible && ansible-lint
