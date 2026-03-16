@@ -1,3 +1,9 @@
 #!/bin/sh
 
 export OP_SERVICE_ACCOUNT_TOKEN="token"
+export GIT_AUTHOR_NAME="name"
+export GIT_COMMITTER_NAME="name"
+export GIT_AUTHOR_EMAIL="email"
+export GIT_COMMITTER_EMAIL="email"
+export SYSADMIN_PUBLIC_KEY="publickey"
+export OP_VAULT_ID="vault_id"

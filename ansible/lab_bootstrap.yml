@@ -26,7 +26,7 @@
           - lookup('vars', item) | string | length > 0
         fail_msg: "Required variable '{{ item }}' is not defined or is empty."
       loop:
-        - operator_public_key
+        - sysadmin_public_key
         - admin_email
         - onepassword_vault
         - onepassword_become_user
@@ -111,11 +111,11 @@
         user: "{{ proxmox_admin_system_user }}"
         nopassword: false
 
-    - name: Authorize operator SSH key for admin user
+    - name: Authorize sysadmin SSH key for admin user
       become: true
       ansible.posix.authorized_key:
         user: "{{ proxmox_admin_system_user }}"
-        key: "{{ operator_public_key }}"
+        key: "{{ sysadmin_public_key }}"
 
     - name: Create Proxmox API user
       community.proxmox.proxmox_user: # noqa: args[module]
@@ -141,6 +141,10 @@
         onepassword_item_title: Proxmox Admin User
         onepassword_item_username: "{{ proxmox_admin_system_user }}"
         onepassword_item_password: "{{ proxmox_admin_password }}"
+        onepassword_item_custom_fields:
+          - label: Notes
+            value: "Managed by Ansible bootstrap. Do not rename this item."
+            field_type: STRING
 
 - name: Bootstrap - Proxmox OpenTofu User
   hosts: enterprise
@@ -166,7 +170,7 @@
         runas: ALL
         state: present
         user: opentofu
-        nopassword: false
+        nopassword: true
 
     - name: Check if OpenTofu SSH key exists in 1Password
       no_log: true
@@ -338,7 +342,7 @@
               no_log: true
               ansible.builtin.command:
                 cmd: >-
-                  pvesh create /access/users/opentofu@pam/token/opentofu_token
+                  pvesh create /access/users/opentofu@pam/tokens/opentofu_token --privsep 0
                   --comment='Managed by Ansible' --output-format=json
               register: opentofu_user_token
               changed_when: true
@@ -352,6 +356,10 @@
                 onepassword_item_title: Proxmox OpenTofu API Token
                 onepassword_item_username: "{{ (opentofu_user_token.stdout | from_json)['full-tokenid'] }}"
                 onepassword_item_password: "{{ (opentofu_user_token.stdout | from_json).value }}"
+                onepassword_item_custom_fields:
+                  - label: Notes
+                    value: "Managed by Ansible bootstrap. Do not rename this item."
+                    field_type: STRING
 
 - name: Bootstrap - Proxmox Storage
   hosts: enterprise

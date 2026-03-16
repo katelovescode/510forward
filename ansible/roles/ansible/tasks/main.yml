@@ -29,7 +29,7 @@
       become: true
       ansible.posix.authorized_key:
         user: "ansible"
-        key: "{{ operator_public_key }}"
+        key: "{{ sysadmin_public_key }}"
         state: present
     - name: Disable password authentication
       become: true

@@ -29,3 +29,9 @@ play:
 
 lint:
 	cd ansible && ansible-lint
+
+edit-secret:
+	cd ansible && ansible-vault edit $(FILE)
+
+tofu-proxmox:
+	cd tofu/proxmox && ../tofu.sh $(ARGS)
