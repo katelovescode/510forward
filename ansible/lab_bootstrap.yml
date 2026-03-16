@@ -352,3 +352,12 @@
                 onepassword_item_title: Proxmox OpenTofu API Token
                 onepassword_item_username: "{{ (opentofu_user_token.stdout | from_json)['full-tokenid'] }}"
                 onepassword_item_password: "{{ (opentofu_user_token.stdout | from_json).value }}"
+
+- name: Bootstrap - Proxmox Storage
+  hosts: enterprise
+  tasks:
+    - name: Enable snippets content type on local storage
+      become: true
+      ansible.builtin.command:
+        cmd: pvesm set local --content vztmpl,backup,iso,snippets
+      changed_when: false
