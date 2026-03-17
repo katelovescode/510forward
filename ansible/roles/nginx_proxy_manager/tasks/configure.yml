@@ -1,0 +1,136 @@
+---
+- name: Check if NPM admin password exists in 1Password
+  no_log: true
+  ansible.builtin.command:
+    cmd: op item get "NPM Admin Password" --vault "{{ onepassword_vault }}"
+  become: true
+  become_user: "{{ onepassword_become_user }}"
+  delegate_to: localhost
+  register: nginx_proxy_manager_admin_password_check
+  failed_when: false
+  changed_when: false
+
+- name: Generate and store NPM admin password in 1Password
+  no_log: true
+  ansible.builtin.include_role:
+    name: onepassword
+    tasks_from: create_item
+  vars:
+    onepassword_item_title: NPM Admin Password
+    onepassword_item_username: "{{ admin_email }}"
+    onepassword_item_password: "{{ lookup('community.general.random_string', length=32, special=false) }}"
+    onepassword_item_custom_fields:
+      - label: Notes
+        value: "Managed by Ansible. Do not rename this item."
+        field_type: STRING
+  when: nginx_proxy_manager_admin_password_check.rc != 0
+
+- name: Read NPM admin password from 1Password
+  no_log: true
+  ansible.builtin.command:
+    cmd: op read "op://{{ onepassword_vault }}/NPM Admin Password/password"
+  become: true
+  become_user: "{{ onepassword_become_user }}"
+  delegate_to: localhost
+  register: nginx_proxy_manager_admin_password_resolved
+  changed_when: false
+
+- name: Authenticate with default credentials
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "admin@example.com"
+      secret: "changeme"
+    status_code: [200, 201]
+  register: nginx_proxy_manager_default_auth
+  failed_when: false
+  no_log: true
+
+- name: Authenticate with configured credentials
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "{{ admin_email }}"
+      secret: "{{ nginx_proxy_manager_admin_password_resolved.stdout }}"
+    status_code: [200, 201]
+  register: nginx_proxy_manager_configured_auth
+  failed_when: false
+  no_log: true
+  when: nginx_proxy_manager_default_auth.status not in [200, 201]
+
+- name: Fail if neither authentication method worked
+  ansible.builtin.fail:
+    msg: >-
+      Could not authenticate with NPM using default or configured credentials.
+      Check admin_email and NPM Admin Password in 1Password.
+  when: >-
+    (nginx_proxy_manager_default_auth.status not in [200, 201]) and
+    (nginx_proxy_manager_configured_auth is skipped or
+     nginx_proxy_manager_configured_auth.status not in [200, 201])
+
+- name: Set auth token fact
+  ansible.builtin.set_fact:
+    nginx_proxy_manager_auth_token: >-
+      {{
+        nginx_proxy_manager_default_auth.json.token
+        if nginx_proxy_manager_default_auth.status in [200, 201]
+        else nginx_proxy_manager_configured_auth.json.token
+      }}
+  no_log: true
+
+- name: First-time admin setup
+  when: nginx_proxy_manager_default_auth.status in [200, 201]
+  block:
+    - name: Update admin email address
+      ansible.builtin.uri:
+        url: "http://localhost:81/api/users/1"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ nginx_proxy_manager_auth_token }}"
+        body_format: json
+        body:
+          name: "Administrator"
+          email: "{{ admin_email }}"
+        status_code: [200, 201]
+      no_log: true
+
+    - name: Set admin password
+      ansible.builtin.uri:
+        url: "http://localhost:81/api/users/1/auth"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ nginx_proxy_manager_auth_token }}"
+        body_format: json
+        body:
+          type: "password"
+          current: "changeme"
+          secret: "{{ nginx_proxy_manager_admin_password_resolved.stdout }}"
+        status_code: [200, 201]
+      no_log: true
+
+    - name: Re-authenticate with new credentials
+      ansible.builtin.uri:
+        url: "http://localhost:81/api/tokens"
+        method: POST
+        body_format: json
+        body:
+          identity: "{{ admin_email }}"
+          secret: "{{ nginx_proxy_manager_admin_password_resolved.stdout }}"
+        status_code: [200, 201]
+      register: nginx_proxy_manager_auth
+      no_log: true
+
+    - name: Update auth token after password change
+      ansible.builtin.set_fact:
+        nginx_proxy_manager_auth_token: "{{ nginx_proxy_manager_auth.json.token }}"
+      no_log: true
+
+- name: Request wildcard certificate
+  ansible.builtin.include_tasks: certificate.yml
+
+- name: Configure proxy hosts
+  ansible.builtin.include_tasks: proxy_hosts.yml

@@ -1,0 +1,37 @@
+---
+- name: Pre-flight
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Update known_hosts
+      ansible.builtin.include_role:
+        name: identity
+        tasks_from: known_hosts
+      vars:
+        identity_host_ip: "{{ ansible_host }}"
+#     - name: Wait for SSH
+#       ansible.builtin.wait_for:
+#         host: "{{ ansible_host }}"
+#         port: 22
+#         timeout: 300
+#       delegate_to: localhost
+
+# - name: Base configuration
+#   hosts: all
+#   roles:
+#     - ansible
+
+# - name: Proxmox configuration
+#   hosts: proxmox_nodes
+#   roles:
+#     - proxmox
+
+# - name: Pi-hole
+#   hosts: pihole_nodes
+#   roles:
+#     - pihole
+
+# - name: NGINX Proxy Manager
+#   hosts: norville
+#   roles:
+#     - nginx_proxy_manager

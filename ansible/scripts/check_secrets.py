@@ -49,8 +49,13 @@ if not shutil.which("ansible-vault"):
 
 config = configparser.ConfigParser()
 script_dir = Path(__file__).parent
-config.read(script_dir / ".." / "ansible.cfg")
+ansible_cfg_path = script_dir / ".." / "ansible.cfg"
+config.read(ansible_cfg_path)
 vault_password_file = config.get("defaults", "vault_password_file", fallback=None)
+
+if vault_password_file:
+    # Resolve relative to ansible.cfg location, not cwd
+    vault_password_file = (ansible_cfg_path.parent / vault_password_file).resolve()
 
 if not vault_password_file:
     print("ERROR: vault_password_file not set in ansible.cfg", file=sys.stderr)

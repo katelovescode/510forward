@@ -1,0 +1,35 @@
+# Managed by Ansible — do not edit manually
+# Pi-hole v6 configuration
+
+[dns]
+upstreams = ["{{ pihole_dns_1 }}", "{{ pihole_dns_2 }}"]
+domain = "{{ domain }}"
+reply_addr4 = "{{ ip_address }}"
+listeningMode = "local"
+dnssec = true
+
+[dhcp]
+active = false
+
+[ntp]
+active = false
+
+[resolver]
+resolveIPv4 = true
+resolveIPv6 = false
+
+[database]
+maxDBdays = 30
+DBinterval = 1.0
+
+[webserver]
+port = "80o,[::]:80o"
+
+[webserver.api]
+queryLog = {{ pihole_query_logging | lower }}
+{% if not (pihole_primary | default(false)) %}
+app_sudo = true
+{% endif %}
+
+[misc]
+privacylevel = 0

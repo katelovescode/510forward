@@ -1,22 +1,31 @@
 ---
 # One-time bootstrap playbook.
 # Runs as root since the ansible user does not exist yet.
+#
+# Prerequisites:
+#   - "Proxmox Root User" must exist in 1Password with the root@pam password
+#     set during Proxmox installation. Bootstrap cannot create this — it must
+#     be added manually before running.
 
-- name: Pre-flight Validation
+- name: Bootstrap - Pre-flight Validation
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Verify vault is decrypted
-      ansible.builtin.assert:
-        that:
-          - hostvars['enterprise'].proxmox_root_password is defined
-          - hostvars['enterprise'].proxmox_root_password | length > 0
-          - hostvars['enterprise'].proxmox_root_password != '$ANSIBLE_VAULT'
-        fail_msg: >-
-          proxmox_root_password is not decrypted. Check that your vault
-          password file is present and correct at the path configured
-          in ansible.cfg.
-        success_msg: Vault decrypted successfully.
+    - name: Verify 1Password CLI is authenticated
+      ansible.builtin.include_role:
+        name: onepassword
+        tasks_from: auth_check
+
+    - name: Verify Proxmox root password exists in 1Password
+      no_log: true
+      ansible.builtin.command:
+        cmd: op item get "Proxmox Root User" --vault "{{ onepassword_vault }}"
+      become: true
+      become_user: "{{ onepassword_become_user }}"
+      delegate_to: localhost
+      changed_when: false
+      register: proxmox_root_password_check
+      failed_when: proxmox_root_password_check.rc != 0
 
     - name: Verify required variables (all hosts)
       no_log: true
@@ -39,12 +48,7 @@
           - hostvars['enterprise'][item] | string | length > 0
         fail_msg: "Required variable '{{ item }}' is not defined or is empty."
       loop:
-        - proxmox_root_password
-        - proxmox_admin_password
         - proxmox_admin_password_salt
-        - proxmox_admin_system_user
-        - proxmox_admin_api_user
-        - proxmox_api_node
 
     - name: Update known_hosts for enterprise
       ansible.builtin.include_role:
@@ -60,17 +64,11 @@
         timeout: 10
       delegate_to: localhost
 
-    - name: Verify 1Password CLI is authenticated
-      ansible.builtin.include_role:
-        name: onepassword
-        tasks_from: auth_check
-
     - name: Display pre-flight summary
       ansible.builtin.debug:
-        msg: >-
-          Pre-flight checks passed.
+        msg: Pre-flight checks passed.
 
-- name: Ansible User
+- name: Bootstrap - Ansible User
   hosts: enterprise
   gather_facts: false
   remote_user: root
@@ -79,16 +77,78 @@
   roles:
     - ansible
 
+- name: Bootstrap - DNS
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Check if DNS is working
+      ansible.builtin.command:
+        cmd: getent hosts cloud-images.ubuntu.com
+      register: dns_check
+      failed_when: false
+      changed_when: false
+
+    - name: Set temporary upstream DNS if resolution is failing
+      become: true
+      ansible.builtin.copy:
+        content: "nameserver 1.1.1.1\n"
+        dest: /etc/resolv.conf
+        mode: "0644"
+      when: dns_check.rc != 0
+
 - name: Bootstrap - Proxmox Admin User
   hosts: enterprise
   remote_user: root
-  module_defaults:
-    group/community.proxmox.proxmox:
-      api_host: "{{ proxmox_api_node }}"
-      api_user: root@pam
-      api_password: "{{ proxmox_root_password }}"
-      validate_certs: false
   tasks:
+    - name: Read Proxmox root password from 1Password
+      no_log: true
+      ansible.builtin.command:
+        cmd: op read "op://{{ onepassword_vault }}/Proxmox Root User/password"
+      become: true
+      become_user: "{{ onepassword_become_user }}"
+      delegate_to: localhost
+      register: proxmox_root_password_resolved
+      changed_when: false
+
+    - name: Check if Proxmox admin password exists in 1Password
+      no_log: true
+      ansible.builtin.command:
+        cmd: op item get "Proxmox Admin User" --vault "{{ onepassword_vault }}"
+      become: true
+      become_user: "{{ onepassword_become_user }}"
+      delegate_to: localhost
+      register: proxmox_admin_password_check
+      failed_when: false
+      changed_when: false
+
+    - name: Generate and store Proxmox admin password in 1Password
+      no_log: true
+      ansible.builtin.include_role:
+        name: onepassword
+        tasks_from: create_item
+      vars:
+        onepassword_item_title: Proxmox Admin User
+        onepassword_item_username: "{{ proxmox_admin_system_user }}"
+        onepassword_item_password: "{{ lookup('community.general.random_string', length=32, special=false) }}"
+        onepassword_item_custom_fields:
+          - label: Notes
+            value: "Managed by Ansible bootstrap. Do not rename this item."
+            field_type: STRING
+      when: proxmox_admin_password_check.rc != 0
+
+    - name: Read Proxmox admin password from 1Password
+      no_log: true
+      ansible.builtin.command:
+        cmd: op read "op://{{ onepassword_vault }}/Proxmox Admin User/password"
+      become: true
+      become_user: "{{ onepassword_become_user }}"
+      delegate_to: localhost
+      register: proxmox_admin_password_resolved
+      changed_when: false
+
     - name: Create system admin user
       become: true
       no_log: true
@@ -97,7 +157,7 @@
         shell: /bin/bash
         password: >-
           {{
-            proxmox_admin_password
+            proxmox_admin_password_resolved.stdout
             | password_hash(salt=proxmox_admin_password_salt, hashtype='sha512')
           }}
 
@@ -121,6 +181,10 @@
       community.proxmox.proxmox_user: # noqa: args[module]
         comment: "Managed by Ansible"
         userid: "{{ proxmox_admin_api_user }}"
+        api_host: "{{ proxmox_api_node }}"
+        api_user: root@pam
+        api_password: "{{ proxmox_root_password_resolved.stdout }}"
+        validate_certs: false
         state: present
         email: "{{ admin_email }}"
 
@@ -129,33 +193,27 @@
         path: /
         roleid: Administrator
         ugid: "{{ proxmox_admin_api_user }}"
+        api_host: "{{ proxmox_api_node }}"
+        api_user: root@pam
+        api_password: "{{ proxmox_root_password_resolved.stdout }}"
+        validate_certs: false
         state: present
         type: user
-
-    - name: Store admin credentials in 1Password
-      no_log: true
-      ansible.builtin.include_role:
-        name: onepassword
-        tasks_from: create_or_update_item
-      vars:
-        onepassword_item_title: Proxmox Admin User
-        onepassword_item_username: "{{ proxmox_admin_system_user }}"
-        onepassword_item_password: "{{ proxmox_admin_password }}"
-        onepassword_item_custom_fields:
-          - label: Notes
-            value: "Managed by Ansible bootstrap. Do not rename this item."
-            field_type: STRING
 
 - name: Bootstrap - Proxmox OpenTofu User
   hosts: enterprise
   remote_user: root
-  module_defaults:
-    group/community.proxmox.proxmox:
-      api_host: "{{ proxmox_api_node }}"
-      api_user: root@pam
-      api_password: "{{ proxmox_root_password }}"
-      validate_certs: false
   tasks:
+    - name: Read Proxmox root password from 1Password
+      no_log: true
+      ansible.builtin.command:
+        cmd: op read "op://{{ onepassword_vault }}/Proxmox Root User/password"
+      become: true
+      become_user: "{{ onepassword_become_user }}"
+      delegate_to: localhost
+      register: proxmox_root_password_resolved
+      changed_when: false
+
     - name: Create system opentofu user
       become: true
       ansible.builtin.user:
@@ -277,6 +335,10 @@
     - name: Group
       community.proxmox.proxmox_group: # noqa: args[module]
         groupid: opentofu
+        api_host: "{{ proxmox_api_node }}"
+        api_user: root@pam
+        api_password: "{{ proxmox_root_password_resolved.stdout }}"
+        validate_certs: false
         state: present
         comment: Managed by Ansible
 
@@ -285,6 +347,10 @@
         path: /
         roleid: opentofu
         ugid: opentofu
+        api_host: "{{ proxmox_api_node }}"
+        api_user: root@pam
+        api_password: "{{ proxmox_root_password_resolved.stdout }}"
+        validate_certs: false
         state: present
         type: group
 
@@ -292,6 +358,10 @@
       community.proxmox.proxmox_user: # noqa: args[module]
         comment: "Managed by Ansible"
         userid: opentofu@pam
+        api_host: "{{ proxmox_api_node }}"
+        api_user: root@pam
+        api_password: "{{ proxmox_root_password_resolved.stdout }}"
+        validate_certs: false
         state: present
         groups:
           - opentofu
@@ -312,9 +382,9 @@
           changed_when: false
 
         - name: Check if OpenTofu token exists in Proxmox
+          become: true
           ansible.builtin.command:
             cmd: pvesh get /access/users/opentofu@pam/token/opentofu_token
-          become: true
           register: opentofu_token_proxmox_check
           failed_when: false
           changed_when: false

@@ -1,0 +1,54 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure NGINX Proxy Manager
+    description: >
+      Deploys NGINX Proxy Manager via Docker Compose, configures admin
+      credentials, issues a wildcard Let's Encrypt certificate via
+      Cloudflare DNS-01 challenge, and creates proxy hosts.
+      Docker is installed via the docker role dependency.
+    options:
+      #################################
+      # Shared vars — from group_vars/all/vars.yml
+      #################################
+      admin_email:
+        type: str
+        required: true
+        description: >
+          Defined in group_vars/all/vars.yml.
+
+      domain:
+        type: str
+        required: true
+        description: >
+          Defined in group_vars/all/vars.yml.
+
+      #################################
+      # Host vars — from host_vars/norville/vars.yml
+      #################################
+      nginx_proxy_manager_proxy_hosts:
+        type: list
+        required: true
+        description: >
+          List of proxy host definitions. Each item requires
+          subdomain (str), host (str), and port (int).
+          Optional: scheme (str, default http).
+          Defined in host_vars/norville/vars.yml.
+
+      #################################
+      # Secrets — from host_vars/norville/secrets.yml
+      #################################
+      nginx_proxy_manager_admin_password:
+        type: str
+        required: true
+        no_log: true
+        description: >
+          Password for the NPM admin account.
+
+      nginx_proxy_manager_cloudflare_api_token:
+        type: str
+        required: true
+        no_log: true
+        description: >
+          Cloudflare API token with Zone DNS Edit permissions,
+          used for the Let's Encrypt DNS-01 challenge.

@@ -1,0 +1,9 @@
+---
+- name: Template custom.list for local DNS resolution
+  ansible.builtin.template:
+    src: custom.list.j2
+    dest: /etc/pihole/custom.list
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart pihole dns

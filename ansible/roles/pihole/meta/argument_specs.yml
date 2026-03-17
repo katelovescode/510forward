@@ -1,0 +1,63 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure Pi-hole v6
+    description: >
+      Installs Pi-hole v6 unattended using a pre-seeded pihole.toml,
+      sets the admin password via CLI, and configures local DNS
+      records for all inventory hosts via custom.list.
+    options:
+      #################################
+      # Shared vars — from group_vars/all/vars.yml
+      #################################
+      domain:
+        type: str
+        required: true
+        description: >
+          Local domain for split-horizon DNS, e.g. 510forward.space.
+          Written to pihole.toml as the DNS domain setting.
+
+      #################################
+      # Host vars — from host_vars/<host>/vars.yml
+      #################################
+      ip_address:
+        type: str
+        required: true
+        description: >
+          IP address of this Pi-hole host. Written to pihole.toml
+          as reply_addr4. Must match the host's actual static IP.
+
+      fqdn:
+        type: str
+        required: true
+        description: >
+          FQDN of this Pi-hole host, e.g. centaurus.510forward.space.
+          Used when generating custom.list DNS entries for all hosts
+          in the inventory.
+
+      #################################
+      # Group vars — from group_vars/pihole_nodes/vars.yml
+      #################################
+      pihole_dns_1:
+        type: str
+        required: true
+        description: >
+          Primary upstream DNS server, e.g. 1.1.1.1.
+
+      pihole_dns_2:
+        type: str
+        required: true
+        description: >
+          Secondary upstream DNS server, e.g. 1.0.0.1.
+
+      pihole_query_logging:
+        type: bool
+        required: true
+        description: >
+          Whether to enable DNS query logging.
+
+      pihole_installer_url:
+        type: str
+        required: true
+        description: >
+          URL for the Pi-hole installer script.

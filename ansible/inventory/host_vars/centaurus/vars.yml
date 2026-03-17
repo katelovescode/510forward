@@ -4,8 +4,4 @@ ip_address: 192.168.30.77
 fqdn: centaurus.510forward.space
 mac_address: "42:17:01:FD:F7:A4"
 
-# LXC provisioning
-lxc_cores: 2
-lxc_memory: 512
-lxc_disk: 4
-lxc_unprivileged: true
+pihole_primary: true

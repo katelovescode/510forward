@@ -1,6 +1,6 @@
 output "centaurus_vmid" {
   description = "VMID assigned to centaurus by Proxmox"
-  value       = proxmox_virtual_environment_container.centaurus.id
+  value       = proxmox_virtual_environment_vm.centaurus.id
 }
 
 output "norville_vmid" {

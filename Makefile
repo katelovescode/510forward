@@ -1,3 +1,18 @@
+help:
+	@echo ""
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "  install            Install dependencies and set up pre-commit hooks"
+	@echo "  uninstall          Remove installed dependencies"
+	@echo "  bootstrap          Run the one-time lab bootstrap playbook"
+	@echo "  play               Run the main Ansible playbook"
+	@echo "  lint               Run ansible-lint and tflint"
+	@echo "  edit-secret        Edit a vault-encrypted file: make edit-secret FILE=path"
+	@echo "  tofu-proxmox       Run OpenTofu for Proxmox: make tofu-proxmox ARGS='plan'"
+	@echo "  sync-pihole        Manually trigger nebula-sync on centaurus"
+	@echo "  help               Show this help message"
+	@echo ""
+
 # Install all dependencies and set up pre-commit hooks
 # Any injected packages need --include-apps to expose the binaries to path immediately without a new shell
 # core.hooksPath needs to be unset, pre-commit refuses to install with it set
@@ -29,9 +44,13 @@ play:
 
 lint:
 	cd ansible && ansible-lint
+	cd tofu/proxmox && tflint --recursive --config "$(PWD)/tofu/proxmox/.tflint.hcl"
 
 edit-secret:
 	cd ansible && ansible-vault edit $(FILE)
 
 tofu-proxmox:
 	cd tofu/proxmox && ../tofu.sh $(ARGS)
+
+sync-pihole:
+	cd ansible && ansible -b -m systemd -a "name=nebula-sync state=started" centaurus

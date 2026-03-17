@@ -1,0 +1,7 @@
+# Managed by Ansible — do not edit manually
+{% for host in groups['all'] %}
+{% set hv = hostvars[host] %}
+{% if hv.ip_address is defined and hv.fqdn is defined %}
+{{ hv.ip_address }} {{ hv.fqdn }}
+{% endif %}
+{% endfor %}
