@@ -12,6 +12,7 @@
   delegate_to: localhost
   ansible.builtin.shell:
     cmd: |
+      set -o pipefail
       keys=$(ssh-keyscan -q {{ identity_host_ip }} 2>/dev/null | grep -v '^#')
       if [ -s ~/.ssh/known_hosts ] && [ "$(tail -c1 ~/.ssh/known_hosts | wc -c)" -gt 0 ]; then
         echo "" >> ~/.ssh/known_hosts

@@ -1,6 +1,0 @@
----
-- name: Deploy NGINX Proxy Manager
-  ansible.builtin.include_tasks: deploy.yml
-
-- name: Configure NGINX Proxy Manager
-  ansible.builtin.include_tasks: configure.yml

@@ -35,8 +35,8 @@
   remote_user: "{{ root_user | default('root') }}"
   roles:
     - pihole
-
-- name: NGINX Proxy Manager
-  hosts: norville
-  roles:
-    - nginx_proxy_manager
+#
+# - name: NGINX Proxy Manager
+#   hosts: norville
+#   roles:
+#     - nginx_proxy_manager
