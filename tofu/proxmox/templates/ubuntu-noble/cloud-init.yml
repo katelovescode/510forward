@@ -1,8 +1,0 @@
----
-packages:
-  - qemu-guest-agent
-  - curl
-  - sudo
-runcmd:
-  - systemctl enable qemu-guest-agent
-  - systemctl start qemu-guest-agent

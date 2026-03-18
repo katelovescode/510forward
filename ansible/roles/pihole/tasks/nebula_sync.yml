@@ -7,15 +7,15 @@
 - name: Download nebula-sync binary
   become: true
   ansible.builtin.get_url:
-    url: "https://github.com/lovelaze/nebula-sync/releases/download/v{{ nebula_sync_version }}/nebula-sync_Linux_x86_64.tar.gz"
-    dest: "/tmp/nebula-sync-{{ nebula_sync_version }}.tar.gz"
+    url: "https://github.com/lovelaze/nebula-sync/releases/download/v{{ nebula_sync_version }}/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+    dest: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
     mode: "0644"
-    checksum: "sha256:{{ nebula_sync_checksum }}"
+    checksum: "{{ nebula_sync_checksum }}"
 
 - name: Extract nebula-sync binary
   become: true
   ansible.builtin.unarchive:
-    src: "/tmp/nebula-sync-{{ nebula_sync_version }}.tar.gz"
+    src: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
     dest: /usr/local/bin
     include:
       - nebula-sync
@@ -25,14 +25,15 @@
     group: root
 
 - name: Remove nebula-sync archive
+  become: true
   ansible.builtin.file:
-    path: "/tmp/nebula-sync-{{ nebula_sync_version }}.tar.gz"
+    path: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
     state: absent
 
 - name: Template nebula-sync env file
   become: true
   ansible.builtin.template:
-    src: nebula_sync.env.j2
+    src: nebula-sync.env.j2
     dest: /etc/nebula-sync.env
     owner: root
     group: root

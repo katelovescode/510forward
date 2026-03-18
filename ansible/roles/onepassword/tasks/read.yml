@@ -1,0 +1,22 @@
+---
+- name: Read item
+  ansible.builtin.command:
+    cmd: >-
+      op item get '{{ onepassword_item.title }}'
+      --vault "{{ onepassword_vault }}"
+      --reveal
+      --format json
+  become: true
+  become_user: "{{ onepassword_become_user }}"
+  delegate_to: localhost
+  register: _onepassword_read_result
+  changed_when: false
+  # no_log: true
+
+- name: Set item result fact
+  ansible.builtin.set_fact:
+    onepassword_item_result: "{{ _onepassword_read_result.stdout | from_json }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ ansible_play_hosts }}"
+  # no_log: true

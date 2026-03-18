@@ -1,22 +1,20 @@
 {% set fields = [] %}
-{% if onepassword_item_username is defined and onepassword_item_username %}
+{% if onepassword_item.username is defined and onepassword_item.username %}
   {% set _ = fields.append({
     "id": "username",
     "type": "STRING",
     "purpose": "USERNAME",
     "label": "username",
-    "value": onepassword_item_username
+    "value": onepassword_item.username
   }) %}
 {% endif %}
-{% if onepassword_item_password is defined and onepassword_item_password %}
-  {% set _ = fields.append({
-    "id": "password",
-    "type": "CONCEALED",
-    "purpose": "PASSWORD",
-    "label": "password",
-    "value": onepassword_item_password
-  }) %}
-{% endif %}
+{% set _ = fields.append({
+  "id": "password",
+  "type": "CONCEALED",
+  "purpose": "PASSWORD",
+  "label": "password",
+  "value": _onepassword_resolved_password
+}) %}
 {% set _ = fields.append({
   "id": "notesPlain",
   "type": "STRING",
@@ -24,7 +22,7 @@
   "label": "notesPlain",
   "value": ""
 }) %}
-{% for field in onepassword_item_custom_fields | default([]) %}
+{% for field in onepassword_item.custom_fields | default([]) %}
   {% if field.field_type | upper == 'URL' %}
     {% set purpose = 'URL' %}
   {% elif field.field_type | upper == 'DATE' %}
@@ -43,7 +41,7 @@
   }) %}
 {% endfor %}
 {
-  "title": "{{ onepassword_item_title | regex_replace('"', '\\"') }}",
+  "title": "{{ onepassword_item.title | regex_replace('"', '\\"') }}",
   "category": "LOGIN",
   "fields": [
     {% for field in fields %}

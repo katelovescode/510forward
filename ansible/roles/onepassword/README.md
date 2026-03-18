@@ -7,11 +7,7 @@ This role provides an interface for managing 1Password items, primarily login cr
 ## Requirements
 
 - The `op` command-line tool must be installed and configured for `onepassword_become_user`.
-- Variables should be stored in `secrets.yml` and encrypted with Ansible Vault.
-
-## Variables
-
-See `defaults/main.yml` for default values and `meta/argument_specs.yml` for complete variable documentation.
+- Variables `onepassword_vault` and `onepassword_become_user` must be defined in `group_vars/all/secrets.yml`.
 
 ## Public Entry Points (Tasks)
 

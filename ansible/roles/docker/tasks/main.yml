@@ -52,4 +52,3 @@
 
 - name: Reset SSH connection to pick up docker group membership
   ansible.builtin.meta: reset_connection
-  when: docker_group_result.changed # noqa: no-handler

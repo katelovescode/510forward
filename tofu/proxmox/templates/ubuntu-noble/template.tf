@@ -4,7 +4,9 @@ resource "proxmox_virtual_environment_file" "cloud_init_user_data" {
   node_name    = "enterprise"
 
   source_raw {
-    data      = file("${path.module}/cloud-init.yml")
+    data      = templatefile("${path.module}/cloud-init.yml.tftpl", {
+      sysadmin_public_key = var.sysadmin_public_key
+    })
     file_name = "cloud-init-user-data.yml"
   }
 }
@@ -44,11 +46,6 @@ resource "proxmox_virtual_environment_vm" "ubuntu_cloud_template" {
   }
 
   initialization {
-    user_account {
-      username = "ansible"
-      keys     = [var.sysadmin_public_key]
-    }
-
     user_data_file_id = proxmox_virtual_environment_file.cloud_init_user_data.id
   }
 
@@ -57,10 +54,8 @@ resource "proxmox_virtual_environment_vm" "ubuntu_cloud_template" {
     model  = "virtio"
   }
 
-  serial_device {}
-
   vga {
-    type = "serial0"
+    type = "std"
   }
 
   boot_order = ["scsi0"]

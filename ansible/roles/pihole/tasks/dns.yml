@@ -1,5 +1,6 @@
 ---
 - name: Template custom.list for local DNS resolution
+  become: true
   ansible.builtin.template:
     src: custom.list.j2
     dest: /etc/pihole/custom.list

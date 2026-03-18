@@ -6,5 +6,5 @@
   ansible.builtin.import_tasks: dns.yml
 
 - name: Install nebula-sync
-  ansible.builtin.import_tasks: nebula_sync.yml
+  ansible.builtin.include_tasks: nebula_sync.yml
   when: pihole_primary | default(false)

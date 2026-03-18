@@ -38,13 +38,6 @@ argument_specs:
       #################################
       # Secrets — from host_vars/norville/secrets.yml
       #################################
-      nginx_proxy_manager_admin_password:
-        type: str
-        required: true
-        no_log: true
-        description: >
-          Password for the NPM admin account.
-
       nginx_proxy_manager_cloudflare_api_token:
         type: str
         required: true

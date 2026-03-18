@@ -44,13 +44,12 @@
       provider: letsencrypt
       domain_names:
         - "*.{{ domain }}"
-      meta:
-        letsencrypt_email: "{{ admin_email }}"
-        letsencrypt_agree: true
-        dns_challenge: true
-        dns_provider: cloudflare
-        dns_provider_credentials: "dns_cloudflare_api_token={{ nginx_proxy_manager_cloudflare_api_token_resolved.stdout }}"
-        propagation_seconds: 120
+      dns_challenge: true
+      dns_provider: cloudflare
+      dns_provider_credentials: "dns_cloudflare_api_token={{ nginx_proxy_manager_cloudflare_api_token_resolved.stdout }}"
+      propagation_seconds: 120
+      letsencrypt_email: "{{ admin_email }}"
+      letsencrypt_agree: true
     status_code: [200, 201]
   register: nginx_proxy_manager_cert_request
   no_log: true

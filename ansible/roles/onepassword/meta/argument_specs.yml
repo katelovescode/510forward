@@ -1,27 +1,16 @@
 ---
 argument_specs:
-  auth_check:
-    short_description: Verify 1Password CLI authentication.
+  main:
+    short_description: Manage 1Password items
     description: >
-      Runs op whoami to confirm the CLI is authenticated. Fails
-      if not authenticated. Use as a pre-flight check before any
-      item operations.
+      Manages 1Password items. Supports upsert, delete, and read actions.
+      Always sets onepassword_item_result after any action.
     options:
-      onepassword_become_user:
+      onepassword_action:
         type: str
         required: true
         description: >
-          Local user to become when running op CLI commands.
-          Must have op configured and authenticated.
-          Defined in group_vars/all/secrets.yml.
-
-  create_item:
-    short_description: Create a new 1Password item.
-    description: >
-      Creates a new 1Password login item without checking for
-      existence first. Use when you know the item doesn't exist
-      and want to skip the existence check.
-    options:
+          Action to perform. One of: upsert, delete, read.
       onepassword_vault:
         type: str
         required: true
@@ -34,141 +23,12 @@ argument_specs:
         description: >
           Local user to become when running op CLI commands.
           Defined in group_vars/all/secrets.yml.
-      onepassword_item_title:
-        type: str
+      onepassword_item:
+        type: dict
         required: true
         description: >
-          Title of the 1Password item to create.
-      onepassword_item_username:
-        type: str
-        required: false
-        description: >
-          Username for the login item. Omit for items that
-          have no username field.
-      onepassword_item_password:
-        type: str
-        required: false
-        no_log: true
-        description: >
-          Password for the login item. Also used for API tokens
-          and other secret string values. Omit for items that
-          have no password field.
-      onepassword_item_custom_fields:
-        type: list
-        required: false
-        default: []
-        no_log: true
-        description: >
-          List of custom field definitions. Each item requires
-          label (str), value (str), and field_type (str).
-          Supported field_type values: STRING, CONCEALED,
-          URL, DATE, TOTP, NOTES. Omit if no custom fields needed.
-
-  update_item:
-    short_description: Update an existing 1Password item.
-    description: >
-      Updates an existing 1Password login item. Fails if the item
-      does not exist. Use when you know the item exists.
-    options:
-      onepassword_vault:
-        type: str
-        required: true
-        description: >
-          Name or UUID of the 1Password vault to operate on.
-      onepassword_become_user:
-        type: str
-        required: true
-        description: >
-          Local user to become when running op CLI commands.
-      onepassword_item_title:
-        type: str
-        required: true
-        description: >
-          Title of the 1Password item to update.
-      onepassword_item_username:
-        type: str
-        required: false
-        description: >
-          Updated username. Omit to leave the existing value unchanged.
-      onepassword_item_password:
-        type: str
-        required: false
-        no_log: true
-        description: >
-          Updated password. Omit to leave the existing value unchanged.
-      onepassword_item_custom_fields:
-        type: list
-        required: false
-        default: []
-        no_log: true
-        description: >
-          Updated custom field definitions. Omit to leave existing
-          custom fields unchanged.
-
-  delete_item:
-    short_description: Delete an existing 1Password item.
-    description: >
-      Deletes an existing 1Password item. Silently skips if the
-      item does not exist. Use for token rotation and cleanup.
-    options:
-      onepassword_vault:
-        type: str
-        required: true
-        description: >
-          Name or UUID of the 1Password vault to operate on.
-      onepassword_become_user:
-        type: str
-        required: true
-        description: >
-          Local user to become when running op CLI commands.
-      onepassword_item_title:
-        type: str
-        required: true
-        description: >
-          Title of the 1Password item to delete.
-
-  create_or_update_item:
-    short_description: Idempotently create or update a 1Password item.
-    description: >
-      Creates or updates a 1Password login item. Checks existence
-      first and compares current field values — only writes if the
-      item does not exist or any field value differs from desired state.
-    options:
-      onepassword_vault:
-        type: str
-        required: true
-        description: >
-          Name or UUID of the 1Password vault to operate on.
-      onepassword_become_user:
-        type: str
-        required: true
-        description: >
-          Local user to become when running op CLI commands.
-      onepassword_item_title:
-        type: str
-        required: true
-        description: >
-          Title of the 1Password item to create or update.
-      onepassword_item_username:
-        type: str
-        required: false
-        description: >
-          Username for the login item. Omit for items that
-          have no username field.
-      onepassword_item_password:
-        type: str
-        required: false
-        no_log: true
-        description: >
-          Password for the login item. Omit for items that
-          have no password field.
-      onepassword_item_custom_fields:
-        type: list
-        required: false
-        default: []
-        no_log: true
-        description: >
-          List of custom field definitions. Each item requires
-          label (str), value (str), and field_type (str).
-          Supported field_type values: STRING, CONCEALED,
-          URL, DATE, TOTP, NOTES. Omit if no custom fields needed.
+          Item definition. Required key: title (str).
+          Optional keys: username (str), password (str),
+          custom_fields (list of dicts with label, value, field_type).
+          Password is auto-generated on create and preserved on update
+          if omitted. Provide explicitly to set or rotate a password.

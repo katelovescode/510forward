@@ -51,40 +51,19 @@
     path: /tmp/pihole_install.sh
     state: absent
 
-- name: Check if Pi-hole password exists in 1Password
-  no_log: true
-  ansible.builtin.command:
-    cmd: op item get "Pi-hole Admin Password ({{ inventory_hostname }})" --vault "{{ onepassword_vault }}"
-  become: true
-  become_user: "{{ onepassword_become_user }}"
-  delegate_to: localhost
-  register: pihole_password_1password_check
-  failed_when: false
-  changed_when: false
-
-- name: Generate and store Pi-hole password in 1Password
-  no_log: true
+- name: Ensure Pi-hole password exists in 1Password
+  # no_log: true
   ansible.builtin.include_role:
     name: onepassword
-    tasks_from: create_item
   vars:
-    onepassword_item_title: "Pi-hole Admin Password ({{ inventory_hostname }})"
-    onepassword_item_password: "{{ lookup('community.general.random_string', length=32, special=false) }}"
-    onepassword_item_custom_fields:
-      - label: Notes
-        value: "Managed by Ansible. Do not rename this item."
-        field_type: STRING
-  when: pihole_password_1password_check.rc != 0
-
-- name: Read Pi-hole password from 1Password
-  no_log: true
-  ansible.builtin.command:
-    cmd: op read "op://{{ onepassword_vault }}/Pi-hole Admin Password ({{ inventory_hostname }})/password"
-  become: true
-  become_user: "{{ onepassword_become_user }}"
-  delegate_to: localhost
-  register: pihole_web_password_resolved
-  changed_when: false
+    onepassword_action: upsert
+    onepassword_item:
+      title: "Pi-hole Admin Password"
+      # custom_fields:
+      #   - label: Notes
+      #     value: "Managed by Ansible. Do not rename this item."
+      #     field_type: STRING
+  run_once: true
 
 - name: Check if Pi-hole password is already correct
   ansible.builtin.uri:
@@ -92,15 +71,25 @@
     method: POST
     body_format: json
     body:
-      password: "{{ pihole_web_password_resolved.stdout }}"
+      password: >-
+        {{
+          onepassword_item_result.fields |
+          selectattr('id', 'equalto', 'password') |
+          map(attribute='value') | first
+        }}
     status_code: [200, 401]
   register: pihole_auth_check
-  no_log: true
+  # no_log: true
 
 - name: Set Pi-hole web password
   become: true
   ansible.builtin.command:
-    cmd: pihole setpasswd "{{ pihole_web_password_resolved.stdout | mandatory }}"
-  no_log: true
+    cmd: >-
+      pihole setpasswd "{{
+        onepassword_item_result.fields |
+        selectattr('id', 'equalto', 'password') |
+        map(attribute='value') | first | mandatory
+      }}"
+  # no_log: true
   changed_when: true
   when: pihole_auth_check.status == 401

@@ -15,7 +15,6 @@
       become: true
       ansible.builtin.user:
         name: ansible
-        uid: 10001
         shell: "/bin/bash"
     - name: Grant ansible password-less sudo
       become: true

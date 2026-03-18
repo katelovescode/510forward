@@ -1,0 +1,16 @@
+#cloud-config
+---
+packages:
+  - qemu-guest-agent
+  - curl
+  - sudo
+runcmd:
+  - systemctl enable serial-getty@ttyS0.service
+  - systemctl enable qemu-guest-agent
+  - systemctl start qemu-guest-agent
+users:
+  - name: ansible
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ${sysadmin_public_key}
