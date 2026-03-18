@@ -13,3 +13,10 @@ argument_specs:
         description: >
           SSH public key to authorize for the ansible user.
           Defined in group_vars/all/secrets.yml.
+      group_names:
+        type: list
+        required: false
+        description: >
+          Ansible built-in variable containing list of groups the current
+          host belongs to. Used to conditionally apply SSH hardening on
+          non-Proxmox nodes.

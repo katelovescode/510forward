@@ -9,9 +9,9 @@ argument_specs:
       hosts via custom.list. On the primary node, also installs and
       configures nebula-sync for Pi-hole clustering.
     options:
-      #################################
+      # ################################
       # Shared vars — from group_vars/all/vars.yml
-      #################################
+      # ################################
       domain:
         type: str
         required: true
@@ -19,9 +19,9 @@ argument_specs:
           Local domain for split-horizon DNS, e.g. 510forward.space.
           Written to pihole.toml as the DNS domain setting.
 
-      #################################
+      # ################################
       # Shared vars — from group_vars/all/secrets.yml
-      #################################
+      # ################################
       onepassword_vault:
         type: str
         required: true
@@ -36,9 +36,9 @@ argument_specs:
           Local user to become when running op CLI commands.
           Defined in group_vars/all/secrets.yml.
 
-      #################################
+      # ################################
       # Host vars — from host_vars/<host>/vars.yml
-      #################################
+      # ################################
       ip_address:
         type: str
         required: true
@@ -62,9 +62,9 @@ argument_specs:
           nebula-sync is installed to push config to replica nodes.
           Defined in host_vars/centaurus/vars.yml.
 
-      #################################
+      # ################################
       # Group vars — from group_vars/pihole_nodes/vars.yml
-      #################################
+      # ################################
       pihole_dns_1:
         type: str
         required: true

@@ -1,0 +1,15 @@
+---
+argument_specs:
+  main:
+    short_description: Manage SSH known hosts
+    description: >
+      Manages SSH known hosts entries for inventory hosts. Supports
+      specifying a target host different from the current host via the
+      identity_target variable.
+    options:
+      identity_target:
+        type: str
+        required: false
+        description: >
+          Optional target host to manage known hosts for. If not specified,
+          uses the current inventory_hostname.

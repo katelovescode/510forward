@@ -6,6 +6,11 @@
 #   - "Proxmox Root User" must exist in 1Password with the root@pam password
 #     set during Proxmox installation. Bootstrap cannot create this — it must
 #     be added manually before running.
+#
+# SECURITY NOTE: This playbook intentionally disables certificate validation
+# (validate_certs: false) because the Proxmox instance uses a self-signed
+# certificate during initial setup. This is required for bootstrap only.
+# DO NOT copy this pattern to regular playbooks.
 
 - name: Bootstrap - Pre-flight Validation
   hosts: localhost
@@ -132,7 +137,7 @@
             selectattr('id', 'equalto', 'password') |
             map(attribute='value') | first
           }}
-        validate_certs: false
+        validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
         state: present
         email: "{{ admin_email }}"
 
@@ -149,7 +154,7 @@
             selectattr('id', 'equalto', 'password') |
             map(attribute='value') | first
           }}
-        validate_certs: false
+        validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
         state: present
         type: user
 
@@ -295,7 +300,7 @@
             selectattr('id', 'equalto', 'password') |
             map(attribute='value') | first
           }}
-        validate_certs: false
+        validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
         state: present
         comment: Managed by Ansible
 
@@ -312,7 +317,7 @@
             selectattr('id', 'equalto', 'password') |
             map(attribute='value') | first
           }}
-        validate_certs: false
+        validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
         state: present
         type: group
 
@@ -328,7 +333,7 @@
             selectattr('id', 'equalto', 'password') |
             map(attribute='value') | first
           }}
-        validate_certs: false
+        validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
         state: present
         groups:
           - opentofu
@@ -379,7 +384,7 @@
               no_log: true
               ansible.builtin.command:
                 cmd: >-
-                  pvesh create /access/users/opentofu@pam/tokens/opentofu_token --privsep 0
+                  pvesh create /access/users/opentofu@pam/token/opentofu_token --privsep 0
                   --comment='Managed by Ansible' --output-format=json
               register: opentofu_user_token
               changed_when: true
