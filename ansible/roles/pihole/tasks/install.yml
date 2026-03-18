@@ -85,7 +85,7 @@
   become: true
   ansible.builtin.command:
     cmd: >-
-      pihole setpasswd "{{
+      pihole setpassword "{{
         onepassword_item_result.fields |
         selectattr('id', 'equalto', 'password') |
         map(attribute='value') | first | mandatory

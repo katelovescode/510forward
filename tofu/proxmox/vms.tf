@@ -36,6 +36,8 @@ resource "proxmox_virtual_environment_vm" "centaurus" {
       username = "ansible"
       keys     = [var.sysadmin_public_key]
     }
+    
+    user_data_file_id = proxmox_virtual_environment_file.cloud_init_config.id
   }
 
   network_device {
@@ -43,5 +45,18 @@ resource "proxmox_virtual_environment_vm" "centaurus" {
     model       = "virtio"
     mac_address = "42:17:01:FD:F7:A4"
     firewall    = true
+  }
+}
+
+resource "proxmox_virtual_environment_file" "cloud_init_config" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = "enterprise"
+  source_raw {
+    data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
+      hostname            = "centaurus"
+      sysadmin_public_key = var.sysadmin_public_key
+    })
+    file_name = "cloud-init-config.yml"
   }
 }
