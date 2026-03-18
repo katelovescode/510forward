@@ -12,7 +12,7 @@
   register: _onepassword_existing
   changed_when: false
   failed_when: false
-  # no_log: true
+  no_log: true
 
 - name: Set existing item facts
   ansible.builtin.set_fact:
@@ -23,7 +23,7 @@
         if _onepassword_existing.rc == 0 and _onepassword_existing.stdout | length > 0
         else {}
       }}
-  # no_log: true
+  no_log: true
 
 - name: Resolve password
   ansible.builtin.set_fact:
@@ -39,7 +39,7 @@
           else lookup('community.general.random_string', length=32, special=false)
         )
       }}
-  # no_log: true
+  no_log: true
 
 - name: Check if write is needed
   ansible.builtin.set_fact:
@@ -63,7 +63,7 @@
         {%- endif -%}
       {%- endfor -%}
       {{ needs_write.value }}
-  # no_log: true
+  no_log: true
 
 - name: Debug write check
   ansible.builtin.debug:
@@ -78,7 +78,7 @@
         dest: "/tmp/op-item-{{ onepassword_item.title | regex_replace('[^a-zA-Z0-9]', '_') }}.json"
         mode: "0600"
       delegate_to: localhost
-      # no_log: true
+      no_log: true
 
     - name: Create or update item
       ansible.builtin.shell: # noqa: command-instead-of-shell
@@ -92,7 +92,7 @@
       become_user: "{{ onepassword_become_user }}"
       delegate_to: localhost
       changed_when: true
-      # no_log: true
+      no_log: true
 
     - name: Remove temp file
       ansible.builtin.file:

@@ -11,7 +11,7 @@
   delegate_to: localhost
   register: _onepassword_read_result
   changed_when: false
-  # no_log: true
+  no_log: true
 
 - name: Set item result fact
   ansible.builtin.set_fact:
@@ -19,4 +19,4 @@
   delegate_to: "{{ item }}"
   delegate_facts: true
   loop: "{{ ansible_play_hosts }}"
-  # no_log: true
+  no_log: true

@@ -46,6 +46,10 @@ lint:
 	cd ansible && ansible-lint
 	cd tofu/proxmox && tflint --recursive --config "$(PWD)/tofu/proxmox/.tflint.hcl"
 
+lint-fix:
+	cd ansible && ansible-lint --fix
+	cd tofu/proxmox && tflint --recursive --config "$(PWD)/tofu/proxmox/.tflint.hcl" --fix
+
 edit-secret:
 	cd ansible && ansible-vault edit $(FILE)
 

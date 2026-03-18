@@ -6,7 +6,7 @@
   become_user: "{{ onepassword_become_user }}"
   delegate_to: localhost
   changed_when: true
-  # no_log: true
+  no_log: true
 
 - name: Clear item result fact
   ansible.builtin.set_fact:

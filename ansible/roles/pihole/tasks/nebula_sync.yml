@@ -4,32 +4,84 @@
 # us consistent logging via journald, clean manual trigger semantics via
 # systemctl start nebula-sync, and fits the rest of the stack.
 
-- name: Download nebula-sync binary
-  become: true
-  ansible.builtin.get_url:
-    url: "https://github.com/lovelaze/nebula-sync/releases/download/v{{ nebula_sync_version }}/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
-    dest: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
-    mode: "0644"
-    checksum: "{{ nebula_sync_checksum }}"
+- name: Check if nebula-sync binary exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/nebula-sync
+  register: pihole_nebula_sync_binary
 
-- name: Extract nebula-sync binary
-  become: true
-  ansible.builtin.unarchive:
-    src: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
-    dest: /usr/local/bin
-    include:
-      - nebula-sync
-    remote_src: true
-    mode: "0755"
-    owner: root
-    group: root
+- name: Update existing nebula-sync installation
+  when: pihole_nebula_sync_binary.stat.exists
 
-- name: Remove nebula-sync archive
-  become: true
-  ansible.builtin.file:
-    path: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
-    state: absent
+  block:
+    - name: Get current nebula-sync version
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          /usr/local/bin/nebula-sync --version | grep -oP 'nebula-sync version v\K[0-9.]*'
+        executable: /bin/bash
+      register: pihole_nebula_sync_current_version
+      changed_when: false
 
+    - name: Get latest nebula-sync version
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/lovelaze/nebula-sync/releases/latest
+        return_content: true
+      register: pihole_nebula_sync_latest_release
+      changed_when: false
+
+    - name: Update nebula-sync if version differs
+      ansible.builtin.get_url:
+        url: "https://github.com/lovelaze/nebula-sync/releases/download/v{{ nebula_sync_version }}/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+        dest: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+        mode: "0644"
+        checksum: "{{ nebula_sync_checksum }}"
+      when: pihole_nebula_sync_current_version.stdout != (pihole_nebula_sync_latest_release.json.tag_name | regex_search('v[0-9.]*') | regex_replace('v', ''))
+
+    - name: Extract nebula-sync binary
+      become: true
+      ansible.builtin.unarchive:
+        src: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+        dest: /usr/local/bin
+        include:
+          - nebula-sync
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+      when: pihole_nebula_sync_current_version.stdout != (pihole_nebula_sync_latest_release.json.tag_name | regex_search('v[0-9.]*') | regex_replace('v', ''))
+
+    - name: Remove nebula-sync archive
+      ansible.builtin.file:
+        path: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+        state: absent
+      when: pihole_nebula_sync_current_version.stdout != (pihole_nebula_sync_latest_release.json.tag_name | regex_search('v[0-9.]*') | regex_replace('v', ''))
+- name: Install new nebula-sync
+  when: not pihole_nebula_sync_binary.stat.exists
+
+  block:
+    - name: Download nebula-sync binary
+      ansible.builtin.get_url:
+        url: "https://github.com/lovelaze/nebula-sync/releases/download/v{{ nebula_sync_version }}/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+        dest: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+        mode: "0644"
+        checksum: "{{ nebula_sync_checksum }}"
+
+    - name: Extract nebula-sync binary
+      become: true
+      ansible.builtin.unarchive:
+        src: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+        dest: /usr/local/bin
+        include:
+          - nebula-sync
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: Remove nebula-sync archive
+      ansible.builtin.file:
+        path: "/tmp/nebula-sync_{{ nebula_sync_version }}_linux_amd64.tar.gz"
+        state: absent
 - name: Template nebula-sync env file
   become: true
   ansible.builtin.template:

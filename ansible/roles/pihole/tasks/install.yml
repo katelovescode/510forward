@@ -25,34 +25,68 @@
     group: pihole
     mode: "0775"
 
-- name: Template pihole.toml pre-install config
-  become: true
-  ansible.builtin.template:
-    src: pihole.toml.j2
-    dest: /etc/pihole/pihole.toml
-    owner: pihole
-    group: pihole
-    mode: "0644"
+- name: Check if Pi-hole config exists
+  ansible.builtin.stat:
+    path: /etc/pihole/pihole.toml
+  register: pihole_config_file
 
-- name: Download Pi-hole installer
-  ansible.builtin.get_url:
-    url: "{{ pihole_installer_url }}"
-    dest: /tmp/pihole_install.sh
-    mode: "0755"
+- name: Update existing Pi-hole installation
+  when: pihole_config_file.stat.exists
 
-- name: Run Pi-hole unattended installer # noqa: command-instead-of-shell
-  become: true
-  ansible.builtin.shell:
-    cmd: bash /tmp/pihole_install.sh --unattended
-    creates: /etc/systemd/system/pihole-FTL.service
+  block:
+    - name: Get current Pi-hole version
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          pihole -v | grep -oP 'Core version is v\K[0-9.]*'
+        executable: /bin/bash
+      register: pihole_current_version
+      changed_when: false
 
-- name: Remove Pi-hole installer script
-  ansible.builtin.file:
-    path: /tmp/pihole_install.sh
-    state: absent
+    - name: Get latest Pi-hole version
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/pi-hole/pi-hole/releases/latest
+        return_content: true
+      register: pihole_latest_release
+      changed_when: false
 
+    - name: Update Pi-hole if version differs
+      ansible.builtin.command:
+        cmd: pihole -up
+      become: true
+      when: pihole_current_version.stdout != (pihole_latest_release.json.tag_name | regex_search('v[0-9.]*') | regex_replace('v', ''))
+      changed_when: pihole_current_version.stdout != (pihole_latest_release.json.tag_name | regex_search('v[0-9.]*') | regex_replace('v', ''))
+- name: Install new Pi-hole
+  when: not pihole_config_file.stat.exists
+
+  block:
+    - name: Template pihole.toml pre-install config
+      become: true
+      ansible.builtin.template:
+        src: pihole.toml.j2
+        dest: /etc/pihole/pihole.toml
+        owner: pihole
+        group: pihole
+        mode: "0644"
+
+    - name: Download Pi-hole installer
+      ansible.builtin.get_url:
+        url: "{{ pihole_installer_url }}"
+        dest: /tmp/pihole_install.sh
+        mode: "0755"
+
+    - name: Run Pi-hole unattended installer # noqa: command-instead-of-shell
+      become: true
+      ansible.builtin.shell:
+        cmd: bash /tmp/pihole_install.sh --unattended
+        creates: /etc/systemd/system/pihole-FTL.service
+
+    - name: Remove Pi-hole installer script
+      ansible.builtin.file:
+        path: /tmp/pihole_install.sh
+        state: absent
 - name: Ensure Pi-hole password exists in 1Password
-  # no_log: true
+  no_log: true
   ansible.builtin.include_role:
     name: onepassword
   vars:
@@ -79,7 +113,7 @@
         }}
     status_code: [200, 401]
   register: pihole_auth_check
-  # no_log: true
+  no_log: true
 
 - name: Set Pi-hole web password
   become: true
@@ -90,6 +124,6 @@
         selectattr('id', 'equalto', 'password') |
         map(attribute='value') | first | mandatory
       }}"
-  # no_log: true
+  no_log: true
   changed_when: true
   when: pihole_auth_check.status == 401

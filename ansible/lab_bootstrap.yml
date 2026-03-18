@@ -23,7 +23,7 @@
         name: identity
         tasks_from: known_hosts
       vars:
-        identity_target_host: "enterprise"
+        identity_target: "enterprise"
 
     - name: Verify enterprise is reachable
       ansible.builtin.wait_for:
@@ -402,8 +402,18 @@
 - name: Bootstrap - Proxmox Storage
   hosts: enterprise
   tasks:
+    - name: Get current local storage content types
+      become: true
+      ansible.builtin.shell:
+        cmd: "awk '/^dir: local/,/content/ {if (/content/) print}' /etc/pve/storage.cfg || echo ''"
+      register: current_content_types
+      changed_when: false
+
     - name: Enable snippets content type on local storage
       become: true
       ansible.builtin.command:
         cmd: pvesm set local --content vztmpl,backup,iso,snippets
-      changed_when: true
+      when:
+        - "'snippets' not in current_content_types.stdout"
+        - "current_content_types.stdout != 'content iso,backup,vztmpl,snippets'"
+      changed_when: "'snippets' not in current_content_types.stdout"
