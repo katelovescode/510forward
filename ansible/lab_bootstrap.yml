@@ -23,7 +23,7 @@
         name: identity
         tasks_from: known_hosts
       vars:
-        identity_host_ip: "{{ hostvars['enterprise'].ansible_host }}"
+        identity_target_host: "enterprise"
 
     - name: Verify enterprise is reachable
       ansible.builtin.wait_for:

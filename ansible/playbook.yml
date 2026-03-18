@@ -8,8 +8,6 @@
       ansible.builtin.include_role:
         name: identity
         tasks_from: known_hosts
-      vars:
-        identity_host_ip: "{{ ansible_host }}"
 
     - name: Wait for SSH
       ansible.builtin.wait_for:

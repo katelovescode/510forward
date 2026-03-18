@@ -1,22 +1,72 @@
 ---
-- name: Remove stale known_hosts entry
+- name: Set target host variables
+  ansible.builtin.set_fact:
+    target_host: "{{ identity_target_host | default(inventory_hostname) }}"
+    target_ip: "{{ hostvars[identity_target_host].ansible_host | default(ansible_host) }}"
+
+- name: Check if host key already exists
   delegate_to: localhost
   ansible.builtin.shell:
     cmd: |
-      ssh-keygen -R {{ identity_host_ip }} 2>/dev/null || true
-      rm -f ~/.ssh/known_hosts.old
+      ssh-keygen -F {{ target_ip }} -f ~/.ssh/known_hosts >/dev/null 2>&1
     executable: /bin/bash
+  register: host_key_exists
+  failed_when: false
   changed_when: false
 
-- name: Scan and add host keys
+- name: Get current host keys from known_hosts
+  delegate_to: localhost
+  ansible.builtin.shell:
+    cmd: |
+      grep "^{{ target_ip }} " ~/.ssh/known_hosts 2>/dev/null | sort || echo ""
+    executable: /bin/bash
+  register: current_keys
+  changed_when: false
+
+- name: Get scanned host keys
+  delegate_to: localhost
+  ansible.builtin.shell:
+    cmd: |
+      ssh-keyscan -q {{ target_ip }} 2>/dev/null | grep -v '^#' | sort
+    executable: /bin/bash
+  register: scanned_keys
+  changed_when: false
+
+- name: Remove existing host key entries if they differ
+  delegate_to: localhost
+  ansible.builtin.shell:
+    cmd: |
+      # Remove both the comment line and host key entries
+      sed -i.tmp '/^# {{ target_host }} SSH host keys$/,/^{{ target_ip }} /d' ~/.ssh/known_hosts 2>/dev/null || true
+      # Also remove any stray host key entries without the comment
+      sed -i.tmp '/^{{ target_ip }} /d' ~/.ssh/known_hosts 2>/dev/null || true
+      rm -f ~/.ssh/known_hosts.tmp ~/.ssh/known_hosts.old
+    executable: /bin/bash
+  changed_when: false
+  when:
+    - host_key_exists.rc == 0
+    - current_keys.stdout != scanned_keys.stdout
+
+- name: Add host keys with hostname comments
   delegate_to: localhost
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      keys=$(ssh-keyscan -q {{ identity_host_ip }} 2>/dev/null | grep -v '^#')
-      if [ -s ~/.ssh/known_hosts ] && [ "$(tail -c1 ~/.ssh/known_hosts | wc -c)" -gt 0 ]; then
-        echo "" >> ~/.ssh/known_hosts
-      fi
+      keys=$(ssh-keyscan -q {{ target_ip }} 2>/dev/null | grep -v '^#' | sort)
+      echo "# {{ target_host }} SSH host keys" >> ~/.ssh/known_hosts
       echo "$keys" >> ~/.ssh/known_hosts
+      echo "" >> ~/.ssh/known_hosts
     executable: /bin/bash
-  changed_when: true
+  when:
+    - host_key_exists.rc != 0 or current_keys.stdout != scanned_keys.stdout
+
+- name: Clean up blank lines from known_hosts
+  delegate_to: localhost
+  ansible.builtin.shell:
+    cmd: |
+      sed -i.tmp '/^[[:space:]]*$/d' ~/.ssh/known_hosts 2>/dev/null || true
+      rm -f ~/.ssh/known_hosts.tmp
+    executable: /bin/bash
+  changed_when: false
+  when:
+    - host_key_exists.rc != 0 or current_keys.stdout != scanned_keys.stdout
