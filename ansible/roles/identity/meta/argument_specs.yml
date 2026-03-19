@@ -16,7 +16,7 @@ argument_specs:
       identity_upsert_key_user:
         type: str
         required: true
-        description: System username to create the SSH key for and authorize on the remote host.
+        description: OS username to create the SSH key for and authorize on the remote host.
       identity_upsert_key_item_title:
         type: str
         required: true
@@ -28,7 +28,7 @@ argument_specs:
       identity_static_key_user:
         type: str
         required: true
-        description: System username to authorize the key for.
+        description: OS username to authorize the key for.
       identity_static_key_public_key:
         type: str
         required: true

@@ -1,0 +1,9 @@
+---
+argument_specs:
+  storage:
+    short_description: Configure Proxmox local storage content types
+    description: >
+      Ensures the local storage datastore on the Proxmox node has snippets
+      enabled in its content types. Idempotent — only runs pvesm set if
+      snippets are not already present.
+    options: {}

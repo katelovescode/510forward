@@ -94,14 +94,14 @@ argument_specs:
         required: false
         description: >
           Version of nebula-sync to install, e.g. 0.11.1.
-          Only used when pihole_primary is true.
+          Required when pihole_primary is true.
 
       nebula_sync_checksum:
         type: str
         required: false
         description: >
           SHA256 checksum for the nebula-sync binary tarball.
-          Only used when pihole_primary is true.
+          Required when pihole_primary is true.
 
       nebula_sync_run_gravity:
         type: bool
@@ -109,4 +109,4 @@ argument_specs:
         description: >
           Whether nebula-sync should run gravity on the replica after
           sync. Defaults to false due to known FTL webserver instability.
-          Only used when pihole_primary is true.
+          Required when pihole_primary is true.

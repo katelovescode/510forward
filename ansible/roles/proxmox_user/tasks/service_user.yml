@@ -2,24 +2,8 @@
 # This role handles Proxmox service user creation with group and role assignment
 # Parameterized to handle both opentofu and ansible service users
 
-- name: Read Proxmox root password from 1Password
-  no_log: true
-  ansible.builtin.include_role:
-    name: onepassword
-  vars:
-    onepassword_action: read
-    onepassword_item:
-      title: "Proxmox Root User"
-
-- name: Set root password fact
-  no_log: true
-  ansible.builtin.set_fact:
-    proxmox_user_root_password: >-
-      {{
-        onepassword_item_result.fields |
-        selectattr('id', 'equalto', 'password') |
-        map(attribute='value') | first
-      }}
+- name: Read Proxmox root password
+  ansible.builtin.include_tasks: read_root_password.yml
 
 - name: Create Proxmox role
   # No role management behavior in community.proxmox

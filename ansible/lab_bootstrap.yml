@@ -21,7 +21,7 @@
         that:
           - hostvars['enterprise']['proxmox_admin_password_salt'] is defined
           - hostvars['enterprise']['proxmox_admin_password_salt'] | string | length > 0
-        fail_msg: "proxmox_admin_password_salt is not defined. Set it in host_vars/enterprise/secrets.yml."
+        fail_msg: "proxmox_admin_password_salt is not defined. Set it in group_vars/proxmox_nodes/secrets.yml."
 
     - name: Verify enterprise is reachable
       ansible.builtin.wait_for:
@@ -75,10 +75,14 @@
   vars:
     ansible_user: root
   tasks:
-    - name: Create system admin user
+    - name: Create OS admin user
       ansible.builtin.include_role:
-        name: system_user
+        name: os_user
         tasks_from: admin_user
+      vars:
+        os_user_admin_name: "{{ proxmox_admin_user }}"
+        os_user_admin_password_salt: "{{ proxmox_admin_password_salt }}"
+        os_user_admin_password_item_title: "Proxmox Admin User"
 
     - name: Create Proxmox admin user
       ansible.builtin.include_role:
@@ -92,12 +96,12 @@
   vars:
     ansible_user: root
   tasks:
-    - name: Create system opentofu user
+    - name: Create OS opentofu user
       ansible.builtin.include_role:
-        name: system_user
+        name: os_user
         tasks_from: service_user
       vars:
-        system_user_name: opentofu
+        os_user_name: opentofu
 
     - name: Manage opentofu SSH key
       ansible.builtin.include_role:

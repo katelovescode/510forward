@@ -1,39 +1,39 @@
 ---
-# This role handles system admin user creation with password and sudo
-# Extracted from lab_bootstrap.yml for the kate admin user pattern
+# Creates an OS admin user with password, sudo, and a static SSH key.
+# Used for human admin users like kate.
 
-- name: Ensure Proxmox admin password exists in 1Password
+- name: Ensure admin user password exists in 1Password
   no_log: true
   ansible.builtin.include_role:
     name: onepassword
   vars:
     onepassword_action: upsert
     onepassword_item:
-      title: "Proxmox Admin User"
-      username: "{{ proxmox_admin_system_user }}"
+      title: "{{ os_user_admin_password_item_title }}"
+      username: "{{ os_user_admin_name }}"
 
-- name: Create system admin user
+- name: Create OS admin user
   become: true
   no_log: true
   ansible.builtin.user:
-    name: "{{ proxmox_admin_system_user }}"
+    name: "{{ os_user_admin_name }}"
     shell: /bin/bash
     password: >-
       {{
         onepassword_item_result.fields |
         selectattr('id', 'equalto', 'password') |
         map(attribute='value') | first
-        | password_hash(salt=proxmox_admin_password_salt, hashtype='sha512')
+        | password_hash(salt=os_user_admin_password_salt, hashtype='sha512')
       }}
 
 - name: Grant admin user sudo
   become: true
   community.general.sudoers:
-    name: "{{ proxmox_admin_system_user }}"
+    name: "{{ os_user_admin_name }}"
     commands: ALL
     runas: ALL
     state: present
-    user: "{{ proxmox_admin_system_user }}"
+    user: "{{ os_user_admin_name }}"
     nopassword: false
 
 - name: Authorize sysadmin SSH key for admin user
@@ -41,5 +41,5 @@
     name: identity
     tasks_from: static_key
   vars:
-    identity_static_key_user: "{{ proxmox_admin_system_user }}"
+    identity_static_key_user: "{{ os_user_admin_name }}"
     identity_static_key_public_key: "{{ sysadmin_public_key }}"

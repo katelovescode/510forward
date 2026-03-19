@@ -4,7 +4,7 @@
 # If out of sync (exists in one but not the other), deletes and recreates.
 #
 # Required vars:
-#   proxmox_user_api_token_user        - system username (e.g. opentofu, ansible)
+#   proxmox_user_api_token_user        - OS username (e.g. opentofu, ansible)
 #   proxmox_user_api_token_item_title  - 1Password item title for the token
 
 - name: Check token in 1Password - {{ proxmox_user_api_token_user }}
