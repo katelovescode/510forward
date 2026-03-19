@@ -25,11 +25,12 @@
         owner: root
         group: root
     - name: Authorize SSH key for ansible user
-      become: true
-      ansible.posix.authorized_key:
-        user: "ansible"
-        key: "{{ sysadmin_public_key }}"
-        state: present
+      ansible.builtin.include_role:
+        name: identity
+        tasks_from: upsert_key
+      vars:
+        upsert_key_user: ansible
+        upsert_key_item_title: "Ansible SSH Key"
     - name: Disable password authentication
       become: true
       ansible.builtin.lineinfile:
