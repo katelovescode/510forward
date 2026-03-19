@@ -1,0 +1,45 @@
+---
+# This role handles Proxmox admin user creation with direct Administrator role
+# Extracted from lab_bootstrap.yml for the kate admin user pattern
+
+- name: Read Proxmox root password from 1Password
+  no_log: true
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: read
+    onepassword_item:
+      title: "Proxmox Root User"
+
+- name: Create Proxmox API user
+  community.proxmox.proxmox_user: # noqa: args[module]
+    comment: "Managed by Ansible"
+    userid: "{{ proxmox_admin_api_user }}"
+    api_host: "{{ proxmox_api_node }}"
+    api_user: root@pam
+    api_password: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('id', 'equalto', 'password') |
+        map(attribute='value') | first
+      }}
+    validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
+    state: present
+    email: "{{ admin_email }}"
+
+- name: Grant Proxmox API user Administrator role
+  community.proxmox.proxmox_access_acl: # noqa: args[module]
+    path: /
+    roleid: Administrator
+    ugid: "{{ proxmox_admin_api_user }}"
+    api_host: "{{ proxmox_api_node }}"
+    api_user: root@pam
+    api_password: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('id', 'equalto', 'password') |
+        map(attribute='value') | first
+      }}
+    validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
+    state: present
+    type: user
