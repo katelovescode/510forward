@@ -1,6 +1,6 @@
 ---
-# This role handles Proxmox user creation with group and role assignment
-# Currently extracted from lab_bootstrap.yml for the opentofu user pattern
+# This role handles Proxmox service user creation with group and role assignment
+# Parameterized to handle both opentofu and ansible service users
 
 - name: Read Proxmox root password from 1Password
   no_log: true
@@ -41,7 +41,7 @@
     - name: Role Check
       become: true
       ansible.builtin.command: >-
-        pvesh get /access/roles/opentofu --output-format json
+        pvesh get /access/roles/{{ proxmox_service_user_name }} --output-format json
       register: proxmox_role_check
       failed_when: false
       changed_when: false
@@ -50,13 +50,13 @@
       become: true
       no_log: true
       ansible.builtin.command: |-
-        pvesh create /access/roles -roleid opentofu -privs '{{ role_privs | join(",") }}'
+        pvesh create /access/roles -roleid {{ proxmox_service_user_name }} -privs '{{ role_privs | join(",") }}'
       when: proxmox_role_check.rc != 0
       changed_when: true
 
 - name: Group
   community.proxmox.proxmox_group: # noqa: args[module]
-    groupid: opentofu
+    groupid: "{{ proxmox_service_user_name }}"
     api_host: "{{ proxmox_api_node }}"
     api_user: root@pam
     api_password: >-
@@ -69,11 +69,11 @@
     state: present
     comment: Managed by Ansible
 
-- name: Grant Proxmox group opentofu role
+- name: Grant Proxmox group {{ proxmox_service_user_name }} role
   community.proxmox.proxmox_access_acl: # noqa: args[module]
     path: /
-    roleid: opentofu
-    ugid: opentofu
+    roleid: "{{ proxmox_service_user_name }}"
+    ugid: "{{ proxmox_service_user_name }}"
     api_host: "{{ proxmox_api_node }}"
     api_user: root@pam
     api_password: >-
@@ -86,10 +86,10 @@
     state: present
     type: group
 
-- name: Create Proxmox OpenTofu user
+- name: Create Proxmox {{ proxmox_service_user_name }} user
   community.proxmox.proxmox_user: # noqa: args[module]
     comment: "Managed by Ansible"
-    userid: opentofu@pam
+    userid: "{{ proxmox_service_user_name }}@pam"
     api_host: "{{ proxmox_api_node }}"
     api_user: root@pam
     api_password: >-
@@ -101,4 +101,5 @@
     validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
     state: present
     groups:
-      - opentofu
+      - "{{ proxmox_service_user_name }}"
+    email: "{{ proxmox_service_user_name }}@510forward.space"

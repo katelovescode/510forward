@@ -178,6 +178,9 @@
     - name: Create Proxmox user and group structure
       ansible.builtin.include_role:
         name: proxmox_user
+        tasks_from: service_user
+      vars:
+        proxmox_service_user_name: opentofu
 
     - name: API Token
       block:
@@ -240,6 +243,83 @@
                   title: "Proxmox OpenTofu API Token"
                   username: "{{ (opentofu_user_token.stdout | from_json)['full-tokenid'] }}"
                   password: "{{ (opentofu_user_token.stdout | from_json).value }}"
+                  # custom_fields:
+                  #   - label: Notes
+                  #     value: "Managed by Ansible bootstrap. Do not rename this item."
+                  #     field_type: STRING
+
+- name: Bootstrap - Proxmox Ansible User
+  hosts: enterprise
+  remote_user: root
+  tasks:
+    - name: Create Proxmox ansible user and group structure
+      ansible.builtin.include_role:
+        name: proxmox_user
+        tasks_from: service_user
+      vars:
+        proxmox_service_user_name: ansible
+
+    - name: API Token
+      block:
+        - name: Check if Ansible token exists in 1Password
+          become: true
+          become_user: "{{ onepassword_become_user }}"
+          delegate_to: localhost
+          no_log: true
+          ansible.builtin.command:
+            cmd: >-
+              op item get "Proxmox Ansible API Token"
+              --vault "{{ onepassword_vault }}"
+          register: ansible_token_1password_check
+          failed_when: false
+          changed_when: false
+
+        - name: Check if Ansible token exists in Proxmox
+          become: true
+          ansible.builtin.command:
+            cmd: pvesh get /access/users/ansible@pam/token/ansible_token
+          register: ansible_token_proxmox_check
+          failed_when: false
+          changed_when: false
+
+        - name: Set token exists fact
+          ansible.builtin.set_fact:
+            ansible_token_exists: >-
+              {{
+                (ansible_token_1password_check.rc == 0 and
+                ansible_token_proxmox_check.rc == 0) | bool
+              }}
+
+        - name: Create or Recreate Ansible API token
+          when: not ansible_token_exists
+          block:
+            - name: Delete existing Proxmox token if not in 1Password
+              become: true
+              ansible.builtin.command:
+                cmd: pvesh delete /access/users/ansible@pam/token/ansible_token
+              failed_when: false
+              changed_when: true
+
+            - name: Create Ansible API token
+              become: true
+              no_log: true
+              ansible.builtin.command:
+                cmd: >-
+                  pvesh create /access/users/ansible@pam/token/ansible_token --privsep 0
+                  --comment='Managed by Ansible' --output-format=json
+              register: ansible_user_token
+              changed_when: true
+
+            - name: Store Ansible token in 1Password
+              no_log: true
+              ansible.builtin.include_role:
+                name: onepassword
+              vars:
+                onepassword_action: upsert
+                onepassword_item:
+                  title: "Proxmox Ansible API Token"
+                  username: "{{ (ansible_user_token.stdout | from_json)['full-tokenid'] }}"
+                  password: "{{ (ansible_user_token.stdout | from_json).value }}"
                   # custom_fields:
                   #   - label: Notes
                   #     value: "Managed by Ansible bootstrap. Do not rename this item."
