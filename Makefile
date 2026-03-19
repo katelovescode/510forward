@@ -39,8 +39,14 @@ endif
 bootstrap:
 	cd ansible && ansible-playbook lab_bootstrap.yml
 
+bootstrap-log:
+	cd ansible && ansible-playbook lab_bootstrap.yml 2>&1 | tee bootstrap_output.log
+
 play:
 	cd ansible && ansible-playbook playbook.yml
+
+play-log:
+	cd ansible && ansible-playbook playbook.yml 2>&1 | tee play_output.log
 
 lint:
 	cd ansible && ansible-lint
