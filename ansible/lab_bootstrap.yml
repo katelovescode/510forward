@@ -116,64 +116,13 @@
       vars:
         system_user_name: opentofu
 
-    - name: Check if OpenTofu SSH key exists in 1Password
-      no_log: true
-      ansible.builtin.command:
-        cmd: op item get "OpenTofu SSH Key" --vault "{{ onepassword_vault }}"
-      become: true
-      become_user: "{{ onepassword_become_user }}"
-      delegate_to: localhost
-      register: opentofu_ssh_key_check
-      failed_when: false
-      changed_when: false
-
-    - name: Create OpenTofu SSH key in 1Password
-      no_log: true
-      ansible.builtin.shell: # noqa: command-instead-of-shell
-        cmd: >-
-          op item create
-          --category ssh
-          --title "OpenTofu SSH Key"
-          --vault "{{ onepassword_vault }}"
-          </dev/null
-        executable: /bin/bash
-      become: true
-      become_user: "{{ onepassword_become_user }}"
-      delegate_to: localhost
-      when: opentofu_ssh_key_check.rc != 0
-      changed_when: true
-
-    - name: Get OpenTofu SSH private key from 1Password
-      no_log: true
-      ansible.builtin.command:
-        cmd: >-
-          op read "op://{{ onepassword_vault }}/OpenTofu SSH Key/private key?ssh-format=openssh"
-      become: true
-      become_user: "{{ onepassword_become_user }}"
-      delegate_to: localhost
-      register: opentofu_ssh_private_key
-      changed_when: false
-
-    - name: Derive OpenTofu SSH public key
-      no_log: true
-      ansible.builtin.shell: # noqa: command-instead-of-shell
-        cmd: >-
-          TMPKEY=$(mktemp) &&
-          trap "rm -f $TMPKEY" EXIT &&
-          chmod 600 $TMPKEY &&
-          echo "{{ opentofu_ssh_private_key.stdout }}" > $TMPKEY &&
-          ssh-keygen -y -f $TMPKEY
-        executable: /bin/bash
-      delegate_to: localhost
-      register: opentofu_ssh_public_key
-      changed_when: false
-
-    - name: Authorize opentofu SSH key for opentofu user
-      become: true
-      no_log: true
-      ansible.posix.authorized_key:
-        user: opentofu
-        key: "{{ opentofu_ssh_public_key.stdout }}"
+    - name: Manage opentofu SSH key
+      ansible.builtin.include_role:
+        name: identity
+        tasks_from: upsert_key
+      vars:
+        upsert_key_user: opentofu
+        upsert_key_item_title: "OpenTofu SSH Key"
 
     - name: Create Proxmox user and group structure
       ansible.builtin.include_role:
