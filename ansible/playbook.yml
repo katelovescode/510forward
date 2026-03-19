@@ -30,7 +30,8 @@
 
 - name: Pi-hole
   hosts: pihole_nodes
-  remote_user: "{{ root_user | default('root') }}"
+  vars:
+    ansible_user: "{{ first_run_user | default('ansible') }}"
   roles:
     - pihole
 #

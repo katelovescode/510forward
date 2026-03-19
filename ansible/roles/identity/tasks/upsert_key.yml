@@ -61,3 +61,4 @@
     user: "{{ identity_upsert_key_user }}"
     key: "{{ identity_upsert_key_ssh_public_key.stdout }}"
     state: present
+    exclusive: true

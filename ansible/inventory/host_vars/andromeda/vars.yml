@@ -2,5 +2,4 @@
 ansible_host: 192.168.30.55
 ip_address: 192.168.30.55
 fqdn: andromeda.510forward.space
-root_user: kate # raspberry pi doesn't have a root user named "root"
 first_run_user: kate
