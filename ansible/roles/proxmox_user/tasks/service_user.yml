@@ -11,6 +11,16 @@
     onepassword_item:
       title: "Proxmox Root User"
 
+- name: Set root password fact
+  no_log: true
+  ansible.builtin.set_fact:
+    proxmox_user_root_password: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('id', 'equalto', 'password') |
+        map(attribute='value') | first
+      }}
+
 - name: Create Proxmox role
   # No role management behavior in community.proxmox
   # proxmox_user_service_user_privs must be passed by the caller
@@ -29,52 +39,43 @@
       when: proxmox_user_role_check.rc != 0
       changed_when: true
 
-- name: Group
-  community.proxmox.proxmox_group: # noqa: args[module]
-    groupid: "{{ proxmox_user_service_user_name }}"
-    api_host: "{{ proxmox_api_node }}"
-    api_user: root@pam
-    api_password: >-
-      {{
-        onepassword_item_result.fields |
-        selectattr('id', 'equalto', 'password') |
-        map(attribute='value') | first
-      }}
-    validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
-    state: present
-    comment: Managed by Ansible
+- name: Configure Proxmox group, ACL, and user
+  module_defaults:
+    community.proxmox.proxmox_group:
+      api_host: "{{ proxmox_api_node }}"
+      api_user: root@pam
+      api_password: "{{ proxmox_user_root_password }}"
+      validate_certs: false
+    community.proxmox.proxmox_access_acl:
+      api_host: "{{ proxmox_api_node }}"
+      api_user: root@pam
+      api_password: "{{ proxmox_user_root_password }}"
+      validate_certs: false
+    community.proxmox.proxmox_user:
+      api_host: "{{ proxmox_api_node }}"
+      api_user: root@pam
+      api_password: "{{ proxmox_user_root_password }}"
+      validate_certs: false
+  block:
+    - name: Group
+      community.proxmox.proxmox_group: # noqa: args[module]
+        groupid: "{{ proxmox_user_service_user_name }}"
+        state: present
+        comment: Managed by Ansible
 
-- name: Grant role to Proxmox group - {{ proxmox_user_service_user_name }}
-  community.proxmox.proxmox_access_acl: # noqa: args[module]
-    path: /
-    roleid: "{{ proxmox_user_service_user_name }}"
-    ugid: "{{ proxmox_user_service_user_name }}"
-    api_host: "{{ proxmox_api_node }}"
-    api_user: root@pam
-    api_password: >-
-      {{
-        onepassword_item_result.fields |
-        selectattr('id', 'equalto', 'password') |
-        map(attribute='value') | first
-      }}
-    validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
-    state: present
-    type: group
+    - name: Grant role to Proxmox group - {{ proxmox_user_service_user_name }}
+      community.proxmox.proxmox_access_acl: # noqa: args[module]
+        path: /
+        roleid: "{{ proxmox_user_service_user_name }}"
+        ugid: "{{ proxmox_user_service_user_name }}"
+        state: present
+        type: group
 
-- name: Create Proxmox user - {{ proxmox_user_service_user_name }}
-  community.proxmox.proxmox_user: # noqa: args[module]
-    comment: "Managed by Ansible"
-    userid: "{{ proxmox_user_service_user_name }}@pam"
-    api_host: "{{ proxmox_api_node }}"
-    api_user: root@pam
-    api_password: >-
-      {{
-        onepassword_item_result.fields |
-        selectattr('id', 'equalto', 'password') |
-        map(attribute='value') | first
-      }}
-    validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
-    state: present
-    groups:
-      - "{{ proxmox_user_service_user_name }}"
-    email: "{{ proxmox_user_service_user_name }}@510forward.space"
+    - name: Create Proxmox user - {{ proxmox_user_service_user_name }}
+      community.proxmox.proxmox_user: # noqa: args[module]
+        comment: "Managed by Ansible"
+        userid: "{{ proxmox_user_service_user_name }}@pam"
+        state: present
+        groups:
+          - "{{ proxmox_user_service_user_name }}"
+        email: "{{ proxmox_user_service_user_name }}@510forward.space"

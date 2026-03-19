@@ -68,10 +68,15 @@
 - name: Write item
   when: _onepassword_needs_write | bool
   block:
+    - name: Set temp file path
+      ansible.builtin.set_fact:
+        _onepassword_temp_file: "/tmp/op-item-{{ onepassword_item.title | regex_replace('[^a-zA-Z0-9]', '_') }}.json"
+      no_log: true
+
     - name: Template item JSON
       ansible.builtin.template:
         src: item_template.j2
-        dest: "/tmp/op-item-{{ onepassword_item.title | regex_replace('[^a-zA-Z0-9]', '_') }}.json"
+        dest: "{{ _onepassword_temp_file }}"
         mode: "0600"
       delegate_to: localhost
       no_log: true
@@ -80,7 +85,7 @@
       ansible.builtin.shell: # noqa: command-instead-of-shell
         cmd: >-
           {{ 'op item create' if not _onepassword_exists else 'op item edit ' + _onepassword_existing_item.id }}
-          --template "/tmp/op-item-{{ onepassword_item.title | regex_replace('[^a-zA-Z0-9]', '_') }}.json"
+          --template "{{ _onepassword_temp_file }}"
           --vault "{{ onepassword_vault }}"
           </dev/null
         executable: /bin/bash
@@ -92,7 +97,7 @@
 
     - name: Remove temp file
       ansible.builtin.file:
-        path: "/tmp/op-item-{{ onepassword_item.title | regex_replace('[^a-zA-Z0-9]', '_') }}.json"
+        path: "{{ _onepassword_temp_file }}"
         state: absent
       delegate_to: localhost
 

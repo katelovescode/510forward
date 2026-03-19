@@ -11,35 +11,40 @@
     onepassword_item:
       title: "Proxmox Root User"
 
-- name: Create Proxmox API user
-  community.proxmox.proxmox_user: # noqa: args[module]
-    comment: "Managed by Ansible"
-    userid: "{{ proxmox_admin_api_user }}"
-    api_host: "{{ proxmox_api_node }}"
-    api_user: root@pam
-    api_password: >-
+- name: Set root password fact
+  no_log: true
+  ansible.builtin.set_fact:
+    proxmox_user_root_password: >-
       {{
         onepassword_item_result.fields |
         selectattr('id', 'equalto', 'password') |
         map(attribute='value') | first
       }}
-    validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
-    state: present
-    email: "{{ admin_email }}"
 
-- name: Grant Proxmox API user Administrator role
-  community.proxmox.proxmox_access_acl: # noqa: args[module]
-    path: /
-    roleid: Administrator
-    ugid: "{{ proxmox_admin_api_user }}"
-    api_host: "{{ proxmox_api_node }}"
-    api_user: root@pam
-    api_password: >-
-      {{
-        onepassword_item_result.fields |
-        selectattr('id', 'equalto', 'password') |
-        map(attribute='value') | first
-      }}
-    validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
-    state: present
-    type: user
+- name: Configure Proxmox admin user and ACL
+  module_defaults:
+    community.proxmox.proxmox_user:
+      api_host: "{{ proxmox_api_node }}"
+      api_user: root@pam
+      api_password: "{{ proxmox_user_root_password }}"
+      validate_certs: false
+    community.proxmox.proxmox_access_acl:
+      api_host: "{{ proxmox_api_node }}"
+      api_user: root@pam
+      api_password: "{{ proxmox_user_root_password }}"
+      validate_certs: false
+  block:
+    - name: Create Proxmox API user
+      community.proxmox.proxmox_user: # noqa: args[module]
+        comment: "Managed by Ansible"
+        userid: "{{ proxmox_admin_api_user }}"
+        state: present
+        email: "{{ admin_email }}"
+
+    - name: Grant Proxmox API user Administrator role
+      community.proxmox.proxmox_access_acl: # noqa: args[module]
+        path: /
+        roleid: Administrator
+        ugid: "{{ proxmox_admin_api_user }}"
+        state: present
+        type: user
