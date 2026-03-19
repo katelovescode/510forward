@@ -13,28 +13,27 @@
 
 - name: Create Proxmox role
   # No role management behavior in community.proxmox
-  # proxmox_service_user_privs must be passed by the caller
+  # proxmox_user_service_user_privs must be passed by the caller
   become: true
   block:
     - name: Role Check
       become: true
       ansible.builtin.command: >-
-        pvesh get /access/roles/{{ proxmox_service_user_name }} --output-format json
-      register: proxmox_role_check
+        pvesh get /access/roles/{{ proxmox_user_service_user_name }} --output-format json
+      register: proxmox_user_role_check
       failed_when: false
       changed_when: false
 
     - name: Role Creation
       become: true
-      no_log: true
       ansible.builtin.command: |-
-        pvesh create /access/roles -roleid {{ proxmox_service_user_name }} -privs '{{ proxmox_service_user_privs | join(",") }}'
-      when: proxmox_role_check.rc != 0
+        pvesh create /access/roles -roleid {{ proxmox_user_service_user_name }} -privs '{{ proxmox_user_service_user_privs | join(",") }}'
+      when: proxmox_user_role_check.rc != 0
       changed_when: true
 
 - name: Group
   community.proxmox.proxmox_group: # noqa: args[module]
-    groupid: "{{ proxmox_service_user_name }}"
+    groupid: "{{ proxmox_user_service_user_name }}"
     api_host: "{{ proxmox_api_node }}"
     api_user: root@pam
     api_password: >-
@@ -47,11 +46,11 @@
     state: present
     comment: Managed by Ansible
 
-- name: Grant Proxmox group {{ proxmox_service_user_name }} role
+- name: Grant role to Proxmox group - {{ proxmox_user_service_user_name }}
   community.proxmox.proxmox_access_acl: # noqa: args[module]
     path: /
-    roleid: "{{ proxmox_service_user_name }}"
-    ugid: "{{ proxmox_service_user_name }}"
+    roleid: "{{ proxmox_user_service_user_name }}"
+    ugid: "{{ proxmox_user_service_user_name }}"
     api_host: "{{ proxmox_api_node }}"
     api_user: root@pam
     api_password: >-
@@ -64,10 +63,10 @@
     state: present
     type: group
 
-- name: Create Proxmox {{ proxmox_service_user_name }} user
+- name: Create Proxmox user - {{ proxmox_user_service_user_name }}
   community.proxmox.proxmox_user: # noqa: args[module]
     comment: "Managed by Ansible"
-    userid: "{{ proxmox_service_user_name }}@pam"
+    userid: "{{ proxmox_user_service_user_name }}@pam"
     api_host: "{{ proxmox_api_node }}"
     api_user: root@pam
     api_password: >-
@@ -79,5 +78,5 @@
     validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
     state: present
     groups:
-      - "{{ proxmox_service_user_name }}"
-    email: "{{ proxmox_service_user_name }}@510forward.space"
+      - "{{ proxmox_user_service_user_name }}"
+    email: "{{ proxmox_user_service_user_name }}@510forward.space"

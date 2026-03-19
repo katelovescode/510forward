@@ -70,6 +70,7 @@
 
 - name: Bootstrap - Proxmox Admin User
   hosts: enterprise
+  gather_facts: false
   remote_user: root
   tasks:
     - name: Create system admin user
@@ -84,6 +85,7 @@
 
 - name: Bootstrap - Proxmox OpenTofu User
   hosts: enterprise
+  gather_facts: false
   remote_user: root
   tasks:
     - name: Create system opentofu user
@@ -98,16 +100,16 @@
         name: identity
         tasks_from: upsert_key
       vars:
-        upsert_key_user: opentofu
-        upsert_key_item_title: "OpenTofu SSH Key"
+        identity_upsert_key_user: opentofu
+        identity_upsert_key_item_title: "OpenTofu SSH Key"
 
     - name: Create Proxmox user and group structure
       ansible.builtin.include_role:
         name: proxmox_user
         tasks_from: service_user
       vars:
-        proxmox_service_user_name: opentofu
-        proxmox_service_user_privs:
+        proxmox_user_service_user_name: opentofu
+        proxmox_user_service_user_privs:
           - Datastore.Allocate
           - Datastore.AllocateSpace
           - Datastore.AllocateTemplate
@@ -135,11 +137,12 @@
         name: proxmox_user
         tasks_from: api_token
       vars:
-        proxmox_api_token_user: opentofu
-        proxmox_api_token_item_title: "Proxmox OpenTofu API Token"
+        proxmox_user_api_token_user: opentofu
+        proxmox_user_api_token_item_title: "Proxmox OpenTofu API Token"
 
 - name: Bootstrap - Proxmox Ansible User
   hosts: enterprise
+  gather_facts: false
   remote_user: root
   tasks:
     - name: Create Proxmox ansible user and group structure
@@ -147,8 +150,8 @@
         name: proxmox_user
         tasks_from: service_user
       vars:
-        proxmox_service_user_name: ansible
-        proxmox_service_user_privs:
+        proxmox_user_service_user_name: ansible
+        proxmox_user_service_user_privs:
           - Datastore.Audit
           - Sys.Audit
           - VM.Audit
@@ -158,8 +161,8 @@
         name: proxmox_user
         tasks_from: api_token
       vars:
-        proxmox_api_token_user: ansible
-        proxmox_api_token_item_title: "Proxmox Ansible API Token"
+        proxmox_user_api_token_user: ansible
+        proxmox_user_api_token_item_title: "Proxmox Ansible API Token"
 
 - name: Bootstrap - Proxmox Storage
   hosts: enterprise

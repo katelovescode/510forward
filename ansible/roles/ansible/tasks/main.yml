@@ -29,8 +29,8 @@
         name: identity
         tasks_from: upsert_key
       vars:
-        upsert_key_user: ansible
-        upsert_key_item_title: "Ansible SSH Key"
+        identity_upsert_key_user: ansible
+        identity_upsert_key_item_title: "Ansible SSH Key"
     - name: Disable password authentication
       become: true
       ansible.builtin.lineinfile:

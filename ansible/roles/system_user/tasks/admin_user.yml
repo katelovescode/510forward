@@ -41,5 +41,5 @@
     name: identity
     tasks_from: static_key
   vars:
-    static_key_user: "{{ proxmox_admin_system_user }}"
-    static_key_public_key: "{{ sysadmin_public_key }}"
+    identity_static_key_user: "{{ proxmox_admin_system_user }}"
+    identity_static_key_public_key: "{{ sysadmin_public_key }}"

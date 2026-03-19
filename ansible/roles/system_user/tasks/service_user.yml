@@ -2,13 +2,13 @@
 # This role handles system service user creation with passwordless sudo
 # Extracted from lab_bootstrap.yml for the opentofu service user pattern
 
-- name: Create system {{ system_user_name }} user
+- name: Create system user - {{ system_user_name }}
   become: true
   ansible.builtin.user:
     name: "{{ system_user_name }}"
     shell: /bin/bash
 
-- name: Grant {{ system_user_name }} user sudo
+- name: Grant sudo - {{ system_user_name }}
   become: true
   community.general.sudoers:
     name: "{{ system_user_name }}"

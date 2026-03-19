@@ -2,62 +2,62 @@
 # Create/manage SSH key in 1Password and authorize it for a user
 # Used for service accounts that should have their SSH keys managed by Ansible
 
-- name: Check if {{ upsert_key_user }} SSH key exists in 1Password
+- name: Check SSH key in 1Password - {{ identity_upsert_key_user }}
   no_log: true
   ansible.builtin.command:
-    cmd: op item get "{{ upsert_key_item_title }}" --vault "{{ onepassword_vault }}"
+    cmd: op item get "{{ identity_upsert_key_item_title }}" --vault "{{ onepassword_vault }}"
   become: true
   become_user: "{{ onepassword_become_user }}"
   delegate_to: localhost
-  register: upsert_key_ssh_key_check
+  register: identity_upsert_key_ssh_key_check
   failed_when: false
   changed_when: false
 
-- name: Create {{ upsert_key_user }} SSH key in 1Password
+- name: Create SSH key in 1Password - {{ identity_upsert_key_user }}
   no_log: true
   ansible.builtin.shell: # noqa: command-instead-of-shell
     cmd: >-
       op item create
       --category ssh
-      --title "{{ upsert_key_item_title }}"
+      --title "{{ identity_upsert_key_item_title }}"
       --vault "{{ onepassword_vault }}"
       </dev/null
     executable: /bin/bash
   become: true
   become_user: "{{ onepassword_become_user }}"
   delegate_to: localhost
-  when: upsert_key_ssh_key_check.rc != 0
+  when: identity_upsert_key_ssh_key_check.rc != 0
   changed_when: true
 
-- name: Get {{ upsert_key_user }} SSH private key from 1Password
+- name: Get SSH private key from 1Password - {{ identity_upsert_key_user }}
   no_log: true
   ansible.builtin.command:
     cmd: >-
-      op read "op://{{ onepassword_vault }}/{{ upsert_key_item_title }}/private key?ssh-format=openssh"
+      op read "op://{{ onepassword_vault }}/{{ identity_upsert_key_item_title }}/private key?ssh-format=openssh"
   become: true
   become_user: "{{ onepassword_become_user }}"
   delegate_to: localhost
-  register: upsert_key_ssh_private_key
+  register: identity_upsert_key_ssh_private_key
   changed_when: false
 
-- name: Derive {{ upsert_key_user }} SSH public key
+- name: Derive SSH public key - {{ identity_upsert_key_user }}
   no_log: true
   ansible.builtin.shell: # noqa: command-instead-of-shell
     cmd: >-
       TMPKEY=$(mktemp) &&
       trap "rm -f $TMPKEY" EXIT &&
       chmod 600 $TMPKEY &&
-      echo "{{ upsert_key_ssh_private_key.stdout }}" > $TMPKEY &&
+      echo "{{ identity_upsert_key_ssh_private_key.stdout }}" > $TMPKEY &&
       ssh-keygen -y -f $TMPKEY
     executable: /bin/bash
   delegate_to: localhost
-  register: upsert_key_ssh_public_key
+  register: identity_upsert_key_ssh_public_key
   changed_when: false
 
-- name: Authorize {{ upsert_key_user }} SSH key for {{ upsert_key_user }} user
+- name: Authorize SSH key - {{ identity_upsert_key_user }}
   become: true
   no_log: true
   ansible.posix.authorized_key:
-    user: "{{ upsert_key_user }}"
-    key: "{{ upsert_key_ssh_public_key.stdout }}"
+    user: "{{ identity_upsert_key_user }}"
+    key: "{{ identity_upsert_key_ssh_public_key.stdout }}"
     state: present

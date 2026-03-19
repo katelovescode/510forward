@@ -5,6 +5,6 @@
 - name: Authorize static SSH key for user
   become: true
   ansible.posix.authorized_key:
-    user: "{{ static_key_user }}"
-    key: "{{ static_key_public_key }}"
+    user: "{{ identity_static_key_user }}"
+    key: "{{ identity_static_key_public_key }}"
     state: present
