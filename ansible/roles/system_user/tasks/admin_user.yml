@@ -37,7 +37,9 @@
     nopassword: false
 
 - name: Authorize sysadmin SSH key for admin user
-  become: true
-  ansible.posix.authorized_key:
-    user: "{{ proxmox_admin_system_user }}"
-    key: "{{ sysadmin_public_key }}"
+  ansible.builtin.include_role:
+    name: identity
+    tasks_from: static_key
+  vars:
+    static_key_user: "{{ proxmox_admin_system_user }}"
+    static_key_public_key: "{{ sysadmin_public_key }}"
