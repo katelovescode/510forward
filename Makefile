@@ -9,6 +9,7 @@ help:
 	@echo "  lint               Run ansible-lint and tflint"
 	@echo "  edit-secret        Edit a vault-encrypted file: make edit-secret FILE=path"
 	@echo "  tofu-proxmox       Run OpenTofu for Proxmox: make tofu-proxmox ARGS='plan'"
+	@echo "  tofu-recreate      Recreate VMs by name: make tofu-recreate HOSTS=centaurus,norville"
 	@echo "  sync-pihole        Manually trigger nebula-sync on centaurus"
 	@echo "  help               Show this help message"
 	@echo ""
@@ -61,6 +62,10 @@ edit-secret:
 
 tofu-proxmox:
 	cd tofu/proxmox && ../tofu.sh $(ARGS)
+
+COMMA := ,
+tofu-recreate:
+	cd tofu/proxmox && ../tofu.sh apply $(addprefix -replace=proxmox_virtual_environment_vm.,$(subst $(COMMA), ,$(HOSTS)))
 
 sync-pihole:
 	cd ansible && ansible -b -m systemd -a "name=nebula-sync state=started" centaurus
