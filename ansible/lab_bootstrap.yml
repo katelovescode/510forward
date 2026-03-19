@@ -23,19 +23,19 @@
           - hostvars['enterprise']['proxmox_admin_password_salt'] | string | length > 0
         fail_msg: "proxmox_admin_password_salt is not defined. Set it in host_vars/enterprise/secrets.yml."
 
-    - name: Update known_hosts for enterprise
-      ansible.builtin.include_role:
-        name: identity
-        tasks_from: known_hosts
-      vars:
-        identity_target: "enterprise"
-
     - name: Verify enterprise is reachable
       ansible.builtin.wait_for:
         host: "{{ hostvars['enterprise'].ansible_host }}"
         port: 22
         timeout: 10
       delegate_to: localhost
+
+    - name: Update known_hosts for enterprise
+      ansible.builtin.include_role:
+        name: identity
+        tasks_from: known_hosts
+      vars:
+        identity_target: "enterprise"
 
 - name: Bootstrap - Ansible User
   hosts: enterprise

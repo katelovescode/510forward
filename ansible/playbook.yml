@@ -4,17 +4,17 @@
   gather_facts: false
   serial: 1
   tasks:
-    - name: Update known_hosts
-      ansible.builtin.include_role:
-        name: identity
-        tasks_from: known_hosts
-
     - name: Wait for SSH
       ansible.builtin.wait_for:
         host: "{{ ansible_host }}"
         port: 22
         timeout: 300
       delegate_to: localhost
+
+    - name: Update known_hosts
+      ansible.builtin.include_role:
+        name: identity
+        tasks_from: known_hosts
 
 - name: Base configuration
   hosts: all
