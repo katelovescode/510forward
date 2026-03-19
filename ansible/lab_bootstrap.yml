@@ -72,6 +72,8 @@
   hosts: enterprise
   gather_facts: false
   remote_user: root
+  vars:
+    ansible_user: root
   tasks:
     - name: Create system admin user
       ansible.builtin.include_role:
@@ -87,6 +89,8 @@
   hosts: enterprise
   gather_facts: false
   remote_user: root
+  vars:
+    ansible_user: root
   tasks:
     - name: Create system opentofu user
       ansible.builtin.include_role:
@@ -144,6 +148,8 @@
   hosts: enterprise
   gather_facts: false
   remote_user: root
+  vars:
+    ansible_user: root
   tasks:
     - name: Create Proxmox ansible user and group structure
       ansible.builtin.include_role:
@@ -168,6 +174,8 @@
   hosts: enterprise
   gather_facts: false
   remote_user: root
+  vars:
+    ansible_user: root
   tasks:
     - name: Configure local storage content types
       ansible.builtin.include_role:
