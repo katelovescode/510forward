@@ -35,14 +35,16 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      ssh-keyscan -q {{ identity_target_ip }} 2>/dev/null | grep -v '^#' | sort
+      ssh-keyscan -q {{ identity_target_ip }} 2>/dev/null | grep -v '^#' | sort || true
     executable: /bin/bash
   register: identity_scanned_keys
+  failed_when: false
   changed_when: false
 
 - name: Remove existing host key entries if they differ
   delegate_to: localhost
   when:
+    - identity_scanned_keys.stdout | length > 0
     - identity_key_exists.rc == 0
     - identity_current_keys.stdout != identity_scanned_keys.stdout
 
@@ -70,6 +72,7 @@
     executable: /bin/bash
   changed_when: identity_key_exists.rc != 0 or identity_current_keys.stdout != identity_scanned_keys.stdout
   when:
+    - identity_scanned_keys.stdout | length > 0
     - identity_key_exists.rc != 0 or identity_current_keys.stdout != identity_scanned_keys.stdout
 
 - name: Clean up blank lines from known_hosts
@@ -79,4 +82,5 @@
     regexp: "^[[:space:]]*$"
     state: absent
   when:
+    - identity_scanned_keys.stdout | length > 0
     - identity_key_exists.rc != 0 or identity_current_keys.stdout != identity_scanned_keys.stdout

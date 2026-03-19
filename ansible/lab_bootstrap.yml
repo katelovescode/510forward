@@ -169,16 +169,7 @@
   gather_facts: false
   remote_user: root
   tasks:
-    - name: Get current local storage content types
-      become: true
-      ansible.builtin.shell:
-        cmd: "awk '/^dir: local/,/content/ {if (/content/) print}' /etc/pve/storage.cfg || echo ''"
-      register: current_content_types
-      changed_when: false
-
-    - name: Enable snippets content type on local storage
-      become: true
-      ansible.builtin.command:
-        cmd: pvesm set local --content vztmpl,backup,iso,snippets
-      when: "'snippets' not in current_content_types.stdout"
-      changed_when: true
+    - name: Configure local storage content types
+      ansible.builtin.include_role:
+        name: proxmox
+        tasks_from: storage
