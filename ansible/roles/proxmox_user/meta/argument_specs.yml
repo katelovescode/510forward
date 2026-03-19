@@ -1,0 +1,54 @@
+---
+argument_specs:
+  admin_user:
+    short_description: Create a Proxmox PAM admin user with the Administrator role
+    options:
+      proxmox_admin_api_user:
+        type: str
+        required: true
+        description: >
+          Proxmox user ID (e.g. kate@pam).
+          Derived from proxmox_admin_system_user in group_vars/proxmox_nodes/vars.yml.
+      proxmox_api_node:
+        type: str
+        required: true
+        description: >
+          Proxmox API hostname.
+          Set in group_vars/proxmox_nodes/vars.yml.
+      admin_email:
+        type: str
+        required: true
+        description: >
+          Email address for the admin user.
+          Set in group_vars/all/vars.yml.
+
+  service_user:
+    short_description: Create a Proxmox PAM service user with a dedicated group and role
+    options:
+      proxmox_user_service_user_name:
+        type: str
+        required: true
+        description: Username for the service user (e.g. opentofu, ansible).
+      proxmox_user_service_user_privs:
+        type: list
+        elements: str
+        required: true
+        description: List of Proxmox privilege strings to assign to the user's role.
+      proxmox_api_node:
+        type: str
+        required: true
+        description: >
+          Proxmox API hostname.
+          Set in group_vars/proxmox_nodes/vars.yml.
+
+  api_token:
+    short_description: Create a Proxmox API token and store it in 1Password
+    options:
+      proxmox_user_api_token_user:
+        type: str
+        required: true
+        description: Username whose Proxmox API token to manage (e.g. opentofu, ansible).
+      proxmox_user_api_token_item_title:
+        type: str
+        required: true
+        description: 1Password item title for the API token.

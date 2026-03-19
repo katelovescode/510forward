@@ -3,20 +3,7 @@ argument_specs:
   main:
     short_description: Create ansible user and harden SSH
     description: >
-      Creates the ansible system user with passwordless sudo and
-      authorizes the sysadmin SSH key. On non-Proxmox hosts, also
-      locks the root account and disables root SSH login.
-    options:
-      sysadmin_public_key:
-        type: str
-        required: true
-        description: >
-          SSH public key to authorize for the ansible user.
-          Defined in group_vars/all/secrets.yml.
-      group_names:
-        type: list
-        required: false
-        description: >
-          Ansible built-in variable containing list of groups the current
-          host belongs to. Used to conditionally apply SSH hardening on
-          non-Proxmox nodes.
+      Creates the ansible system user with passwordless sudo and an SSH key
+      managed in 1Password. On non-Proxmox hosts, also locks the root account
+      and disables root SSH login.
+    options: {}
