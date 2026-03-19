@@ -64,10 +64,8 @@
   delegate_to: localhost
   ansible.builtin.shell:
     cmd: |
-      set -o pipefail
-      keys=$(ssh-keyscan -q {{ identity_target_ip }} 2>/dev/null | grep -v '^#' | sort)
       echo "# {{ identity_target_host }} SSH host keys" >> ~/.ssh/known_hosts
-      echo "$keys" >> ~/.ssh/known_hosts
+      echo "{{ identity_scanned_keys.stdout }}" >> ~/.ssh/known_hosts
       echo "" >> ~/.ssh/known_hosts
     executable: /bin/bash
   changed_when: identity_key_exists.rc != 0 or identity_current_keys.stdout != identity_scanned_keys.stdout
@@ -80,7 +78,7 @@
   ansible.builtin.replace:
     path: ~/.ssh/known_hosts
     regexp: "^[[:space:]]*$"
-    state: absent
+    replace: ""
   when:
     - identity_scanned_keys.stdout | length > 0
     - identity_key_exists.rc != 0 or identity_current_keys.stdout != identity_scanned_keys.stdout

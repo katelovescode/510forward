@@ -65,10 +65,6 @@
       {{ needs_write.value }}
   no_log: true
 
-- name: Debug write check
-  ansible.builtin.debug:
-    var: _onepassword_needs_write
-
 - name: Write item
   when: _onepassword_needs_write | bool
   block:

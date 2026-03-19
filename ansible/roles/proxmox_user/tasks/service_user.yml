@@ -17,7 +17,6 @@
   become: true
   block:
     - name: Role Check
-      become: true
       ansible.builtin.command: >-
         pvesh get /access/roles/{{ proxmox_user_service_user_name }} --output-format json
       register: proxmox_user_role_check
@@ -25,7 +24,6 @@
       changed_when: false
 
     - name: Role Creation
-      become: true
       ansible.builtin.command: |-
         pvesh create /access/roles -roleid {{ proxmox_user_service_user_name }} -privs '{{ proxmox_user_service_user_privs | join(",") }}'
       when: proxmox_user_role_check.rc != 0
