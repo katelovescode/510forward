@@ -178,15 +178,6 @@
         user: opentofu
         nopassword: true
 
-    - name: Read Proxmox root password from 1Password
-      no_log: true
-      ansible.builtin.include_role:
-        name: onepassword
-      vars:
-        onepassword_action: read
-        onepassword_item:
-          title: "Proxmox Root User"
-
     - name: Check if OpenTofu SSH key exists in 1Password
       no_log: true
       ansible.builtin.command:
@@ -246,97 +237,9 @@
         user: opentofu
         key: "{{ opentofu_ssh_public_key.stdout }}"
 
-    - name: Create Proxmox role
-      # No role management behavior in community.proxmox
-      become: true
-      vars:
-        role_privs:
-          - Datastore.Allocate
-          - Datastore.AllocateSpace
-          - Datastore.AllocateTemplate
-          - Datastore.Audit
-          - Sys.Audit
-          - Sys.Console
-          - Sys.Modify
-          - VM.Allocate
-          - VM.Audit
-          - VM.Clone
-          - VM.Config.CDROM
-          - VM.Config.Cloudinit
-          - VM.Config.CPU
-          - VM.Config.Disk
-          - VM.Config.HWType
-          - VM.Config.Memory
-          - VM.Config.Network
-          - VM.Config.Options
-          - VM.GuestAgent.Audit
-          - VM.PowerMgmt
-          - SDN.Use
-      block:
-        - name: Role Check
-          become: true
-          ansible.builtin.command: >-
-            pvesh get /access/roles/opentofu --output-format json
-          register: proxmox_role_check
-          failed_when: false
-          changed_when: false
-
-        - name: Role Creation
-          become: true
-          no_log: true
-          ansible.builtin.command: |-
-            pvesh create /access/roles -roleid opentofu -privs '{{ role_privs | join(",") }}'
-          when: proxmox_role_check.rc != 0
-          changed_when: true
-
-    - name: Group
-      community.proxmox.proxmox_group: # noqa: args[module]
-        groupid: opentofu
-        api_host: "{{ proxmox_api_node }}"
-        api_user: root@pam
-        api_password: >-
-          {{
-            onepassword_item_result.fields |
-            selectattr('id', 'equalto', 'password') |
-            map(attribute='value') | first
-          }}
-        validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
-        state: present
-        comment: Managed by Ansible
-
-    - name: Grant Proxmox group opentofu role
-      community.proxmox.proxmox_access_acl: # noqa: args[module]
-        path: /
-        roleid: opentofu
-        ugid: opentofu
-        api_host: "{{ proxmox_api_node }}"
-        api_user: root@pam
-        api_password: >-
-          {{
-            onepassword_item_result.fields |
-            selectattr('id', 'equalto', 'password') |
-            map(attribute='value') | first
-          }}
-        validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
-        state: present
-        type: group
-
-    - name: Create Proxmox OpenTofu user
-      community.proxmox.proxmox_user: # noqa: args[module]
-        comment: "Managed by Ansible"
-        userid: opentofu@pam
-        api_host: "{{ proxmox_api_node }}"
-        api_user: root@pam
-        api_password: >-
-          {{
-            onepassword_item_result.fields |
-            selectattr('id', 'equalto', 'password') |
-            map(attribute='value') | first
-          }}
-        validate_certs: false # REQUIRED: Bootstrap needs cert validation disabled
-        state: present
-        groups:
-          - opentofu
+    - name: Create Proxmox user and group structure
+      ansible.builtin.include_role:
+        name: proxmox_user
 
     - name: API Token
       block:
