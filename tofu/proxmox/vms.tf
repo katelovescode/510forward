@@ -34,7 +34,7 @@ resource "proxmox_virtual_environment_vm" "centaurus" {
 
     user_account {
       username = "ansible"
-      keys     = [var.sysadmin_public_key]
+      keys     = [var.ansible_public_key]
     }
     
     user_data_file_id = proxmox_virtual_environment_file.cloud_init_config.id
@@ -56,6 +56,7 @@ resource "proxmox_virtual_environment_file" "cloud_init_config" {
     data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
       hostname            = "centaurus"
       sysadmin_public_key = var.sysadmin_public_key
+      ansible_public_key  = var.ansible_public_key
     })
     file_name = "cloud-init-config.yml"
   }

@@ -40,7 +40,9 @@
       notify: Restart sshd
 
 - name: Secure SSH on non-hypervisor nodes
-  when: ("proxmox_nodes" not in group_names)
+  when:
+    - '"proxmox_nodes" not in group_names'
+    - '"raspbian_nodes" not in group_names'
   block:
     - name: Lock root user password
       become: true

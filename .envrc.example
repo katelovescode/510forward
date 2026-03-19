@@ -1,9 +1,21 @@
 #!/bin/sh
 
-export OP_SERVICE_ACCOUNT_TOKEN="token"
-export GIT_AUTHOR_NAME="name"
-export GIT_COMMITTER_NAME="name"
-export GIT_AUTHOR_EMAIL="email"
-export GIT_COMMITTER_EMAIL="email"
-export SYSADMIN_PUBLIC_KEY="publickey"
-export OP_VAULT_ID="vault_id"
+export OP_SERVICE_ACCOUNT_TOKEN="[service account token]"
+
+GIT_AUTHOR_NAME=$(git config --global user.name)
+export GIT_AUTHOR_NAME
+
+GIT_COMMITTER_NAME=$(git config --global user.name)
+export GIT_COMMITTER_NAME
+
+export GIT_AUTHOR_EMAIL="[email]"
+export GIT_COMMITTER_EMAIL="[email]"
+
+OP_VAULT_ID=$(op vault get VAULT_NAME --format json | jq -r '.id')
+export OP_VAULT_ID
+
+SYSADMIN_PUBLIC_KEY=$(op read "op://${OP_VAULT_ID}/ITEM_TITLE/public key")
+export SYSADMIN_PUBLIC_KEY
+
+op read "op://${OP_VAULT_ID}/ITEM_TITLE/private key?ssh-format=openssh" > ~/.ssh/id_ed25519_ITEM_NAME
+chmod 600 ~/.ssh/id_ed25519_ITEM_NAME

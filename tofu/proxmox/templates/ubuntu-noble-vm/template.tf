@@ -7,6 +7,7 @@ resource "proxmox_virtual_environment_file" "cloud_init_user_data" {
     data      = templatefile("${path.module}/cloud-init.yml.tftpl", {
       hostname            = "ubuntu-cloud-template"
       sysadmin_public_key = var.sysadmin_public_key
+      ansible_public_key  = var.ansible_public_key
     })
     file_name = "cloud-init-user-data.yml"
   }
