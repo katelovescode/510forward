@@ -87,34 +87,9 @@
           #     field_type: STRING
 
     - name: Create system admin user
-      become: true
-      no_log: true
-      ansible.builtin.user:
-        name: "{{ proxmox_admin_system_user }}"
-        shell: /bin/bash
-        password: >-
-          {{
-            onepassword_item_result.fields |
-            selectattr('id', 'equalto', 'password') |
-            map(attribute='value') | first
-            | password_hash(salt=proxmox_admin_password_salt, hashtype='sha512')
-          }}
-
-    - name: Grant admin user sudo
-      become: true
-      community.general.sudoers:
-        name: "{{ proxmox_admin_system_user }}"
-        commands: ALL
-        runas: ALL
-        state: present
-        user: "{{ proxmox_admin_system_user }}"
-        nopassword: false
-
-    - name: Authorize sysadmin SSH key for admin user
-      become: true
-      ansible.posix.authorized_key:
-        user: "{{ proxmox_admin_system_user }}"
-        key: "{{ sysadmin_public_key }}"
+      ansible.builtin.include_role:
+        name: system_user
+        tasks_from: admin_user
 
     - name: Read Proxmox root password from 1Password
       no_log: true
@@ -135,20 +110,11 @@
   remote_user: root
   tasks:
     - name: Create system opentofu user
-      become: true
-      ansible.builtin.user:
-        name: opentofu
-        shell: /bin/bash
-
-    - name: Grant opentofu user sudo
-      become: true
-      community.general.sudoers:
-        name: opentofu
-        commands: ALL
-        runas: ALL
-        state: present
-        user: opentofu
-        nopassword: true
+      ansible.builtin.include_role:
+        name: system_user
+        tasks_from: service_user
+      vars:
+        system_user_name: opentofu
 
     - name: Check if OpenTofu SSH key exists in 1Password
       no_log: true
