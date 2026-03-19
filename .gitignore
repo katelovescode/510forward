@@ -1,8 +1,11 @@
-# IDE
+# IDE & Agents
 
 .windsurf/*
 .ansible/*
+.claude/*
 .gemini/*
+*.log
+CLAUDE.md
 
 # macOS
 .DS_Store
