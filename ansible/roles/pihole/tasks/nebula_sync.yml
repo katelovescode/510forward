@@ -46,8 +46,24 @@
     - name: Install nebula-sync binary
       ansible.builtin.include_tasks: install_nebula_sync_binary.yml
 
+- name: Read Pi-hole admin password from 1Password
+  no_log: true
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: read
+    onepassword_item:
+      title: "Pi-hole Admin Password"
+
+- name: Set Pi-hole admin password fact
+  no_log: true
+  ansible.builtin.set_fact:
+    pihole_nebula_sync_admin_password: >-
+      {{ onepassword_item_result.fields | selectattr('id', 'equalto', 'password') | map(attribute='value') | first }}
+
 - name: Template nebula-sync env file
   become: true
+  no_log: true
   ansible.builtin.template:
     src: nebula-sync.env.j2
     dest: /etc/nebula-sync.env
