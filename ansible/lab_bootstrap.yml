@@ -77,15 +77,6 @@
         name: system_user
         tasks_from: admin_user
 
-    - name: Read Proxmox root password from 1Password
-      no_log: true
-      ansible.builtin.include_role:
-        name: onepassword
-      vars:
-        onepassword_action: read
-        onepassword_item:
-          title: "Proxmox Root User"
-
     - name: Create Proxmox admin user
       ansible.builtin.include_role:
         name: proxmox_user
@@ -172,6 +163,8 @@
 
 - name: Bootstrap - Proxmox Storage
   hosts: enterprise
+  gather_facts: false
+  remote_user: root
   tasks:
     - name: Get current local storage content types
       become: true
@@ -184,7 +177,5 @@
       become: true
       ansible.builtin.command:
         cmd: pvesm set local --content vztmpl,backup,iso,snippets
-      when:
-        - "'snippets' not in current_content_types.stdout"
-        - "current_content_types.stdout != 'content iso,backup,vztmpl,snippets'"
-      changed_when: "'snippets' not in current_content_types.stdout"
+      when: "'snippets' not in current_content_types.stdout"
+      changed_when: true
