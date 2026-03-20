@@ -1,0 +1,14 @@
+services:
+  app:
+    image: "jc21/nginx-proxy-manager:latest"
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    environment:
+      INITIAL_ADMIN_EMAIL: "{{ admin_email }}"
+      INITIAL_ADMIN_PASSWORD: "{{ nginx_proxy_manager_admin_password }}"
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt

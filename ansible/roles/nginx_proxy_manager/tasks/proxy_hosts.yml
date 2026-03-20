@@ -1,0 +1,49 @@
+---
+- name: Authenticate with NPM
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "{{ admin_email }}"
+      secret: "{{ nginx_proxy_manager_admin_password }}"
+    status_code: 200
+  register: nginx_proxy_manager_token
+  no_log: true
+  tags: nginx_proxy_manager
+
+- name: Get existing proxy hosts
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/nginx/proxy-hosts"
+    headers:
+      Authorization: "Bearer {{ nginx_proxy_manager_token.json.token }}"
+    status_code: 200
+  register: nginx_proxy_manager_existing_hosts
+  tags: nginx_proxy_manager
+
+- name: Create proxy hosts
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/nginx/proxy-hosts"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ nginx_proxy_manager_token.json.token }}"
+    body_format: json
+    body:
+      domain_names:
+        - "{{ item.subdomain }}.{{ domain }}"
+      forward_host: "{{ item.host }}"
+      forward_port: "{{ item.port }}"
+      forward_scheme: "{{ item.scheme | default('http') }}"
+      block_exploits: true
+      allow_websocket_upgrade: false
+      access_list_id: 0
+      certificate_id: 0
+      meta:
+        letsencrypt_agree: false
+        dns_challenge: false
+    status_code: 201
+  loop: "{{ nginx_proxy_manager_proxy_hosts }}"
+  when: >-
+    (item.subdomain + '.' + domain) not in
+    (nginx_proxy_manager_existing_hosts.json | map(attribute='domain_names') | flatten)
+  tags: nginx_proxy_manager

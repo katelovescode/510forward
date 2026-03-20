@@ -1,0 +1,58 @@
+---
+argument_specs:
+  main:
+    short_description: Deploy and configure NGINX Proxy Manager
+    description: >
+      Deploys NGINX Proxy Manager via Docker Compose, stores admin credentials
+      in 1Password, rotates the default password on first run, and configures
+      proxy hosts via the NPM REST API.
+    options:
+      # ################################
+      # Shared vars — from group_vars/all/vars.yml
+      # ################################
+      admin_email:
+        type: str
+        required: true
+        description: >
+          Email address for the NPM admin account. Used as the login identity
+          and replaces the NPM default (admin@example.com) on first run.
+
+      domain:
+        type: str
+        required: true
+        description: >
+          Local domain suffix, e.g. 510forward.space. Appended to each
+          proxy host subdomain to form the full domain name.
+
+      ansible_user:
+        type: str
+        required: true
+        description: >
+          Ansible connection user. Passed to the docker role so the user
+          is added to the docker group.
+
+      # ################################
+      # Shared vars — from group_vars/all/secrets.yml
+      # ################################
+      onepassword_vault:
+        type: str
+        required: true
+        description: >
+          Name or UUID of the 1Password vault to operate on.
+
+      onepassword_become_user:
+        type: str
+        required: true
+        description: >
+          Local user to become when running op CLI commands.
+
+      # ################################
+      # Host vars — from host_vars/norville/vars.yml
+      # ################################
+      nginx_proxy_manager_proxy_hosts:
+        type: list
+        required: true
+        description: >
+          List of proxy host definitions to configure via the NPM API.
+          Each entry requires: subdomain (str), host (str), port (int).
+          Optional: scheme (str, default 'http').

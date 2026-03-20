@@ -35,7 +35,9 @@
   roles:
     - pihole
 #
-# - name: NGINX Proxy Manager
-#   hosts: norville
-#   roles:
-#     - nginx_proxy_manager
+- name: NGINX Proxy Manager
+  hosts: norville
+  vars:
+    ansible_user: "{{ first_run_user | default('ansible') }}"
+  roles:
+    - nginx_proxy_manager

@@ -14,7 +14,7 @@ resource "proxmox_virtual_environment_vm" "centaurus" {
   }
 
   memory {
-    dedicated = 1024
+    dedicated = 2048
   }
 
   disk {
@@ -78,7 +78,7 @@ resource "proxmox_virtual_environment_vm" "norville" {
   }
 
   memory {
-    dedicated = 1024
+    dedicated = 3072
   }
 
   disk {
