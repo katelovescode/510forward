@@ -1,9 +1,9 @@
 ---
-- name: Template custom.list for local DNS resolution
+- name: Template local DNS entries
   become: true
   ansible.builtin.template:
-    src: custom.list.j2
-    dest: /etc/pihole/custom.list
+    src: local-dns.conf.j2
+    dest: /etc/dnsmasq.d/99-ansible-local-dns.conf
     owner: root
     group: root
     mode: "0644"

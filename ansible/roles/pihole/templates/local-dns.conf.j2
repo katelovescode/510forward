@@ -2,6 +2,6 @@
 {% for host in groups['all'] %}
 {% set hv = hostvars[host] %}
 {% if hv.ip_address is defined and hv.fqdn is defined %}
-{{ hv.ip_address }} {{ hv.fqdn }}
+address=/{{ hv.fqdn }}/{{ hv.ip_address }}
 {% endif %}
 {% endfor %}
