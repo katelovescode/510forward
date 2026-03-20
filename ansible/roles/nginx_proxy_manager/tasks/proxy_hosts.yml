@@ -21,6 +21,20 @@
   register: nginx_proxy_manager_existing_hosts
   tags: nginx_proxy_manager
 
+- name: Delete stale proxy hosts
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/nginx/proxy-hosts/{{ item.id }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ nginx_proxy_manager_token.json.token }}"
+    status_code: 200
+  loop: "{{ nginx_proxy_manager_existing_hosts.json }}"
+  when: >-
+    (item.domain_names | first | replace('.' ~ domain, '')) not in
+    (nginx_proxy_manager_proxy_hosts | map(attribute='subdomain') | list)
+  changed_when: true
+  tags: nginx_proxy_manager
+
 - name: Create proxy hosts
   ansible.builtin.uri:
     url: "http://localhost:81/api/nginx/proxy-hosts"
@@ -46,4 +60,5 @@
   when: >-
     (item.subdomain + '.' + domain) not in
     (nginx_proxy_manager_existing_hosts.json | map(attribute='domain_names') | flatten)
+  changed_when: true
   tags: nginx_proxy_manager

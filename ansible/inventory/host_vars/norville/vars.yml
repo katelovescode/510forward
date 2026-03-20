@@ -12,6 +12,6 @@ nginx_proxy_manager_proxy_hosts:
   - subdomain: centaurus
     host: "{{ hostvars['centaurus'].ip_address }}"
     port: 80
-  - subdomain: nginx_proxy_manager
+  - subdomain: norville
     host: 127.0.0.1
     port: 81
