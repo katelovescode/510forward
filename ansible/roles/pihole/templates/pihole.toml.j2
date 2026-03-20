@@ -5,7 +5,7 @@
 upstreams = ["{{ pihole_dns_1 }}", "{{ pihole_dns_2 }}"]
 domain = "{{ domain }}"
 reply_addr4 = "{{ ip_address }}"
-listeningMode = "local"
+listeningMode = "{{ pihole_listening_mode | default('all') }}"
 dnssec = true
 
 [dhcp]

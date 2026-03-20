@@ -77,6 +77,14 @@ argument_specs:
         description: >
           Secondary upstream DNS server, e.g. 1.0.0.1.
 
+      pihole_listening_mode:
+        type: str
+        required: false
+        description: >
+          Pi-hole DNS listening mode. Defaults to 'all' to accept queries
+          from all subnets/VLANs. Set to 'local' to restrict to the
+          Pi-hole host's own subnet only.
+
       pihole_query_logging:
         type: bool
         required: true

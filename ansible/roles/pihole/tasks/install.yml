@@ -85,6 +85,18 @@
       ansible.builtin.file:
         path: /tmp/pihole_install.sh
         state: absent
+
+- name: Apply pihole.toml config
+  become: true
+  ansible.builtin.template:
+    src: pihole.toml.j2
+    dest: /etc/pihole/pihole.toml
+    owner: pihole
+    group: pihole
+    mode: "0644"
+  notify: Restart pihole dns
+  tags: pihole
+
 - name: Ensure Pi-hole password exists in 1Password
   no_log: true
   ansible.builtin.include_role:
