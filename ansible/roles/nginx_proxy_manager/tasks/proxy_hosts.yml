@@ -51,14 +51,42 @@
       block_exploits: true
       allow_websocket_upgrade: false
       access_list_id: 0
-      certificate_id: 0
+      certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
       meta:
-        letsencrypt_agree: false
+        letsencrypt_agree: true
         dns_challenge: false
     status_code: 201
   loop: "{{ nginx_proxy_manager_proxy_hosts }}"
   when: >-
     (item.subdomain + '.' + domain) not in
     (nginx_proxy_manager_existing_hosts.json | map(attribute='domain_names') | flatten)
+  changed_when: true
+  tags: nginx_proxy_manager
+
+- name: Update proxy hosts with wildcard certificate
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/nginx/proxy-hosts/{{ item.id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ nginx_proxy_manager_token.json.token }}"
+    body_format: json
+    body:
+      domain_names: "{{ item.domain_names }}"
+      forward_host: "{{ item.forward_host }}"
+      forward_port: "{{ item.forward_port }}"
+      forward_scheme: "{{ item.forward_scheme }}"
+      block_exploits: "{{ item.block_exploits }}"
+      allow_websocket_upgrade: "{{ item.allow_websocket_upgrade }}"
+      access_list_id: "{{ item.access_list_id }}"
+      certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
+      meta:
+        letsencrypt_agree: true
+        dns_challenge: false
+    status_code: 200
+  loop: "{{ nginx_proxy_manager_existing_hosts.json }}"
+  when: >-
+    (item.domain_names | first | replace('.' ~ domain, '')) in
+    (nginx_proxy_manager_proxy_hosts | map(attribute='subdomain') | list)
+    and item.certificate_id | int != nginx_proxy_manager_certificate_id | int
   changed_when: true
   tags: nginx_proxy_manager
