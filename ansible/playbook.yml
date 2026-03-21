@@ -17,7 +17,7 @@
         tasks_from: known_hosts
 
 - name: Base configuration
-  hosts: all
+  hosts: all:!proxmox_nodes
   vars:
     ansible_user: "{{ first_run_user | default('ansible') }}"
   roles:

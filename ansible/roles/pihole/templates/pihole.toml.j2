@@ -1,36 +1,10 @@
-# Managed by Ansible — do not edit manually
-# Pi-hole v6 configuration
+# Pre-seeded by Ansible before Pi-hole installation.
+# Post-install configuration is managed via pihole-FTL --config.
 
 [dns]
 upstreams = ["{{ pihole_dns_1 }}", "{{ pihole_dns_2 }}"]
-domain = "{{ domain }}"
-reply_addr4 = "{{ ip_address }}"
-listeningMode = "{{ pihole_listening_mode | default('all') }}"
+listeningMode = "{{ pihole_listening_mode }}"
 dnssec = true
 
-[dhcp]
-active = false
-
-[ntp]
-active = false
-
-[resolver]
-resolveIPv4 = true
-resolveIPv6 = false
-
-[database]
-maxDBdays = 30
-DBinterval = 1.0
-
-[webserver]
-port = "80,[::]:80"
-
-[webserver.api]
-queryLog = {{ pihole_query_logging | lower }}
-{% if not (pihole_primary | default(false)) %}
-app_sudo = true
-{% endif %}
-
 [misc]
-privacylevel = 0
 etc_dnsmasq_d = true

@@ -7,10 +7,9 @@
 #     set during Proxmox installation. Bootstrap cannot create this — it must
 #     be added manually before running.
 #
-# SECURITY NOTE: This playbook intentionally disables certificate validation
-# (validate_certs: false) because the Proxmox instance uses a self-signed
-# certificate during initial setup. This is required for bootstrap only.
-# DO NOT copy this pattern to regular playbooks.
+# SECURITY NOTE: Bootstrap plays that call community.proxmox modules set validate_certs: false
+# via play-level module_defaults because the Proxmox instance uses a self-signed certificate
+# before the ACME cert is issued. validate_certs: true is the global default everywhere else.
 
 - name: Bootstrap - Pre-flight Validation
   hosts: localhost
@@ -74,6 +73,9 @@
   remote_user: root
   vars:
     ansible_user: root
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
   tasks:
     - name: Create OS admin user
       ansible.builtin.include_role:
@@ -95,6 +97,9 @@
   remote_user: root
   vars:
     ansible_user: root
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
   tasks:
     - name: Create OS opentofu user
       ansible.builtin.include_role:
@@ -154,6 +159,9 @@
   remote_user: root
   vars:
     ansible_user: root
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
   tasks:
     - name: Create Proxmox ansible user and group structure
       ansible.builtin.include_role:
@@ -173,6 +181,30 @@
       vars:
         proxmox_user_api_token_user: ansible
         proxmox_user_api_token_item_title: "Proxmox Ansible API Token"
+
+- name: Bootstrap - Proxmox Repositories
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Configure Proxmox repositories
+      ansible.builtin.include_role:
+        name: proxmox
+        tasks_from: repos
+
+- name: Bootstrap - Proxmox TLS
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Configure ACME and TLS certificate
+      ansible.builtin.include_role:
+        name: proxmox
+        tasks_from: acme
 
 - name: Bootstrap - Proxmox Storage
   hosts: enterprise

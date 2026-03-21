@@ -29,17 +29,14 @@
       api_host: "{{ proxmox_api_node }}"
       api_user: root@pam
       api_password: "{{ proxmox_user_root_password }}"
-      validate_certs: false
     community.proxmox.proxmox_access_acl:
       api_host: "{{ proxmox_api_node }}"
       api_user: root@pam
       api_password: "{{ proxmox_user_root_password }}"
-      validate_certs: false
     community.proxmox.proxmox_user:
       api_host: "{{ proxmox_api_node }}"
       api_user: root@pam
       api_password: "{{ proxmox_user_root_password }}"
-      validate_certs: false
   block:
     - name: Group
       community.proxmox.proxmox_group: # noqa: args[module]

@@ -91,14 +91,52 @@
         path: /tmp/pihole_install.sh
         state: absent
 
-- name: Apply pihole.toml config
+- name: Build Pi-hole settings list
+  ansible.builtin.set_fact:
+    _pihole_settings: >-
+      {{
+        _pihole_base_settings +
+        ([] if (pihole_primary | default(false)) else _pihole_replica_settings)
+      }}
+  vars:
+    _pihole_base_settings:
+      - {key: "dns.upstreams", value: "[ {{ pihole_dns_1 }}, {{ pihole_dns_2 }} ]"}
+      - {key: "dns.dnssec", value: "true"}
+      - {key: "dns.listeningMode", value: "{{ pihole_listening_mode }}"}
+      - {key: "dns.domain.name", value: "{{ domain }}"}
+      - {key: "dns.queryLogging", value: "{{ pihole_query_logging | lower }}"}
+      - {key: "database.maxDBdays", value: "{{ pihole_max_db_days | string }}"}
+      - {key: "webserver.port", value: "80,[::]:80"}
+      - {key: "misc.etc_dnsmasq_d", value: "true"}
+      - {key: "resolver.resolveIPv6", value: "false"}
+    _pihole_replica_settings:
+      - {key: "webserver.api.app_sudo", value: "true"}
+  tags: pihole
+
+- name: Read Pi-hole settings
   become: true
-  ansible.builtin.template:
-    src: pihole.toml.j2
-    dest: /etc/pihole/pihole.toml
-    owner: pihole
-    group: pihole
-    mode: "0644"
+  ansible.builtin.command:
+    cmd: pihole-FTL --config {{ item.key }}
+  register: _pihole_config_reads
+  changed_when: false
+  loop: "{{ _pihole_settings }}"
+  loop_control:
+    label: "{{ item.key }}"
+  tags: pihole
+
+- name: Apply Pi-hole settings
+  become: true
+  ansible.builtin.command:
+    argv:
+      - pihole-FTL
+      - --config
+      - "{{ item.item.key }}"
+      - "{{ item.item.value }}"
+  when: item.stdout | trim != item.item.value
+  changed_when: true
+  loop: "{{ _pihole_config_reads.results }}"
+  loop_control:
+    label: "{{ item.item.key }}"
   notify: Restart pihole dns
   tags: pihole
 

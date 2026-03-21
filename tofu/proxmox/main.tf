@@ -1,7 +1,7 @@
 provider "proxmox" {
-  endpoint  = "https://192.168.30.170:8006"
+  endpoint  = "https://enterprise.510forward.space:8006"
   api_token = var.proxmox_api_token
-  insecure  = true # wildcard cert not yet in place
+  insecure  = false
 
   ssh {
     agent       = false
