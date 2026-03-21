@@ -1,11 +1,11 @@
 ---
 argument_specs:
   main:
-    short_description: Configure Proxmox repositories, storage, and TLS
+    short_description: Configure Proxmox repositories, storage, TLS, and DNS
     description: >
       Configures the Proxmox no-subscription apt repository, ensures the
-      local storage datastore has snippets enabled, and issues a wildcard
-      TLS certificate via ACME DNS-01 (Cloudflare).
+      local storage datastore has snippets enabled, issues a wildcard TLS
+      certificate via ACME DNS-01 (Cloudflare), and configures DNS resolvers.
     options:
       proxmox_repo_uri:
         type: str
@@ -35,6 +35,11 @@ argument_specs:
         type: str
         required: true
         description: Let's Encrypt Terms of Service URL to agree to on account creation.
+      proxmox_dns_servers:
+        type: list
+        elements: str
+        required: true
+        description: Ordered list of nameserver IPs to write to /etc/resolv.conf.
 
   repos:
     short_description: Configure Proxmox apt repositories
@@ -62,3 +67,14 @@ argument_specs:
       enabled in its content types. Idempotent — only runs pvesm set if
       snippets are not already present.
     options: {}
+  dns:
+    short_description: Configure DNS resolvers
+    description: >
+      Templates /etc/resolv.conf with the configured nameservers and domain
+      search suffix.
+    options:
+      proxmox_dns_servers:
+        type: list
+        elements: str
+        required: true
+        description: Ordered list of nameserver IPs to write to /etc/resolv.conf.

@@ -2,3 +2,7 @@
 ansible_user: ansible
 admin_email: kate@510forward.space
 domain: 510forward.space
+
+public_dns_servers:
+  - 1.1.1.1
+  - 1.0.0.1

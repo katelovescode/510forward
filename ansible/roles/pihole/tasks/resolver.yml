@@ -1,0 +1,31 @@
+---
+# Pi-hole nodes must use public DNS for OS-level resolution to avoid a
+# circular dependency where the host depends on its own Pi-hole being up.
+
+- name: Install systemd-resolved
+  become: true
+  ansible.builtin.apt:
+    name: systemd-resolved
+    state: present
+  tags: pihole
+
+- name: Ensure systemd-resolved drop-in directory exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags: pihole
+
+- name: Configure OS DNS resolver (systemd-resolved)
+  become: true
+  ansible.builtin.template:
+    src: resolved.conf.j2
+    dest: /etc/systemd/resolved.conf.d/ansible-dns.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart systemd-resolved
+  tags: pihole

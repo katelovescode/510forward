@@ -4,3 +4,6 @@
 
 - name: Configure Proxmox storage
   ansible.builtin.import_tasks: storage.yml
+
+- name: Configure DNS resolvers
+  ansible.builtin.import_tasks: dns.yml

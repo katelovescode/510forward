@@ -2,6 +2,9 @@
 - name: Install Pi-hole
   ansible.builtin.import_tasks: install.yml
 
+- name: Configure OS DNS resolver
+  ansible.builtin.import_tasks: resolver.yml
+
 - name: Configure DNS
   ansible.builtin.import_tasks: dns.yml
 

@@ -23,3 +23,8 @@ proxmox_acme_tos_url: "https://letsencrypt.org/documents/LE-SA-v1.6-August-18-20
 # Network Configuration
 proxmox_network_cidr: "24"
 proxmox_network_bridge_name: "vmbr0"
+
+#################################
+# DNS
+#################################
+proxmox_dns_servers: "{{ groups['pihole_nodes'] | map('extract', hostvars, 'ip_address') | list + public_dns_servers[:1] }}"

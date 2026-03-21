@@ -69,13 +69,18 @@ argument_specs:
         type: str
         required: true
         description: >
-          Primary upstream DNS server, e.g. 1.1.1.1.
+          Primary upstream DNS server, e.g. 1.1.1.1. Also written to the
+          systemd-resolved drop-in so the host OS does not depend on Pi-hole
+          itself for resolution.
 
       pihole_dns_2:
         type: str
         required: true
         description: >
-          Secondary upstream DNS server, e.g. 1.0.0.1.
+          Secondary upstream DNS server, e.g. 1.0.0.1. Also written to the
+          systemd-resolved drop-in so the host OS does not depend on Pi-hole
+          itself for resolution.
+
 
       pihole_listening_mode:
         type: str
