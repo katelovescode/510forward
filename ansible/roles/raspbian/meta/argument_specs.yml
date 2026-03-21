@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: Configure Raspberry Pi OS (Raspbian) hosts
+    description: >
+      Applies Raspbian-specific desktop configuration.
+    options:
+      raspbian_desktop_user:
+        type: str
+        required: true
+        description: User account whose desktop config is managed (e.g. kate).
+      raspbian_clock_time_format:
+        type: str
+        required: true
+        description: >
+          strftime format string for the wf-panel-pi clock widget.
+          e.g. "%R" for 24h, "%l:%M %p" for 12h.

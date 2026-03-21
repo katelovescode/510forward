@@ -28,6 +28,11 @@
   roles:
     - proxmox
 
+- name: Raspbian configuration
+  hosts: raspbian_nodes
+  roles:
+    - raspbian
+
 - name: Pi-hole
   hosts: pihole_nodes
   roles:

@@ -1,0 +1,3 @@
+---
+- name: Configure desktop
+  ansible.builtin.import_tasks: desktop.yml
