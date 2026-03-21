@@ -1,10 +1,11 @@
 ---
 argument_specs:
   main:
-    short_description: Configure Proxmox repositories and storage
+    short_description: Configure Proxmox repositories, storage, and TLS
     description: >
-      Configures the Proxmox no-subscription apt repository and ensures
-      the local storage datastore has snippets enabled.
+      Configures the Proxmox no-subscription apt repository, ensures the
+      local storage datastore has snippets enabled, and issues a wildcard
+      TLS certificate via ACME DNS-01 (Cloudflare).
     options:
       proxmox_repo_uri:
         type: str
@@ -18,6 +19,22 @@ argument_specs:
         type: str
         required: true
         description: Repository component (e.g. pve-no-subscription).
+      proxmox_acme_account:
+        type: str
+        required: true
+        description: Name of the ACME account to create/use in Proxmox.
+      proxmox_acme_plugin_id:
+        type: str
+        required: true
+        description: ID of the ACME DNS plugin to create/use in Proxmox.
+      proxmox_acme_domain:
+        type: str
+        required: true
+        description: Domain to issue the certificate for (e.g. *.510forward.space).
+      proxmox_acme_tos_url:
+        type: str
+        required: true
+        description: Let's Encrypt Terms of Service URL to agree to on account creation.
 
   repos:
     short_description: Configure Proxmox apt repositories
