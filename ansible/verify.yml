@@ -1,0 +1,124 @@
+---
+# verify.yml — acceptance tests for live infrastructure
+# Run after make play: ansible-playbook -i inventory/hosts.yml verify.yml
+#
+# Sections mirror the verification checklist in .windsurf/plans/homelab-ansible-plan.md.
+# Destructive / stateful failover tests (stopping pihole-FTL, etc.) are omitted —
+# run those manually per the checklist.
+
+##############################################################################
+# DNS
+##############################################################################
+
+# PLAY 1: Enterprise (Proxmox host) routes DNS through Pi-hole
+#
+# Enterprise has a static IP, so it never gets DNS config from DHCP — its only
+# DNS configuration is the /etc/resolv.conf file that Ansible templates. We read
+# that file and assert that all three expected nameservers are listed: Pi-hole
+# primary (centaurus), Pi-hole secondary (andromeda), and 1.1.1.1 as a last-resort
+# fallback in case both Pi-holes are unreachable. The list is derived from
+# proxmox_dns_servers in group_vars rather than hardcoded, so it stays correct
+# if the Pi-hole node IPs ever change.
+#
+# Note: we slurp the file rather than running `resolvectl status` because Proxmox
+# does not run systemd-resolved — it manages resolv.conf directly.
+- name: DNS | Enterprise uses Pi-hole for resolution
+  hosts: proxmox_nodes
+  gather_facts: false
+  tasks:
+    - name: Read /etc/resolv.conf
+      ansible.builtin.slurp:
+        src: /etc/resolv.conf
+      register: resolv_conf
+      tags: [verify, dns]
+
+    - name: Assert all configured DNS servers are present
+      ansible.builtin.assert:
+        that: item in (resolv_conf.content | b64decode)
+        fail_msg: "DNS server {{ item }} missing from /etc/resolv.conf"
+        success_msg: "DNS server {{ item }} present in /etc/resolv.conf"
+      loop: "{{ proxmox_dns_servers }}"
+      tags: [verify, dns]
+
+# PLAY 2: Pi-hole nodes bypass Pi-hole for their own DNS
+#
+# If centaurus or andromeda used Pi-hole for their own OS-level DNS, you'd have a
+# circular dependency: Pi-hole needs to be running for the host to resolve names,
+# but the host needs to resolve names to start services. To break the circle, both
+# Pi-hole nodes are configured to use public DNS (1.1.1.1 / 1.0.0.1) directly.
+#
+# This is done via a systemd-resolved drop-in file that sets:
+#   DNS=1.1.1.1 1.0.0.1   — use Cloudflare as the resolver
+#   Domains=~.             — route ALL queries through this config, not just
+#                            fallback. Without ~., systemd-resolved would still
+#                            prefer the DHCP-assigned DNS (Pi-hole IPs that Unifi
+#                            hands out to every host on the network) for general
+#                            queries, making the drop-in mostly ineffective.
+#
+# We assert the drop-in file content rather than running `resolvectl status`
+# because resolvectl shows ALL DNS servers including the DHCP-advertised ones —
+# Pi-hole IPs will always appear there since Unifi advertises them to every host.
+# Checking the file is the correct way to verify what we actually configured.
+# Functional verification (DNS still works when Pi-hole is down) requires the
+# manual failover test in the checklist — that's intentionally not automated
+# here because it requires stopping and restarting a live service.
+- name: DNS | Pi-hole nodes use public DNS (no circular dependency)
+  hosts: pihole_nodes
+  gather_facts: false
+  tasks:
+    - name: Read systemd-resolved drop-in
+      ansible.builtin.slurp:
+        src: /etc/systemd/resolved.conf.d/ansible-dns.conf
+      register: resolved_dropin
+      tags: [verify, dns]
+
+    - name: Assert public DNS servers and catch-all routing are configured in drop-in
+      ansible.builtin.assert:
+        that: item in (resolved_dropin.content | b64decode)
+        fail_msg: "'{{ item }}' missing from resolved drop-in on {{ inventory_hostname }}"
+        success_msg: "'{{ item }}' present in resolved drop-in on {{ inventory_hostname }}"
+      loop: "{{ [pihole_dns_1, pihole_dns_2, '~.'] }}"
+      tags: [verify, dns]
+
+# PLAY 3: Pi-hole actually resolves internal hostnames correctly
+#
+# This is a functional test — it runs from your local machine and fires real DNS
+# queries directly at the Pi-hole primary (centaurus) using `dig @<pihole-ip>`.
+# It verifies that Pi-hole has the correct A records for all internal hosts and
+# can answer queries for them. This would catch a misconfigured local DNS entry
+# or a Pi-hole that's up but not serving the right answers.
+#
+# The expected IPs come from inventory host_vars, so they stay in sync with the
+# rest of the config automatically.
+- name: DNS | Pi-hole resolves internal hostnames correctly
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars:
+    pihole_primary_ip: "{{ hostvars['centaurus']['ip_address'] }}"
+    expected_resolutions:
+      - hostname: "enterprise.{{ domain }}"
+        ip: "{{ hostvars['enterprise']['ip_address'] }}"
+      - hostname: "centaurus.{{ domain }}"
+        ip: "{{ hostvars['centaurus']['ip_address'] }}"
+      - hostname: "norville.{{ domain }}"
+        ip: "{{ hostvars['norville']['ip_address'] }}"
+  tasks:
+    - name: Query Pi-hole for internal hostname
+      ansible.builtin.command: "dig +short {{ item.hostname }} @{{ pihole_primary_ip }}"
+      register: dig_results
+      changed_when: false
+      loop: "{{ expected_resolutions }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+      tags: [verify, dns]
+
+    - name: Assert internal hostnames resolve to expected IPs
+      ansible.builtin.assert:
+        that: "item.item.ip in item.stdout"
+        fail_msg: "{{ item.item.hostname }} did not resolve to {{ item.item.ip }} via Pi-hole (got: '{{ item.stdout | default('(empty)') }}')"
+        success_msg: "{{ item.item.hostname }} → {{ item.item.ip }}"
+      loop: "{{ dig_results.results }}"
+      loop_control:
+        label: "{{ item.item.hostname }}"
+      tags: [verify, dns]

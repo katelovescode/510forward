@@ -6,6 +6,7 @@ help:
 	@echo "  uninstall          Remove installed dependencies"
 	@echo "  bootstrap          Run the one-time lab bootstrap playbook"
 	@echo "  play               Run the main Ansible playbook"
+	@echo "  verify             Run the verify playbook against live infrastructure"
 	@echo "  lint               Run ansible-lint and tflint"
 	@echo "  edit-secret        Edit a vault-encrypted file: make edit-secret FILE=path"
 	@echo "  tofu-proxmox       Run OpenTofu for Proxmox: make tofu-proxmox ARGS='plan'"
@@ -45,6 +46,9 @@ bootstrap-log:
 
 play:
 	cd ansible && ansible-playbook playbook.yml
+
+verify:
+	cd ansible && ansible-playbook verify.yml
 
 play-log:
 	cd ansible && ansible-playbook playbook.yml 2>&1 | tee play_output.log
