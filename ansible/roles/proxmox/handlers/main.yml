@@ -1,0 +1,6 @@
+---
+- name: Apt dist-upgrade
+  become: true
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: false

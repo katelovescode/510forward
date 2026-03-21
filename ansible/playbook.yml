@@ -23,21 +23,17 @@
   roles:
     - ansible
 
-# - name: Proxmox configuration
-#   hosts: proxmox_nodes
-#   roles:
-#     - proxmox
+- name: Proxmox configuration
+  hosts: proxmox_nodes
+  roles:
+    - proxmox
 
 - name: Pi-hole
   hosts: pihole_nodes
-  vars:
-    ansible_user: "{{ first_run_user | default('ansible') }}"
   roles:
     - pihole
-#
+
 - name: NGINX Proxy Manager
   hosts: norville
-  vars:
-    ansible_user: "{{ first_run_user | default('ansible') }}"
   roles:
     - nginx_proxy_manager
