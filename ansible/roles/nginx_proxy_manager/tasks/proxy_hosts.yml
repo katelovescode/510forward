@@ -52,6 +52,7 @@
       allow_websocket_upgrade: false
       access_list_id: 0
       certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
+      ssl_forced: true
       meta:
         letsencrypt_agree: true
         dns_challenge: false
@@ -79,6 +80,7 @@
       allow_websocket_upgrade: "{{ item.allow_websocket_upgrade }}"
       access_list_id: "{{ item.access_list_id }}"
       certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
+      ssl_forced: true
       meta:
         letsencrypt_agree: true
         dns_challenge: false
@@ -87,6 +89,7 @@
   when: >-
     (item.domain_names | first | replace('.' ~ domain, '')) in
     (nginx_proxy_manager_proxy_hosts | map(attribute='subdomain') | list)
-    and item.certificate_id | int != nginx_proxy_manager_certificate_id | int
+    and (item.certificate_id | int != nginx_proxy_manager_certificate_id | int
+    or not item.ssl_forced)
   changed_when: true
   tags: nginx_proxy_manager
