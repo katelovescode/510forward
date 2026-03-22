@@ -1,4 +1,25 @@
 ---
+- name: Read Home Assistant Ansible API token
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: read
+    onepassword_item:
+      title: "{{ home_assistant_ansible_api_token_item }}"
+  no_log: true
+  tags: [home_assistant, configuration]
+
+- name: Set API token fact
+  ansible.builtin.set_fact:
+    _home_assistant_api_token: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('label', 'equalto', 'credential') |
+        map(attribute='value') | first
+      }}
+  no_log: true
+  tags: [home_assistant, configuration]
+
 - name: Template configuration.yaml
   ansible.builtin.template:
     src: configuration.yaml.j2
@@ -26,5 +47,8 @@
 - name: Verify Home Assistant API is responding
   ansible.builtin.uri:
     url: "http://localhost:8123/api/"
+    headers:
+      Authorization: "Bearer {{ _home_assistant_api_token }}"
     status_code: 200
+  no_log: true
   tags: [home_assistant, configuration]

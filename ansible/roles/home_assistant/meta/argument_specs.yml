@@ -7,6 +7,14 @@ argument_specs:
       add-on. Derives trusted_proxies from the norville inventory host. Restarts
       HA core when configuration changes.
     options:
+      home_assistant_ansible_api_token_item:
+        type: str
+        required: false
+        default: "Home Assistant Ansible API Token"
+        description: >
+          1Password item title for the long-lived HA API token. Must be created
+          manually in HA (Profile → Security → Long-lived access tokens) and
+          stored in 1Password with a field labelled 'credential'.
       domain:
         type: str
         required: true
