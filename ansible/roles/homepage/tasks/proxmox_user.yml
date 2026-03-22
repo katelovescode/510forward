@@ -32,7 +32,7 @@
   tags: homepage
 
 - name: Configure Proxmox group, ACL, and user
-  delegate_to: localhost
+  delegate_to: enterprise
   module_defaults:
     community.proxmox.proxmox_group:
       api_host: "{{ proxmox_api_node }}"

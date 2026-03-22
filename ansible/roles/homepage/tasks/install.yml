@@ -49,6 +49,62 @@
          if _homepage_version_file.stat.exists else '' }}
   tags: homepage
 
+- name: Create swapfile
+  become: true
+  ansible.builtin.command:
+    cmd: fallocate -l 1G /swapfile
+    creates: /swapfile
+  tags: homepage
+
+- name: Set swapfile permissions
+  become: true
+  ansible.builtin.file:
+    path: /swapfile
+    owner: root
+    group: root
+    mode: "0600"
+  tags: homepage
+
+- name: Check if swapfile is formatted
+  become: true
+  ansible.builtin.command:
+    cmd: file /swapfile
+  register: _swapfile_type
+  changed_when: false
+  tags: homepage
+
+- name: Format swapfile
+  become: true
+  ansible.builtin.command:
+    cmd: mkswap /swapfile
+  when: "'swap file' not in _swapfile_type.stdout"
+  changed_when: true
+  tags: homepage
+
+- name: Check if swapfile is active
+  ansible.builtin.command:
+    cmd: grep -q /swapfile /proc/swaps
+  register: _swap_active
+  failed_when: false
+  changed_when: false
+  tags: homepage
+
+- name: Enable swapfile
+  become: true
+  ansible.builtin.command:
+    cmd: swapon /swapfile
+  when: _swap_active.rc != 0
+  changed_when: true
+  tags: homepage
+
+- name: Persist swapfile in fstab
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    line: /swapfile none swap sw 0 0
+    state: present
+  tags: homepage
+
 - name: Install Homepage v{{ homepage_version }}
   when: _homepage_current_version != homepage_version
   tags: homepage
@@ -113,6 +169,7 @@
         mode: "0644"
 
     - name: Remove source tarball
+      become: true
       ansible.builtin.file:
         path: "/tmp/homepage-{{ homepage_version }}.tar.gz"
         state: absent

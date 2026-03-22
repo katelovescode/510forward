@@ -40,6 +40,9 @@
   register: identity_scanned_keys
   failed_when: false
   changed_when: false
+  retries: 5
+  delay: 3
+  until: identity_scanned_keys.stdout | length > 0
 
 - name: Remove existing host key entries if they differ
   delegate_to: localhost

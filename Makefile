@@ -20,12 +20,14 @@ help:
 # core.hooksPath needs to be unset, pre-commit refuses to install with it set
 install:
 ifdef VIRTUAL_ENV
-	pip install ansible-core ansible-lint pre-commit passlib
+	pip install --upgrade pip
+	pip install --upgrade ansible-core ansible-lint pre-commit passlib proxmoxer requests
 else
-	pipx install ansible-core
+	pipx install ansible-core || pipx upgrade ansible-core
 	pipx inject ansible-core ansible-lint --include-apps
 	pipx inject ansible-core pre-commit --include-apps
 	pipx inject ansible-core passlib
+	pipx inject ansible-core proxmoxer requests
 endif
 	git config --local --unset-all core.hooksPath || true
 	pre-commit install
@@ -33,7 +35,7 @@ endif
 
 uninstall:
 ifdef VIRTUAL_ENV
-	pip uninstall -y ansible-core ansible-lint pre-commit passlib
+	pip uninstall -y ansible-core ansible-lint pre-commit passlib proxmoxer requests
 else
 	pipx uninstall ansible-core
 endif
