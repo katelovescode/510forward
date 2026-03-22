@@ -5,7 +5,7 @@
   vars:
     onepassword_action: read
     onepassword_item:
-      title: "{{ home_assistant_ansible_api_token_item }}"
+      title: "Home Assistant Ansible API Token"
   no_log: true
   tags: [home_assistant, configuration]
 
