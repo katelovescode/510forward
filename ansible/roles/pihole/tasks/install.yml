@@ -23,7 +23,7 @@
     state: directory
     owner: pihole
     group: pihole
-    mode: "0775"
+    mode: "0755"
 
 - name: Check if Pi-hole config exists
   ansible.builtin.stat:

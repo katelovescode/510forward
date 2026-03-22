@@ -29,3 +29,15 @@
     mode: "0644"
   notify: Restart systemd-resolved
   tags: pihole
+
+- name: Point /etc/resolv.conf at non-stub systemd-resolved config
+  become: true
+  ansible.builtin.file:
+    src: /run/systemd/resolve/resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+    force: true
+  tags: pihole
+  # With DNSStubListener=no, the stub at 127.0.0.53 is gone. The symlink must
+  # point to the non-stub resolv.conf which contains the actual upstream DNS
+  # servers (1.1.1.1) rather than the now-disabled stub address.

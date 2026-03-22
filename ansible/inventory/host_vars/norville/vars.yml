@@ -11,9 +11,6 @@ nginx_proxy_manager_proxy_hosts:
     host: "{{ hostvars['enterprise'].ip_address }}"
     port: 8006
     scheme: https
-  - subdomain: centaurus
-    host: "{{ hostvars['centaurus'].ip_address }}"
-    port: 80
   - subdomain: norville
     host: 127.0.0.1
     port: 81

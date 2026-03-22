@@ -1,8 +1,9 @@
 ---
 - name: Restart pihole dns
-  ansible.builtin.command:
-    cmd: pihole restartdns
-  changed_when: true
+  become: true
+  ansible.builtin.systemd:
+    name: pihole-FTL
+    state: restarted
 
 - name: Restart nebula-sync
   become: true
