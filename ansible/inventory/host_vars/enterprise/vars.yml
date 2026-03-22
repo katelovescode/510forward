@@ -2,3 +2,4 @@
 ansible_host: 192.168.30.170
 ip_address: 192.168.30.170
 fqdn: enterprise.510forward.space
+npm_proxied: true

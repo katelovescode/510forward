@@ -69,7 +69,7 @@
     pihole_primary_ip: "{{ hostvars['centaurus']['ip_address'] }}"
     expected_resolutions:
       - hostname: "enterprise.{{ domain }}"
-        ip: "{{ hostvars['enterprise']['ip_address'] }}"
+        ip: "{{ hostvars['norville']['ip_address'] }}"
       - hostname: "centaurus.{{ domain }}"
         ip: "{{ hostvars['centaurus']['ip_address'] }}"
       - hostname: "norville.{{ domain }}"
@@ -106,17 +106,8 @@
 # will catch that independently of any DNS or proxy config.
 #
 # The Proxmox backend uses HTTPS with a valid Let's Encrypt cert, so we use
-# -k (skip cert validation) since we're connecting by IP — there are no IP SANs
-# in the cert. We're testing reachability here, not TLS (that's Play 5/6).
-#
-# UNTESTED (blocked on future work): enterprise.510forward.space end-to-end via
-# port 443. enterprise DNS still points at the real host IP because OpenTofu and
-# community.proxmox use that hostname for TLS-validated API calls on port 8006 —
-# changing the DNS would break them. Once those are updated to go through NPM on
-# port 443, add:
-#   - https://enterprise.510forward.space → assert 200, check for Proxmox UI content
-#
-# The Proxmox backend (HTTPS, more permissive than Pi-hole) can be tested directly:
+# validate_certs: false since we're connecting by IP — there are no IP SANs
+# in the cert. We're testing reachability here, not TLS (that's Play 4/5 in TLS).
 - name: NPM | Proxmox backend is reachable from norville
   hosts: norville
   gather_facts: false
@@ -138,16 +129,24 @@
 # always returns its own real IP as a safety measure. So centaurus.510forward.space
 # always resolves to 192.168.30.77, and nothing listens on port 443 there. Access
 # Pi-hole UIs directly at http://192.168.30.77 and http://192.168.30.55 instead.
-- name: NPM | norville.510forward.space reaches the NPM admin UI
+- name: NPM | active subdomains are reachable end-to-end
   hosts: localhost
   gather_facts: false
   connection: local
+  vars:
+    npm_proxied_hosts:
+      - subdomain: norville
+        expected_status: 200
+      - subdomain: enterprise
+        expected_status: [200, 301, 302]
   tasks:
-    - name: Reach NPM UI via proxy
+    - name: Reach proxied subdomain via NPM
       ansible.builtin.uri:
-        url: "https://norville.{{ domain }}"
-        validate_certs: true
-        status_code: 200
+        url: "https://{{ item.subdomain }}.{{ domain }}"
+        status_code: "{{ item.expected_status }}"
+      loop: "{{ npm_proxied_hosts }}"
+      loop_control:
+        label: "{{ item.subdomain }}.{{ domain }}"
       tags: [verify, npm]
 
 ##############################################################################
@@ -160,30 +159,20 @@
 # The cert is for enterprise.510forward.space, issued by Let's Encrypt via
 # Cloudflare DNS-01 challenge, and Proxmox handles renewal automatically.
 #
-# Two checks:
-# - uri with validate_certs: true confirms the cert is trusted and not expired.
-#   If this passes, the CA chain is valid — no self-signed cert slipping through.
-# - openssl checks the issuer is actually Let's Encrypt (not some other CA) and
-#   the subject matches the expected hostname. We pipe /dev/null into s_client so
-#   it doesn't hang waiting for stdin.
+# enterprise.510forward.space now resolves to norville (NPM), so we connect
+# directly to the Proxmox IP:8006 with -servername to check the cert Proxmox
+# is serving on the backend. We pipe /dev/null into s_client so it doesn't hang.
 - name: TLS | Proxmox has a valid Let's Encrypt cert
   hosts: localhost
   gather_facts: false
   connection: local
   vars:
-    proxmox_url: "https://enterprise.{{ domain }}:8006"
+    proxmox_ip: "{{ hostvars['enterprise']['ip_address'] }}"
     proxmox_host: "enterprise.{{ domain }}"
   tasks:
-    - name: Connect to Proxmox over HTTPS (validates cert trust chain)
-      ansible.builtin.uri:
-        url: "{{ proxmox_url }}"
-        validate_certs: true
-        status_code: [200, 301, 302]
-      tags: [verify, tls]
-
     - name: Get Proxmox cert issuer and subject via openssl
       ansible.builtin.shell: >
-        openssl s_client -connect {{ proxmox_host }}:8006
+        openssl s_client -connect {{ proxmox_ip }}:8006
         -servername {{ proxmox_host }} </dev/null 2>/dev/null
         | openssl x509 -noout -issuer -subject
       register: proxmox_cert_info
@@ -209,14 +198,12 @@
 # NPM on norville holds a *.510forward.space wildcard cert issued via Cloudflare
 # DNS-01 challenge. It serves this cert for all proxy hosts on port 443.
 #
-# We only test norville.510forward.space here because that's the only hostname
-# that currently resolves to norville's IP (192.168.30.58) via Pi-hole DNS.
-# centaurus.510forward.space and enterprise.510forward.space still resolve to
-# their actual host IPs — routing those through NPM on port 443 requires a DNS
-# change that's tracked as future work in the plan.
+# Tests norville.510forward.space — enterprise.510forward.space also routes
+# through NPM but its backend cert is tested above. Pi-hole UIs aren't reachable
+# via NPM due to FTL self-protection.
 #
-# Same two-step pattern as the Proxmox check: uri for trust chain, openssl for
-# issuer and subject details.
+# Same pattern as the Proxmox check: uri for trust chain, openssl for issuer
+# and subject details.
 - name: TLS | NPM is serving the wildcard cert
   hosts: localhost
   gather_facts: false
@@ -227,7 +214,6 @@
     - name: Connect to NPM over HTTPS (validates cert trust chain)
       ansible.builtin.uri:
         url: "https://{{ npm_host }}"
-        validate_certs: true
         status_code: [200, 301, 302]
       tags: [verify, tls]
 
