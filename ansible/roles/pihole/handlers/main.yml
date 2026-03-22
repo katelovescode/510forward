@@ -5,6 +5,11 @@
     name: pihole-FTL
     state: restarted
 
+- name: Update pihole gravity
+  become: true
+  ansible.builtin.command:
+    cmd: pihole updateGravity
+
 - name: Restart nebula-sync
   become: true
   ansible.builtin.systemd:

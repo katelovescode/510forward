@@ -1,4 +1,11 @@
 ---
+- name: Install sqlite3
+  become: true
+  ansible.builtin.apt:
+    name: sqlite3
+    state: present
+  tags: pihole
+
 - name: Install Pi-hole
   ansible.builtin.import_tasks: install.yml
 
@@ -7,6 +14,10 @@
 
 - name: Configure DNS
   ansible.builtin.import_tasks: dns.yml
+
+- name: Manage adlists
+  ansible.builtin.include_tasks: adlists.yml
+  when: pihole_primary | default(false)
 
 - name: Install nebula-sync
   ansible.builtin.include_tasks: nebula_sync.yml

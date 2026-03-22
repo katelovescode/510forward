@@ -116,6 +116,14 @@ argument_specs:
           SHA256 checksum for the nebula-sync binary tarball.
           Required when pihole_primary is true.
 
+      pihole_adlists:
+        type: list
+        required: false
+        description: >
+          List of adlists to manage on the primary Pi-hole node. Each entry
+          must have a `url` field, and optionally `enabled` (default true)
+          and `comment`. Replicas receive adlists via nebula-sync.
+
       nebula_sync_run_gravity:
         type: bool
         required: false
