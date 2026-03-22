@@ -11,6 +11,7 @@ help:
 	@echo "  edit-secret        Edit a vault-encrypted file: make edit-secret FILE=path"
 	@echo "  tofu-proxmox       Run OpenTofu for Proxmox: make tofu-proxmox ARGS='plan'"
 	@echo "  tofu-recreate      Recreate VMs by name: make tofu-recreate HOSTS=centaurus,norville"
+	@echo "  reboot-vms         Reboot all QEMU VMs (centaurus, norville, dorothy)"
 	@echo "  sync-pihole        Manually trigger nebula-sync on centaurus"
 	@echo "  help               Show this help message"
 	@echo ""
@@ -72,6 +73,9 @@ tofu-proxmox:
 COMMA := ,
 tofu-recreate:
 	cd tofu/proxmox && ../tofu.sh apply $(addprefix -replace=proxmox_virtual_environment_vm.,$(subst $(COMMA), ,$(HOSTS)))
+
+reboot-vms:
+	ssh -i ~/.ssh/id_ed25519_ansible_510forward ansible@enterprise "sudo qm reboot 100 && sudo qm reboot 101 && sudo qm reboot 102"
 
 sync-pihole:
 	cd ansible && ansible -b -m systemd -a "name=nebula-sync state=started" centaurus

@@ -99,6 +99,33 @@
       tags: [verify, dns]
 
 ##############################################################################
+# QEMU GUEST AGENT
+##############################################################################
+
+# PLAY: QEMU guest agent is running on all VMs
+#
+# Verifies the agent service is active inside each VM. If it's not running,
+# Proxmox can't use it for clean shutdown, snapshots, or IP display.
+# The agent requires the virtio-serial channel to be enabled in Proxmox
+# (set via pvesh after VM creation) — if it's not running, check that first.
+- name: QEMU | Guest agent is running on all VMs
+  hosts: qemu_vms
+  gather_facts: false
+  tasks:
+    - name: Check qemu-guest-agent is active
+      ansible.builtin.command: systemctl is-active qemu-guest-agent
+      register: _agent_status
+      changed_when: false
+      tags: [verify, qemu]
+
+    - name: Assert qemu-guest-agent is running
+      ansible.builtin.assert:
+        that: _agent_status.stdout == "active"
+        fail_msg: "qemu-guest-agent is not running on {{ inventory_hostname }} (status: {{ _agent_status.stdout }})"
+        success_msg: "qemu-guest-agent is active on {{ inventory_hostname }}"
+      tags: [verify, qemu]
+
+##############################################################################
 # NPM PROXY
 ##############################################################################
 
