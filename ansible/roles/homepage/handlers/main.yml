@@ -1,0 +1,7 @@
+---
+- name: Restart homepage
+  become: true
+  ansible.builtin.systemd:
+    name: homepage
+    state: restarted
+    daemon_reload: true

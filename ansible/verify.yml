@@ -31,6 +31,8 @@
         ip: "{{ hostvars['centaurus']['ip_address'] }}"
       - hostname: "norville.{{ domain }}"
         ip: "{{ hostvars['norville']['ip_address'] }}"
+      - hostname: "dorothy.{{ domain }}"
+        ip: "{{ hostvars['norville']['ip_address'] }}"
   tasks:
     - name: Resolve internal hostname from enterprise
       ansible.builtin.command: "dig +short {{ item.hostname }}"
@@ -74,6 +76,8 @@
         ip: "{{ hostvars['centaurus']['ip_address'] }}"
       - hostname: "norville.{{ domain }}"
         ip: "{{ hostvars['norville']['ip_address'] }}"
+      - hostname: "dorothy.{{ domain }}"
+        ip: "{{ hostvars['norville']['ip_address'] }}"
   tasks:
     - name: Query Pi-hole for internal hostname
       ansible.builtin.command: "dig +short {{ item.hostname }} @{{ pihole_primary_ip }}"
@@ -108,6 +112,16 @@
 # The Proxmox backend uses HTTPS with a valid Let's Encrypt cert, so we use
 # validate_certs: false since we're connecting by IP — there are no IP SANs
 # in the cert. We're testing reachability here, not TLS (that's Play 4/5 in TLS).
+- name: NPM | Homepage backend is reachable from norville
+  hosts: norville
+  gather_facts: false
+  tasks:
+    - name: Reach Homepage backend from norville
+      ansible.builtin.uri:
+        url: "http://{{ hostvars['dorothy']['ip_address'] }}:3000"
+        status_code: 200
+      tags: [verify, npm]
+
 - name: NPM | Proxmox backend is reachable from norville
   hosts: norville
   gather_facts: false
@@ -139,6 +153,8 @@
         expected_status: 200
       - subdomain: enterprise
         expected_status: [200, 301, 302]
+      - subdomain: dorothy
+        expected_status: 200
   tasks:
     - name: Reach proxied subdomain via NPM
       ansible.builtin.uri:

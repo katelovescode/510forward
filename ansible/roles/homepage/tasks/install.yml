@@ -1,0 +1,136 @@
+---
+- name: Install Node.js and npm
+  become: true
+  ansible.builtin.apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+    update_cache: true
+  tags: homepage
+
+- name: Install pnpm
+  become: true
+  community.general.npm:
+    name: pnpm
+    version: "10.8.1"
+    global: true
+    state: present
+  tags: homepage
+
+- name: Create homepage system user
+  become: true
+  ansible.builtin.user:
+    name: homepage
+    system: true
+    shell: /usr/sbin/nologin
+    home: /opt/homepage
+    create_home: false
+    state: present
+  tags: homepage
+
+- name: Check installed Homepage version
+  ansible.builtin.stat:
+    path: /opt/homepage/.installed_version
+  register: _homepage_version_file
+  tags: homepage
+
+- name: Read installed Homepage version
+  ansible.builtin.slurp:
+    path: /opt/homepage/.installed_version
+  register: _homepage_installed_version
+  when: _homepage_version_file.stat.exists
+  tags: homepage
+
+- name: Set installed version fact
+  ansible.builtin.set_fact:
+    _homepage_current_version: >-
+      {{ _homepage_installed_version.content | b64decode | trim
+         if _homepage_version_file.stat.exists else '' }}
+  tags: homepage
+
+- name: Install Homepage v{{ homepage_version }}
+  when: _homepage_current_version != homepage_version
+  tags: homepage
+  block:
+    - name: Download Homepage source
+      become: true
+      ansible.builtin.get_url:
+        url: "https://github.com/gethomepage/homepage/archive/refs/tags/v{{ homepage_version }}.tar.gz"
+        dest: "/tmp/homepage-{{ homepage_version }}.tar.gz"
+        mode: "0644"
+
+    - name: Create /opt/homepage directory
+      become: true
+      ansible.builtin.file:
+        path: /opt/homepage
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Extract Homepage source
+      become: true
+      ansible.builtin.unarchive:
+        src: "/tmp/homepage-{{ homepage_version }}.tar.gz"
+        dest: /opt/homepage
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+
+    - name: Install dependencies
+      become: true
+      ansible.builtin.command:
+        cmd: pnpm install --frozen-lockfile
+        chdir: /opt/homepage
+      changed_when: true
+
+    - name: Build Homepage
+      become: true
+      ansible.builtin.command:
+        cmd: pnpm build
+        chdir: /opt/homepage
+      environment:
+        NODE_ENV: production
+        NEXT_TELEMETRY_DISABLED: "1"
+      changed_when: true
+
+    - name: Set ownership
+      become: true
+      ansible.builtin.file:
+        path: /opt/homepage
+        owner: homepage
+        group: homepage
+        recurse: true
+
+    - name: Write installed version file
+      become: true
+      ansible.builtin.copy:
+        content: "{{ homepage_version }}"
+        dest: /opt/homepage/.installed_version
+        owner: homepage
+        group: homepage
+        mode: "0644"
+
+    - name: Remove source tarball
+      ansible.builtin.file:
+        path: "/tmp/homepage-{{ homepage_version }}.tar.gz"
+        state: absent
+
+- name: Deploy systemd service
+  become: true
+  ansible.builtin.template:
+    src: homepage.service.j2
+    dest: /etc/systemd/system/homepage.service
+    mode: "0644"
+  notify: Restart homepage
+  tags: homepage
+
+- name: Enable and start homepage service
+  become: true
+  ansible.builtin.systemd:
+    name: homepage
+    enabled: true
+    state: started
+    daemon_reload: true
+  tags: homepage

@@ -14,7 +14,7 @@ argument_specs:
         required: true
         description: >
           Proxmox API hostname.
-          Set in group_vars/proxmox_nodes/vars.yml.
+          Set in group_vars/all/vars.yml.
       admin_email:
         type: str
         required: true
@@ -23,7 +23,7 @@ argument_specs:
           Set in group_vars/all/vars.yml.
 
   service_user:
-    short_description: Create a Proxmox PAM service user with a dedicated group and role
+    short_description: Create a Proxmox service user with a dedicated group and role
     options:
       proxmox_user_service_user_name:
         type: str
@@ -34,12 +34,16 @@ argument_specs:
         elements: str
         required: true
         description: List of Proxmox privilege strings to assign to the user's role.
+      proxmox_user_service_user_realm:
+        type: str
+        required: false
+        description: Proxmox realm for the user. Defaults to 'pam'. Use 'pve' for API-only users that don't need an OS account.
       proxmox_api_node:
         type: str
         required: true
         description: >
           Proxmox API hostname.
-          Set in group_vars/proxmox_nodes/vars.yml.
+          Set in group_vars/all/vars.yml.
 
   api_token:
     short_description: Create a Proxmox API token and store it in 1Password
@@ -52,3 +56,7 @@ argument_specs:
         type: str
         required: true
         description: 1Password item title for the API token.
+      proxmox_user_api_token_realm:
+        type: str
+        required: false
+        description: Proxmox realm for the user. Defaults to 'pam'. Must match the realm used when creating the user.

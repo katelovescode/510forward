@@ -1,6 +1,4 @@
 ---
-proxmox_api_node: enterprise
-
 proxmox_admin_user: kate
 proxmox_admin_api_user: "{{ proxmox_admin_user }}@pam"
 

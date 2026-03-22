@@ -55,7 +55,7 @@
     - name: Create Proxmox user - {{ proxmox_user_service_user_name }}
       community.proxmox.proxmox_user: # noqa: args[module]
         comment: "Managed by Ansible"
-        userid: "{{ proxmox_user_service_user_name }}@pam"
+        userid: "{{ proxmox_user_service_user_name }}@{{ proxmox_user_service_user_realm | default('pam') }}"
         state: present
         groups:
           - "{{ proxmox_user_service_user_name }}"

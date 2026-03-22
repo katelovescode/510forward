@@ -1,0 +1,9 @@
+---
+ansible_host: 192.168.30.60
+ip_address: 192.168.30.60
+fqdn: dorothy.510forward.space
+mac_address: "42:17:01:FD:72:48"
+first_run_user: root
+npm_proxied: true
+
+homepage_version: "1.5.0"

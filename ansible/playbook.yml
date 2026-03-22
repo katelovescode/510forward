@@ -42,3 +42,8 @@
   hosts: norville
   roles:
     - nginx_proxy_manager
+
+- name: Homepage
+  hosts: dorothy
+  roles:
+    - homepage

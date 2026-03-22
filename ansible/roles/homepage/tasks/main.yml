@@ -1,0 +1,12 @@
+---
+- name: Manage Homepage Proxmox user and API token
+  ansible.builtin.include_tasks: proxmox_user.yml
+
+- name: Install Homepage
+  ansible.builtin.import_tasks: install.yml
+
+- name: Resolve Proxmox VM IDs
+  ansible.builtin.include_tasks: proxmox_vmids.yml
+
+- name: Configure Homepage
+  ansible.builtin.import_tasks: config.yml
