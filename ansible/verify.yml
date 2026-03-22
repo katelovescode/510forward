@@ -156,7 +156,7 @@
     - name: Reach Home Assistant backend from norville
       ansible.builtin.uri:
         url: "http://{{ hostvars['codsworth']['ip_address'] }}:8123/api/"
-        status_code: 200
+        status_code: 401 # HA requires auth; 401 confirms the backend is up
       tags: [verify, npm, home_assistant]
 
 - name: NPM | Proxmox backend is reachable from norville
@@ -342,5 +342,5 @@
     - name: Reach Home Assistant API via NPM
       ansible.builtin.uri:
         url: "https://codsworth.{{ domain }}/api/"
-        status_code: 200
+        status_code: 401 # HA requires auth; 401 confirms the stack is working end-to-end
       tags: [verify, home_assistant]
