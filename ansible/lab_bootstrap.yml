@@ -84,7 +84,7 @@
       vars:
         os_user_admin_name: "{{ proxmox_admin_user }}"
         os_user_admin_password_salt: "{{ proxmox_admin_password_salt }}"
-        os_user_admin_password_item_title: "Proxmox Admin User"
+        os_user_admin_password_item_title: "Proxmox Admin Password"
 
     - name: Create Proxmox admin user
       ansible.builtin.include_role:

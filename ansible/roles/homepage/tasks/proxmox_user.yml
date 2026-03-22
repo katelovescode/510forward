@@ -77,7 +77,7 @@
   delegate_to: localhost
   no_log: true
   ansible.builtin.command:
-    cmd: op item get "Homepage Proxmox Token" --vault "{{ onepassword_vault }}"
+    cmd: op item get "Proxmox Homepage API Token" --vault "{{ onepassword_vault }}"
   register: _homepage_token_1password_check
   failed_when: false
   changed_when: false
@@ -125,6 +125,6 @@
       vars:
         onepassword_action: upsert
         onepassword_item:
-          title: "Homepage Proxmox Token"
+          title: "Proxmox Homepage API Token"
           username: "{{ (_homepage_token_result.stdout | from_json)['full-tokenid'] }}"
           password: "{{ (_homepage_token_result.stdout | from_json).value }}"

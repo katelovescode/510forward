@@ -149,6 +149,16 @@
         status_code: 200
       tags: [verify, npm]
 
+- name: NPM | Home Assistant backend is reachable from norville
+  hosts: norville
+  gather_facts: false
+  tasks:
+    - name: Reach Home Assistant backend from norville
+      ansible.builtin.uri:
+        url: "http://{{ hostvars['codsworth']['ip_address'] }}:8123/api/"
+        status_code: 200
+      tags: [verify, npm, home_assistant]
+
 - name: NPM | Proxmox backend is reachable from norville
   hosts: norville
   gather_facts: false
@@ -181,6 +191,8 @@
       - subdomain: enterprise
         expected_status: [200, 301, 302]
       - subdomain: dorothy
+        expected_status: 200
+      - subdomain: codsworth
         expected_status: 200
   tasks:
     - name: Reach proxied subdomain via NPM
@@ -311,3 +323,24 @@
         fail_msg: "HTTP did not redirect to HTTPS (Location: {{ http_response.location | default('none') }})"
         success_msg: "HTTP → HTTPS redirect OK (Location: {{ http_response.location }})"
       tags: [verify, tls]
+
+##############################################################################
+# HOME ASSISTANT
+##############################################################################
+
+# PLAY: Home Assistant API is responding
+#
+# Verifies HA is up and serving its REST API. The /api/ endpoint returns 200
+# with no authentication required, making it a reliable liveness check.
+# Runs from localhost through NPM (codsworth.510forward.space) so it exercises
+# DNS → NPM → HA backend in a single check.
+- name: HA | Home Assistant API is responding
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Reach Home Assistant API via NPM
+      ansible.builtin.uri:
+        url: "https://codsworth.{{ domain }}/api/"
+        status_code: 200
+      tags: [verify, home_assistant]

@@ -9,7 +9,7 @@
       secret: "{{ nginx_proxy_manager_admin_password }}"
     status_code: 200
   register: nginx_proxy_manager_token
-  no_log: true
+  # no_log: true
   tags: nginx_proxy_manager
 
 - name: Read Cloudflare API token from 1Password
@@ -19,7 +19,7 @@
   vars:
     onepassword_action: read
     onepassword_item:
-      title: "DNS Homelab Cloudflare API Token"
+      title: "Cloudflare DNS API Token"
   tags: nginx_proxy_manager
 
 - name: Set Cloudflare API token fact

@@ -27,7 +27,7 @@
   vars:
     onepassword_action: read
     onepassword_item:
-      title: "NGINX Proxy Manager Admin"
+      title: "NGINX Proxy Manager Admin Password"
   tags: homepage
 
 - name: Set NPM credentials facts
@@ -54,7 +54,7 @@
   vars:
     onepassword_action: read
     onepassword_item:
-      title: "Homepage Proxmox Token"
+      title: "Proxmox Homepage API Token"
   tags: homepage
 
 - name: Set Proxmox token facts

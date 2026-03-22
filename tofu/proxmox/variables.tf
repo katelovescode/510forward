@@ -19,3 +19,8 @@ variable "ansible_public_key" {
   description = "SSH public key injected into provisioned hosts for the ansible user"
   type        = string
 }
+
+variable "haos_version" {
+  description = "Home Assistant OS version to deploy (check github.com/home-assistant/operating-system/releases)"
+  type        = string
+}

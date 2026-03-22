@@ -1,0 +1,4 @@
+---
+- name: Restart Home Assistant core
+  ansible.builtin.command: ha core restart
+  changed_when: false

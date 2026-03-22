@@ -13,4 +13,7 @@ export TF_VAR_sysadmin_public_key
 TF_VAR_ansible_public_key=$(op read "op://$OP_VAULT_ID/Ansible SSH Key/public key")
 export TF_VAR_ansible_public_key
 
+TF_VAR_haos_version="17.1"
+export TF_VAR_haos_version
+
 tofu "$@"

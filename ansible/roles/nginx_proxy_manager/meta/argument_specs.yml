@@ -54,8 +54,8 @@ argument_specs:
         required: true
         description: >
           Wildcard domain for the Let's Encrypt certificate, e.g. *.510forward.space.
-          Issued via Cloudflare DNS-01 challenge using the "DNS Homelab Cloudflare
-          API Token" item from 1Password.
+          Issued via Cloudflare DNS-01 challenge using the "Cloudflare DNS API Token"
+          item from 1Password.
 
       nginx_proxy_manager_proxy_hosts:
         type: list

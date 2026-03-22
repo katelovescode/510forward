@@ -21,7 +21,7 @@
   vars:
     onepassword_action: upsert
     onepassword_item:
-      title: "NGINX Proxy Manager Admin"
+      title: "NGINX Proxy Manager Admin Password"
       username: "{{ admin_email }}"
   tags: nginx_proxy_manager
 

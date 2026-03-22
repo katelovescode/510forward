@@ -1,0 +1,30 @@
+---
+- name: Template configuration.yaml
+  ansible.builtin.template:
+    src: configuration.yaml.j2
+    dest: /config/configuration.yaml
+    owner: root
+    group: root
+    mode: "0644"
+  tags: [home_assistant, configuration]
+  notify: Restart Home Assistant core
+
+- name: Read deployed configuration.yaml
+  ansible.builtin.slurp:
+    src: /config/configuration.yaml
+  register: _ha_config_raw
+  tags: [home_assistant, configuration]
+
+- name: Assert trusted_proxies contains norville IP
+  ansible.builtin.assert:
+    that:
+      - hostvars['norville']['ip_address'] in (_ha_config_raw.content | b64decode)
+    fail_msg: "trusted_proxies missing {{ hostvars['norville']['ip_address'] }} in /config/configuration.yaml"
+    success_msg: "trusted_proxies OK: {{ hostvars['norville']['ip_address'] }} is present"
+  tags: [home_assistant, configuration]
+
+- name: Verify Home Assistant API is responding
+  ansible.builtin.uri:
+    url: "http://localhost:8123/api/"
+    status_code: 200
+  tags: [home_assistant, configuration]

@@ -6,7 +6,7 @@
   vars:
     onepassword_action: read
     onepassword_item:
-      title: "DNS Homelab Cloudflare API Token"
+      title: "Cloudflare DNS API Token"
 
 - name: Set Cloudflare token fact
   no_log: true

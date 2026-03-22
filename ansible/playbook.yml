@@ -22,7 +22,7 @@
     - proxmox
 
 - name: Base configuration
-  hosts: all:!proxmox_nodes
+  hosts: all:!proxmox_nodes:!haos_nodes
   vars:
     ansible_user: "{{ first_run_user | default('ansible') }}"
   roles:
@@ -47,3 +47,8 @@
   hosts: dorothy
   roles:
     - homepage
+
+- name: Home Assistant
+  hosts: haos_nodes
+  roles:
+    - home_assistant

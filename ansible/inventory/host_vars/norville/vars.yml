@@ -11,10 +11,15 @@ nginx_proxy_manager_proxy_hosts:
     host: "{{ hostvars['enterprise'].ip_address }}"
     port: 8006
     scheme: https
+    allow_websocket_upgrade: true
   - subdomain: norville
     host: 127.0.0.1
     port: 81
   - subdomain: dorothy
     host: "{{ hostvars['dorothy'].ip_address }}"
     port: 3000
+    scheme: http
+  - subdomain: codsworth
+    host: "{{ hostvars['codsworth'].ip_address }}"
+    port: 8123
     scheme: http
