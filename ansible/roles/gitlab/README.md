@@ -23,6 +23,10 @@ The installed version is controlled by `gitlab_version` in `host_vars/memory-alp
 
 GitLab backup/restore requires matching major.minor versions. Pin the new instance to the same version as the old instance before restoring a backup, then upgrade afterward.
 
+## SSH clone URLs
+
+`gitlab_rails['gitlab_ssh_host']` is set to `memory-alpha` so clone URLs display as `git@memory-alpha:kate/repo.git`. This requires a `Host memory-alpha` entry in `~/.ssh/config` on each client.
+
 ## Secret management
 
 The root password is upserted into 1Password as "GitLab Root Password" on first run. If the item already exists the existing password is reused — the `initial_root_password` setting in `gitlab.rb` is ignored by GitLab after the first `gitlab-ctl reconfigure`, so subsequent runs are safe.

@@ -3,3 +3,4 @@
   become: true
   ansible.builtin.command: gitlab-ctl reconfigure
   changed_when: true
+  listen: reconfigure gitlab

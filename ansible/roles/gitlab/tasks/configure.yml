@@ -27,7 +27,7 @@
     path: /etc/gitlab/gitlab.rb
     regexp: "^external_url .*"
     line: "external_url 'https://{{ fqdn }}'"
-  notify: Reconfigure GitLab
+  notify: reconfigure gitlab
   tags: gitlab
 
 - name: Disable GitLab bundled nginx HTTPS
@@ -36,7 +36,7 @@
     path: /etc/gitlab/gitlab.rb
     regexp: "^#?\\s*nginx\\['listen_https'\\].*"
     line: "nginx['listen_https'] = false"
-  notify: Reconfigure GitLab
+  notify: reconfigure gitlab
   tags: gitlab
 
 - name: Set GitLab bundled nginx listen port
@@ -45,7 +45,7 @@
     path: /etc/gitlab/gitlab.rb
     regexp: "^#?\\s*nginx\\['listen_port'\\].*"
     line: "nginx['listen_port'] = 80"
-  notify: Reconfigure GitLab
+  notify: reconfigure gitlab
   tags: gitlab
 
 - name: Disable Let's Encrypt in GitLab
@@ -54,7 +54,16 @@
     path: /etc/gitlab/gitlab.rb
     regexp: "^#?\\s*letsencrypt\\['enable'\\].*"
     line: "letsencrypt['enable'] = false"
-  notify: Reconfigure GitLab
+  notify: reconfigure gitlab
+  tags: gitlab
+
+- name: Set GitLab SSH host
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "^#?\\s*gitlab_rails\\['gitlab_ssh_host'\\].*"
+    line: "gitlab_rails['gitlab_ssh_host'] = '{{ inventory_hostname }}'"
+  notify: reconfigure gitlab
   tags: gitlab
 
 - name: Set initial root password in gitlab.rb
@@ -63,6 +72,6 @@
     path: /etc/gitlab/gitlab.rb
     regexp: "^#?\\s*gitlab_rails\\['initial_root_password'\\].*"
     line: "gitlab_rails['initial_root_password'] = '{{ _gitlab_root_password }}'"
-  notify: Reconfigure GitLab
+  notify: reconfigure gitlab
   no_log: true
   tags: gitlab
