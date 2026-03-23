@@ -61,3 +61,8 @@
   hosts: haos_nodes
   roles:
     - home_assistant
+
+- name: GitLab
+  hosts: memory-alpha
+  roles:
+    - gitlab

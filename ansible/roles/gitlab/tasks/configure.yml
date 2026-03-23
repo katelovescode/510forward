@@ -1,0 +1,68 @@
+---
+- name: Upsert GitLab root password in 1Password
+  no_log: true
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: upsert
+    onepassword_item:
+      title: "GitLab Root Password"
+      username: root
+  tags: gitlab
+
+- name: Set GitLab root password fact
+  ansible.builtin.set_fact:
+    _gitlab_root_password: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('id', 'equalto', 'password') |
+        map(attribute='value') | first
+      }}
+  no_log: true
+  tags: gitlab
+
+- name: Set external_url in gitlab.rb
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "^external_url .*"
+    line: "external_url 'https://{{ fqdn }}'"
+  notify: Reconfigure GitLab
+  tags: gitlab
+
+- name: Disable GitLab bundled nginx HTTPS
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "^#?\\s*nginx\\['listen_https'\\].*"
+    line: "nginx['listen_https'] = false"
+  notify: Reconfigure GitLab
+  tags: gitlab
+
+- name: Set GitLab bundled nginx listen port
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "^#?\\s*nginx\\['listen_port'\\].*"
+    line: "nginx['listen_port'] = 80"
+  notify: Reconfigure GitLab
+  tags: gitlab
+
+- name: Disable Let's Encrypt in GitLab
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "^#?\\s*letsencrypt\\['enable'\\].*"
+    line: "letsencrypt['enable'] = false"
+  notify: Reconfigure GitLab
+  tags: gitlab
+
+- name: Set initial root password in gitlab.rb
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "^#?\\s*gitlab_rails\\['initial_root_password'\\].*"
+    line: "gitlab_rails['initial_root_password'] = '{{ _gitlab_root_password }}'"
+  notify: Reconfigure GitLab
+  no_log: true
+  tags: gitlab

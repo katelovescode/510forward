@@ -1,0 +1,40 @@
+---
+- name: Install GitLab dependencies
+  become: true
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ca-certificates
+      - perl
+      - tzdata
+    state: present
+  tags: gitlab
+
+- name: Add GitLab apt repository
+  become: true
+  ansible.builtin.deb822_repository:
+    name: gitlab-ce
+    types: deb
+    uris: https://packages.gitlab.com/gitlab/gitlab-ce/ubuntu/
+    suites: "{{ ansible_distribution_release }}"
+    components: main
+    signed_by: https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey
+    state: present
+  register: _gitlab_repo
+  tags: gitlab
+
+- name: Check installed GitLab CE version
+  ansible.builtin.command: dpkg-query -W -f='${Version}' gitlab-ce
+  register: _gitlab_installed_version
+  changed_when: false
+  failed_when: false
+  tags: gitlab
+
+- name: Install GitLab CE {{ gitlab_version }} [~2-3 min]
+  become: true
+  ansible.builtin.apt:
+    name: "gitlab-ce={{ gitlab_version }}-ce.0"
+    state: present
+    update_cache: "{{ _gitlab_repo.changed or _gitlab_installed_version.rc != 0 }}"
+  when: gitlab_version ~ '-ce.0' not in (_gitlab_installed_version.stdout | default(''))
+  tags: gitlab
