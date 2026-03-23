@@ -49,7 +49,7 @@
 - name: Check virtio-serial channel is present
   ansible.builtin.stat:
     path: /dev/virtio-ports/org.qemu.guest_agent.0
-  register: _virtio_channel
+  register: _ansible_virtio_channel
   when: inventory_hostname in groups['qemu_vms']
 
 - name: Enable qemu-guest-agent
@@ -57,7 +57,7 @@
   ansible.builtin.systemd:
     name: qemu-guest-agent
     enabled: true
-    state: "{{ 'started' if _virtio_channel.stat.exists else 'stopped' }}"
+    state: "{{ 'started' if _ansible_virtio_channel.stat.exists else 'stopped' }}"
   when: inventory_hostname in groups['qemu_vms']
 
 - name: Secure SSH on non-hypervisor nodes

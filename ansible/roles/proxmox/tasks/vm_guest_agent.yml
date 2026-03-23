@@ -45,7 +45,7 @@
   register: _proxmox_agent_enabled
   tags: proxmox_vm_guest_agent
 
-- name: Reboot VMs where agent channel was just enabled
+- name: Reboot VMs where agent channel was just enabled # noqa: no-handler
   become: true
   ansible.builtin.command:
     cmd: >-
@@ -59,7 +59,7 @@
   changed_when: true
   tags: proxmox_vm_guest_agent
 
-- name: Wait for rebooted VMs to come back up
+- name: Wait for rebooted VMs to come back up # noqa: no-handler
   ansible.builtin.wait_for:
     host: "{{ hostvars[item.item.item]['ansible_host'] }}"
     port: 22

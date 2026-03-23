@@ -69,7 +69,7 @@
   become: true
   ansible.builtin.command:
     cmd: file /swapfile
-  register: _swapfile_type
+  register: _homepage_swapfile_type
   changed_when: false
   tags: homepage
 
@@ -77,14 +77,14 @@
   become: true
   ansible.builtin.command:
     cmd: mkswap /swapfile
-  when: "'swap file' not in _swapfile_type.stdout"
+  when: "'swap file' not in _homepage_swapfile_type.stdout"
   changed_when: true
   tags: homepage
 
 - name: Check if swapfile is active
   ansible.builtin.command:
     cmd: grep -q /swapfile /proc/swaps
-  register: _swap_active
+  register: _homepage_swap_active
   failed_when: false
   changed_when: false
   tags: homepage
@@ -93,7 +93,7 @@
   become: true
   ansible.builtin.command:
     cmd: swapon /swapfile
-  when: _swap_active.rc != 0
+  when: _homepage_swap_active.rc != 0
   changed_when: true
   tags: homepage
 

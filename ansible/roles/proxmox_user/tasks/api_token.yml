@@ -24,7 +24,8 @@
   become: true
   ansible.builtin.command:
     cmd: >-
-      pvesh get /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{ proxmox_user_api_token_user }}_token
+      pvesh get
+      /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{ proxmox_user_api_token_user }}_token
   register: proxmox_user_api_token_proxmox_check
   failed_when: false
   changed_when: false
@@ -44,7 +45,8 @@
     - name: Delete existing Proxmox token if not in 1Password
       become: true
       ansible.builtin.command:
-        cmd: pvesh delete /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{ proxmox_user_api_token_user }}_token
+        cmd: pvesh delete /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{
+          proxmox_user_api_token_user }}_token
       failed_when: false
       changed_when: true
       delegate_to: enterprise
@@ -54,7 +56,8 @@
       no_log: true
       ansible.builtin.command:
         cmd: >-
-          pvesh create /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{ proxmox_user_api_token_user }}_token
+          pvesh create
+          /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{ proxmox_user_api_token_user }}_token
           --privsep 0 --comment='Managed by Ansible' --output-format=json
       register: proxmox_user_api_token_result
       changed_when: true

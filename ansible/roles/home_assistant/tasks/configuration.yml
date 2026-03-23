@@ -33,13 +33,13 @@
 - name: Read deployed configuration.yaml
   ansible.builtin.slurp:
     src: /config/configuration.yaml
-  register: _ha_config_raw
+  register: _home_assistant_config_raw
   tags: [home_assistant, configuration]
 
 - name: Assert trusted_proxies contains norville IP
   ansible.builtin.assert:
     that:
-      - hostvars['norville']['ip_address'] in (_ha_config_raw.content | b64decode)
+      - hostvars['norville']['ip_address'] in (_home_assistant_config_raw.content | b64decode)
     fail_msg: "trusted_proxies missing {{ hostvars['norville']['ip_address'] }} in /config/configuration.yaml"
     success_msg: "trusted_proxies OK: {{ hostvars['norville']['ip_address'] }} is present"
   tags: [home_assistant, configuration]

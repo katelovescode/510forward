@@ -9,6 +9,7 @@
   become: true
   ansible.builtin.command:
     cmd: pihole updateGravity
+  changed_when: true
 
 - name: Restart nebula-sync
   become: true

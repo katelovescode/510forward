@@ -10,4 +10,3 @@
 
 - name: Configure guest agent channel for QEMU VMs
   ansible.builtin.import_tasks: vm_guest_agent.yml
-

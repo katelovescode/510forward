@@ -3,7 +3,7 @@
   become: true
   ansible.builtin.command:
     cmd: pvesh get /nodes/{{ proxmox_api_node }}/qemu --output-format json
-  register: _proxmox_qemu_list
+  register: _homepage_proxmox_qemu_list
   changed_when: false
   delegate_to: enterprise
   tags: homepage
@@ -13,19 +13,19 @@
     homepage_proxmox_vmids:
       centaurus: >-
         {{
-          ((_proxmox_qemu_list.stdout | from_json) |
+          ((_homepage_proxmox_qemu_list.stdout | from_json) |
           selectattr('name', 'equalto', 'centaurus') |
           map(attribute='vmid') | list + [0]) | first
         }}
       norville: >-
         {{
-          ((_proxmox_qemu_list.stdout | from_json) |
+          ((_homepage_proxmox_qemu_list.stdout | from_json) |
           selectattr('name', 'equalto', 'norville') |
           map(attribute='vmid') | list + [0]) | first
         }}
       dorothy: >-
         {{
-          ((_proxmox_qemu_list.stdout | from_json) |
+          ((_homepage_proxmox_qemu_list.stdout | from_json) |
           selectattr('name', 'equalto', 'dorothy') |
           map(attribute='vmid') | list + [0]) | first
         }}

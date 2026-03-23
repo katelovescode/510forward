@@ -6,9 +6,9 @@
 # Destructive / stateful failover tests (stopping pihole-FTL, etc.) are omitted —
 # run those manually per the checklist.
 
-##############################################################################
+# #############################################################################
 # DNS
-##############################################################################
+# #############################################################################
 
 # PLAY 1: Enterprise can resolve internal hostnames via Pi-hole
 #
@@ -98,9 +98,9 @@
         label: "{{ item.item.hostname }}"
       tags: [verify, dns]
 
-##############################################################################
+# #############################################################################
 # QEMU GUEST AGENT
-##############################################################################
+# #############################################################################
 
 # PLAY: QEMU guest agent is running on all VMs
 #
@@ -112,22 +112,20 @@
   hosts: qemu_vms
   gather_facts: false
   tasks:
-    - name: Check qemu-guest-agent is active
-      ansible.builtin.command: systemctl is-active qemu-guest-agent
-      register: _agent_status
-      changed_when: false
+    - name: Gather service facts
+      ansible.builtin.service_facts:
       tags: [verify, qemu]
 
     - name: Assert qemu-guest-agent is running
       ansible.builtin.assert:
-        that: _agent_status.stdout == "active"
-        fail_msg: "qemu-guest-agent is not running on {{ inventory_hostname }} (status: {{ _agent_status.stdout }})"
+        that: ansible_facts.services['qemu-guest-agent.service'].state == 'running'
+        fail_msg: "qemu-guest-agent is not running on {{ inventory_hostname }}"
         success_msg: "qemu-guest-agent is active on {{ inventory_hostname }}"
       tags: [verify, qemu]
 
-##############################################################################
+# #############################################################################
 # NPM PROXY
-##############################################################################
+# #############################################################################
 
 # PLAY 4: NPM can reach its backends
 #
@@ -204,9 +202,9 @@
         label: "{{ item.subdomain }}.{{ domain }}"
       tags: [verify, npm]
 
-##############################################################################
+# #############################################################################
 # TLS
-##############################################################################
+# #############################################################################
 
 # PLAY 4: Proxmox has a valid Let's Encrypt cert
 #
@@ -226,10 +224,13 @@
     proxmox_host: "enterprise.{{ domain }}"
   tasks:
     - name: Get Proxmox cert issuer and subject via openssl
-      ansible.builtin.shell: >
-        openssl s_client -connect {{ proxmox_ip }}:8006
-        -servername {{ proxmox_host }} </dev/null 2>/dev/null
-        | openssl x509 -noout -issuer -subject
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          openssl s_client -connect {{ proxmox_ip }}:8006 \
+            -servername {{ proxmox_host }} </dev/null 2>/dev/null \
+            | openssl x509 -noout -issuer -subject
+        executable: /bin/bash
       register: proxmox_cert_info
       changed_when: false
       tags: [verify, tls]
@@ -273,10 +274,13 @@
       tags: [verify, tls]
 
     - name: Get NPM cert issuer and subject via openssl
-      ansible.builtin.shell: >
-        openssl s_client -connect {{ npm_host }}:443
-        -servername {{ npm_host }} </dev/null 2>/dev/null
-        | openssl x509 -noout -issuer -subject
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          openssl s_client -connect {{ npm_host }}:443 \
+            -servername {{ npm_host }} </dev/null 2>/dev/null \
+            | openssl x509 -noout -issuer -subject
+        executable: /bin/bash
       register: npm_cert_info
       changed_when: false
       tags: [verify, tls]
@@ -324,9 +328,9 @@
         success_msg: "HTTP → HTTPS redirect OK (Location: {{ http_response.location }})"
       tags: [verify, tls]
 
-##############################################################################
+# #############################################################################
 # HOME ASSISTANT
-##############################################################################
+# #############################################################################
 
 # PLAY: Home Assistant API is responding
 #
@@ -343,4 +347,38 @@
       ansible.builtin.uri:
         url: "https://codsworth.{{ domain }}/"
         status_code: 200
+      tags: [verify, home_assistant]
+
+- name: HA | Proxmox API token authenticates successfully
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Read Proxmox Home Assistant API token
+      ansible.builtin.include_role:
+        name: onepassword
+      vars:
+        onepassword_action: read
+        onepassword_item:
+          title: "Proxmox Home Assistant API Token"
+      no_log: true
+      tags: [verify, home_assistant]
+
+    - name: Assert Proxmox token authenticates to API
+      ansible.builtin.uri:
+        url: "https://{{ hostvars['enterprise']['ip_address'] }}:8006/api2/json/nodes"
+        headers:
+          Authorization: >-
+            PVEAPIToken={{
+              onepassword_item_result.fields |
+              selectattr('id', 'equalto', 'username') |
+              map(attribute='value') | first
+            }}={{
+              onepassword_item_result.fields |
+              selectattr('id', 'equalto', 'password') |
+              map(attribute='value') | first
+            }}
+        validate_certs: false
+        status_code: 200
+      no_log: true
       tags: [verify, home_assistant]

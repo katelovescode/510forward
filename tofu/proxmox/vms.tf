@@ -181,7 +181,7 @@ resource "proxmox_virtual_environment_download_file" "haos_image" {
   datastore_id        = "local"
   node_name           = "enterprise"
   url                 = "https://github.com/home-assistant/operating-system/releases/download/${var.haos_version}/haos_ova-${var.haos_version}.qcow2.xz"
-  file_name           = "haos_ova-${var.haos_version}.qcow2.xz"
+  file_name           = "haos_ova-${var.haos_version}.qcow2.img"
   overwrite_unmanaged = true
 }
 
