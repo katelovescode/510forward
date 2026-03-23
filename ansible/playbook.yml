@@ -21,6 +21,15 @@
   roles:
     - proxmox
 
+- name: QEMU VM configuration
+  hosts: qemu_vms
+  tasks:
+    - name: Configure qemu-guest-agent
+      ansible.builtin.include_role:
+        name: proxmox
+        tasks_from: vms/main
+      tags: proxmox_vm_guest_agent
+
 - name: Base configuration
   hosts: all:!proxmox_nodes:!haos_nodes
   vars:

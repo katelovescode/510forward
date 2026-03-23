@@ -192,7 +192,7 @@
     - name: Configure Proxmox repositories
       ansible.builtin.include_role:
         name: proxmox
-        tasks_from: repos
+        tasks_from: nodes/repos
 
 - name: Bootstrap - Proxmox TLS
   hosts: enterprise
@@ -204,7 +204,7 @@
     - name: Configure ACME and TLS certificate
       ansible.builtin.include_role:
         name: proxmox
-        tasks_from: acme
+        tasks_from: nodes/acme
 
 - name: Bootstrap - Proxmox Storage
   hosts: enterprise
@@ -216,4 +216,4 @@
     - name: Configure local storage content types
       ansible.builtin.include_role:
         name: proxmox
-        tasks_from: storage
+        tasks_from: nodes/storage
