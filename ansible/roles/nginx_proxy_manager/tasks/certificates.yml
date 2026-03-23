@@ -52,7 +52,7 @@
       }}
   tags: nginx_proxy_manager
 
-- name: Request wildcard certificate via Cloudflare DNS-01
+- name: Request wildcard certificate via Cloudflare DNS-01 [~2 min]
   ansible.builtin.uri:
     url: "http://localhost:81/api/nginx/certificates"
     method: POST

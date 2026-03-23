@@ -99,7 +99,7 @@
   when: proxmox_acme_cert_stat.stat.exists
   tags: proxmox
 
-- name: Order ACME certificate
+- name: Order ACME certificate [~1-2 min]
   become: true
   ansible.builtin.command:
     cmd: pvesh create /nodes/{{ proxmox_api_node }}/certificates/acme/certificate

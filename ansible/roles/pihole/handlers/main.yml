@@ -5,7 +5,7 @@
     name: pihole-FTL
     state: restarted
 
-- name: Update pihole gravity
+- name: Update pihole gravity [~2-3 min]
   become: true
   ansible.builtin.command:
     cmd: pihole updateGravity

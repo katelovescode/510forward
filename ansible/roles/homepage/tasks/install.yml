@@ -134,14 +134,14 @@
         extra_opts:
           - --strip-components=1
 
-    - name: Install dependencies
+    - name: Install dependencies [~1-2 min]
       become: true
       ansible.builtin.command:
         cmd: pnpm install --frozen-lockfile
         chdir: /opt/homepage
       changed_when: true
 
-    - name: Build Homepage
+    - name: Build Homepage [~2-4 min]
       become: true
       ansible.builtin.command:
         cmd: pnpm build

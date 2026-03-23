@@ -80,7 +80,7 @@
         dest: /tmp/pihole_install.sh
         mode: "0755"
 
-    - name: Run Pi-hole unattended installer # noqa: command-instead-of-shell
+    - name: Run Pi-hole unattended installer [~2-3 min] # noqa: command-instead-of-shell
       become: true
       ansible.builtin.shell:
         cmd: bash /tmp/pihole_install.sh --unattended
