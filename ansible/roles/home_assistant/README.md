@@ -14,7 +14,7 @@ Manages Home Assistant OS (HAOS) configuration on codsworth, creates the `homeas
 
 HAOS runs an SSH add-on, not a standard sshd. Three things fall out of this:
 
-- **User**: `ansible_user: hassio` (uid=1000, passwordless sudo via `wheel`). There is no `ansible` user on HAOS.
+- **User**: `ansible_user: hassio` (uid=1000, passwordless sudo via `wheel` group). There is no `ansible` user on HAOS — HAOS is a purpose-built appliance OS with a mostly read-only filesystem and no traditional user management. The SSH add-on only exposes `hassio`; creating additional OS users isn't possible.
 - **File transfer**: The SSH add-on has no `sftp-server` or `scp`. `ansible_ssh_transfer_method: piped` avoids failed attempts and suppresses warnings.
 - **become**: `ansible_become: true` required for all tasks that touch `/config/`.
 
@@ -27,20 +27,24 @@ POST /api/services/homeassistant/restart
 Authorization: Bearer <long-lived-token>
 ```
 
+// TODO: change this - we should be doing upsert on 1Password with this, and should find a way to create the token automatically
+
 The long-lived token is created once manually in HA (Profile → Security → Long-lived access tokens) and stored in 1Password as "Home Assistant Ansible API Token" (field: `credential`). The role fetches it via the `onepassword` role before it could be needed by the handler.
 
 ## Proxmox permissions — why four separate roles
 
 The proxmoxve integration's [recommended permission model](https://github.com/dougiteixeira/proxmoxve#suggestion-for-creating-permission-roles-for-use-with-integration) uses purpose-specific roles rather than one catch-all role. This makes it easy to grant or revoke individual capabilities:
 
-| Role | Privileges | Purpose |
-|---|---|---|
-| `HomeAssistant.Audit` | `VM.Audit`, `Sys.Audit`, `Datastore.Audit` | Read VM/node/storage state |
-| `HomeAssistant.NodePowerMgmt` | `Sys.PowerMgmt` | Node shutdown/restart |
-| `HomeAssistant.Update` | `Sys.Modify` | Read available package updates |
-| `HomeAssistant.VMPowerMgmt` | `VM.PowerMgmt` | Start/stop/restart VMs |
+| Role                          | Privileges                                 | Purpose                        |
+| ----------------------------- | ------------------------------------------ | ------------------------------ |
+| `HomeAssistant.Audit`         | `VM.Audit`, `Sys.Audit`, `Datastore.Audit` | Read VM/node/storage state     |
+| `HomeAssistant.NodePowerMgmt` | `Sys.PowerMgmt`                            | Node shutdown/restart          |
+| `HomeAssistant.Update`        | `Sys.Modify`                               | Read available package updates |
+| `HomeAssistant.VMPowerMgmt`   | `VM.PowerMgmt`                             | Start/stop/restart VMs         |
 
 All four are assigned to the `homeassistant` group at path `/` with propagation.
+
+// TODO: when we start adding automated installation of these things, we should move the documentation there and out of the general README
 
 ## Why the proxmoxve integration uses IP, not hostname
 

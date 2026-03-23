@@ -11,9 +11,12 @@ Tasks are split by the host they target:
 
 `tasks/main.yml` imports `nodes/main.yml` and is what `roles: - proxmox` calls. The `vms/` tasks are called from a separate play in `playbook.yml` targeting `qemu_vms`.
 
+// TODO maybe we can do the vm_guest_agent.yml tasks in the vms subfolder, it still makes more sense to me there. If we call it from main.yml in the vms subfolder, we can delegate_to: enterprise maybe
+
 ## What it does
 
 **On enterprise (`nodes/`):**
+
 - Configures the no-subscription apt repo (suite: `trixie`) and disables the enterprise repo
 - Issues and renews the Let's Encrypt wildcard cert via Proxmox ACME with Cloudflare DNS-01
 - Templates `/etc/resolv.conf` with Pi-hole nodes as primary/secondary DNS and `1.1.1.1` as fallback
@@ -21,13 +24,10 @@ Tasks are split by the host they target:
 - Reboots VMs where the channel was just enabled so the agent can communicate
 
 **On each VM (`vms/`):**
+
 - Installs `qemu-guest-agent`
 - Checks whether the virtio-serial channel is present at `/dev/virtio-ports/org.qemu.guest_agent.0`
 - Starts the service if the channel is present, stops it if not
-
-## Why trixie, not bookworm
-
-PVE 8.x is Debian bookworm-based, but PVE 9.x is trixie-based. The correct no-subscription repo suite is `trixie`. The signing key (`proxmox-release-trixie.gpg`) is already present on PVE installs and does not need downloading.
 
 ## ACME/TLS cert
 
@@ -44,6 +44,8 @@ The cert is issued for `enterprise.510forward.space` via Proxmox's built-in ACME
 `/etc/resolv.conf` on enterprise is templated by `tasks/dns.yml`. The resolver order is derived dynamically: Pi-hole node IPs from `groups['pihole_nodes']` (centaurus first, andromeda second — order in `hosts.yml` is intentional) plus `public_dns_servers[0]` as fallback.
 
 ## Why community.proxmox modules must delegate_to enterprise
+
+// TODO: why is this true? Can't we just call those tasks on the enterprise host and leave it at that?
 
 `community.proxmox` modules (`proxmox_group`, `proxmox_user`, `proxmox_access_acl`) connect to the Proxmox API. The controller cannot resolve bare `enterprise` (the hostname in `proxmox_api_node`), and `enterprise.510forward.space` is `npm_proxied` — it resolves to norville, where nothing listens on port 8006. On enterprise itself, the hostname resolves locally and `proxmoxer` is installed. All community.proxmox calls must `delegate_to: enterprise`.
 

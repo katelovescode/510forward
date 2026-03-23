@@ -47,7 +47,7 @@
   no_log: true
   tags: homepage
 
-- name: Read Homepage Proxmox token
+- name: Read Proxmox Homepage token
   no_log: true
   ansible.builtin.include_role:
     name: onepassword

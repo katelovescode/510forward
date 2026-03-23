@@ -2,6 +2,8 @@
 
 Installs and configures Pi-hole v6 in a primary/replica setup. centaurus is the primary; andromeda is the replica. nebula-sync replicates config from primary to replica. Also manages DNS resolver config on both Pi-hole nodes to avoid circular dependencies.
 
+// TODO: maybe find out if there's a way to check through monitoring or something that nebula sync has run when expected
+
 ## What it does
 
 - Installs Pi-hole v6 from the official installer
@@ -19,13 +21,13 @@ The correct pattern: read the current value with `pihole-FTL --config <key>`, co
 
 Array values are read back as `[ val1, val2 ]` (no quotes). Set them using the `argv:` form in Ansible to avoid shell word-splitting.
 
-Custom DNS entries go in `/etc/dnsmasq.d/` (not `custom.list`, which Pi-hole v6 no longer reads directly). `misc.etc_dnsmasq_d = true` must be set in `pihole.toml`. Use `systemctl restart pihole-FTL` to apply config changes — `pihole restartdns` does not reload `dnsmasq.d` or `pihole.toml`.
+Custom DNS entries go in `/etc/dnsmasq.d/`. `misc.etc_dnsmasq_d = true` must be set in `pihole.toml`. `make play` handles the restart automatically via a handler — no manual steps needed. If you're making changes directly on the machine for debugging, use `systemctl restart pihole-FTL` to apply them — `pihole restartdns` does not reload `dnsmasq.d` or `pihole.toml`.
 
 ## Why Pi-hole nodes use public DNS for themselves
 
 Pi-hole nodes cannot use themselves as DNS resolvers — if Pi-hole is down, the node loses DNS and can't restart the service. centaurus and andromeda use `1.1.1.1` and `1.0.0.1` as upstreams directly.
 
-The resolver is managed via a systemd-resolved drop-in at `/etc/systemd/resolved.conf.d/ansible-dns.conf` with `DNSStubListener=no`. This also resolves the ARM64 FTL bug (see below). The drop-in is interface-agnostic, which matters for andromeda which is on WiFi with a fragile NM connection name.
+The resolver is managed via a systemd-resolved drop-in at `/etc/systemd/resolved.conf.d/ansible-dns.conf` with `DNSStubListener=no`. This also resolves the ARM64 FTL bug (see below). The drop-in is interface-agnostic, which matters for andromeda: it's on WiFi, and NetworkManager identifies connections by name (e.g. `netplan-wlan0-YourSSID`). Setting DNS per-interface via NM would require referencing that name, which breaks if the SSID changes or NM regenerates it. The systemd-resolved drop-in sets DNS system-wide without touching interface config.
 
 ## ARM64 FTL port 53 conflict (andromeda)
 
@@ -33,7 +35,7 @@ On andromeda (Raspberry Pi 5, ARM64), pihole-FTL v6 has a bug where the outer FT
 
 **Root cause and fix:** systemd-resolved's stub listener at `127.0.0.53:53` conflicts with FTL binding `0.0.0.0:53`. Setting `DNSStubListener=no` in the resolved drop-in frees port 53 exclusively for FTL. The `/etc/resolv.conf` symlink is also updated to `/run/systemd/resolve/resolv.conf` (the non-stub version) so the upstream DNS servers are used rather than the now-disabled stub.
 
-Note: systemd-resolved is not installed by default on Raspbian trixie. The pihole role installs it on hosts that need it.
+Note: systemd-resolved is not installed by default on Raspbian trixie. This role installs it.
 
 ## nebula-sync
 
@@ -48,3 +50,5 @@ Pi-hole must be set to `listeningMode = ALL` (not `LOCAL`) to answer DNS queries
 ## adlists
 
 StevenBlack unified hosts and Hagezi Multi PRO are managed via sqlite3 directly on the primary. nebula-sync replicates the database to replicas.
+
+// TODO - client metrics

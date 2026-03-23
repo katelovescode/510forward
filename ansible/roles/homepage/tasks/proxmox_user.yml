@@ -1,130 +1,23 @@
 ---
 # Creates the homepage@pve Proxmox user, assigns it a read-only role, and
-# upserts its API token to 1Password. Runs from the dorothy play context but
-# delegates pvesh commands to enterprise and API/1Password calls to localhost.
+# upserts its API token to 1Password.
 
-- name: Read Proxmox root password
-  no_log: true
+- name: Create homepage Proxmox user and group structure
   ansible.builtin.include_role:
     name: proxmox_user
-    tasks_from: read_root_password
+    tasks_from: service_user
+  vars:
+    proxmox_user_service_user_name: homepage
+    proxmox_user_service_user_realm: pve
+    proxmox_user_service_user_privs: [VM.Audit, Sys.Audit, Datastore.Audit]
   tags: homepage
 
-- name: Check homepage Proxmox role exists
-  become: true
-  ansible.builtin.command:
-    cmd: pvesh get /access/roles/homepage --output-format json
-  register: _homepage_proxmox_role_check
-  failed_when: false
-  changed_when: false
-  delegate_to: enterprise
+- name: Create homepage API token
+  ansible.builtin.include_role:
+    name: proxmox_user
+    tasks_from: api_token
+  vars:
+    proxmox_user_api_token_user: homepage
+    proxmox_user_api_token_realm: pve
+    proxmox_user_api_token_item_title: "Proxmox Homepage API Token"
   tags: homepage
-
-- name: Create homepage Proxmox role
-  become: true
-  ansible.builtin.command:
-    cmd: >-
-      pvesh create /access/roles -roleid homepage
-      -privs 'VM.Audit,Sys.Audit,Datastore.Audit'
-  when: _homepage_proxmox_role_check.rc != 0
-  changed_when: true
-  delegate_to: enterprise
-  tags: homepage
-
-- name: Configure Proxmox group, ACL, and user
-  delegate_to: enterprise
-  module_defaults:
-    community.proxmox.proxmox_group:
-      api_host: "{{ proxmox_api_node }}"
-      api_user: root@pam
-      api_password: "{{ proxmox_user_root_password }}"
-    community.proxmox.proxmox_access_acl:
-      api_host: "{{ proxmox_api_node }}"
-      api_user: root@pam
-      api_password: "{{ proxmox_user_root_password }}"
-    community.proxmox.proxmox_user:
-      api_host: "{{ proxmox_api_node }}"
-      api_user: root@pam
-      api_password: "{{ proxmox_user_root_password }}"
-  tags: homepage
-
-  block:
-    - name: Create homepage Proxmox group
-      community.proxmox.proxmox_group: # noqa: args[module]
-        groupid: homepage
-        state: present
-        comment: Managed by Ansible
-
-    - name: Grant homepage role to group
-      community.proxmox.proxmox_access_acl: # noqa: args[module]
-        path: /
-        roleid: homepage
-        ugid: homepage
-        state: present
-        type: group
-
-    - name: Create homepage@pve user
-      community.proxmox.proxmox_user: # noqa: args[module]
-        userid: homepage@pve
-        state: present
-        groups:
-          - homepage
-        email: homepage@{{ domain }}
-        comment: Managed by Ansible
-- name: Check token in 1Password
-  become: true
-  become_user: "{{ onepassword_become_user }}"
-  delegate_to: localhost
-  no_log: true
-  ansible.builtin.command:
-    cmd: op item get "Proxmox Homepage API Token" --vault "{{ onepassword_vault }}"
-  register: _homepage_token_1password_check
-  failed_when: false
-  changed_when: false
-  tags: homepage
-
-- name: Check token in Proxmox
-  become: true
-  ansible.builtin.command:
-    cmd: pvesh get /access/users/homepage@pve/token/homepage_token
-  register: _homepage_token_proxmox_check
-  failed_when: false
-  changed_when: false
-  delegate_to: enterprise
-  tags: homepage
-
-- name: Create or recreate Homepage Proxmox API token
-  when: >-
-    _homepage_token_1password_check.rc != 0 or
-    _homepage_token_proxmox_check.rc != 0
-  tags: homepage
-  block:
-    - name: Delete existing token if out of sync
-      become: true
-      ansible.builtin.command:
-        cmd: pvesh delete /access/users/homepage@pve/token/homepage_token
-      failed_when: false
-      changed_when: true
-      delegate_to: enterprise
-
-    - name: Create API token
-      become: true
-      no_log: true
-      ansible.builtin.command:
-        cmd: >-
-          pvesh create /access/users/homepage@pve/token/homepage_token
-          --privsep 0 --comment='Managed by Ansible' --output-format=json
-      register: _homepage_token_result
-      changed_when: true
-      delegate_to: enterprise
-
-    - name: Store token in 1Password
-      no_log: true
-      ansible.builtin.include_role:
-        name: onepassword
-      vars:
-        onepassword_action: upsert
-        onepassword_item:
-          title: "Proxmox Homepage API Token"
-          username: "{{ (_homepage_token_result.stdout | from_json)['full-tokenid'] }}"
-          password: "{{ (_homepage_token_result.stdout | from_json).value }}"

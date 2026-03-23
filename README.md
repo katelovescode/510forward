@@ -58,3 +58,7 @@ Maybe running my own DHCP will make it so I can assign fixed IPs?
 - Proxmox installed and accessible at enterprise IP
 - 1Password CLI installed and authenticated on controller
 - Vault password file present at ./secrets/vault_password
+
+## Why `become` is scoped per-task
+
+Global `become: true` is prohibited by ansible-lint. Every task that needs privilege escalation declares it explicitly. This is a hard requirement across the entire codebase.
