@@ -28,6 +28,7 @@
   register: proxmox_user_api_token_proxmox_check
   failed_when: false
   changed_when: false
+  delegate_to: enterprise
 
 - name: Set token exists fact - {{ proxmox_user_api_token_user }}
   ansible.builtin.set_fact:
@@ -46,6 +47,7 @@
         cmd: pvesh delete /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{ proxmox_user_api_token_user }}_token
       failed_when: false
       changed_when: true
+      delegate_to: enterprise
 
     - name: Create API token - {{ proxmox_user_api_token_user }}
       become: true
@@ -56,6 +58,7 @@
           --privsep 0 --comment='Managed by Ansible' --output-format=json
       register: proxmox_user_api_token_result
       changed_when: true
+      delegate_to: enterprise
 
     - name: Store token in 1Password - {{ proxmox_user_api_token_user }}
       no_log: true

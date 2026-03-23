@@ -1,29 +1,42 @@
 ---
-# This role handles Proxmox service user creation with group and role assignment
-# Parameterized to handle both opentofu and ansible service users
+# This role handles Proxmox service user creation with group and role assignment.
+# Supports multiple roles via proxmox_user_service_user_roles (list of {name, privs}).
+# Falls back to a single role named after the user when only
+# proxmox_user_service_user_privs is provided (backward compat).
 
 - name: Read Proxmox root password
   ansible.builtin.include_tasks: read_root_password.yml
 
-- name: Create Proxmox role
-  # No role management behavior in community.proxmox
-  # proxmox_user_service_user_privs must be passed by the caller
+- name: Resolve roles list
+  ansible.builtin.set_fact:
+    _proxmox_user_service_user_roles: >-
+      {{
+        proxmox_user_service_user_roles
+        if proxmox_user_service_user_roles is defined
+        else [{'name': proxmox_user_service_user_name, 'privs': proxmox_user_service_user_privs}]
+      }}
+
+- name: Check Proxmox roles exist
   become: true
-  block:
-    - name: Role Check
-      ansible.builtin.command: >-
-        pvesh get /access/roles/{{ proxmox_user_service_user_name }} --output-format json
-      register: proxmox_user_role_check
-      failed_when: false
-      changed_when: false
+  ansible.builtin.command:
+    cmd: pvesh get /access/roles/{{ item.name }} --output-format json
+  loop: "{{ _proxmox_user_service_user_roles }}"
+  register: _proxmox_user_role_checks
+  failed_when: false
+  changed_when: false
+  delegate_to: enterprise
 
-    - name: Role Creation
-      ansible.builtin.command: |-
-        pvesh create /access/roles -roleid {{ proxmox_user_service_user_name }} -privs '{{ proxmox_user_service_user_privs | join(",") }}'
-      when: proxmox_user_role_check.rc != 0
-      changed_when: true
+- name: Create missing Proxmox roles
+  become: true
+  ansible.builtin.command:
+    cmd: pvesh create /access/roles -roleid {{ item.item.name }} -privs '{{ item.item.privs | join(",") }}'
+  loop: "{{ _proxmox_user_role_checks.results }}"
+  when: item.rc != 0
+  changed_when: true
+  delegate_to: enterprise
 
-- name: Configure Proxmox group, ACL, and user
+- name: Configure Proxmox group, ACLs, and user
+  delegate_to: enterprise
   module_defaults:
     community.proxmox.proxmox_group:
       api_host: "{{ proxmox_api_node }}"
@@ -44,13 +57,14 @@
         state: present
         comment: Managed by Ansible
 
-    - name: Grant role to Proxmox group - {{ proxmox_user_service_user_name }}
+    - name: Grant roles to Proxmox group - {{ proxmox_user_service_user_name }}
       community.proxmox.proxmox_access_acl: # noqa: args[module]
         path: /
-        roleid: "{{ proxmox_user_service_user_name }}"
+        roleid: "{{ item.name }}"
         ugid: "{{ proxmox_user_service_user_name }}"
         state: present
         type: group
+      loop: "{{ _proxmox_user_service_user_roles }}"
 
     - name: Create Proxmox user - {{ proxmox_user_service_user_name }}
       community.proxmox.proxmox_user: # noqa: args[module]

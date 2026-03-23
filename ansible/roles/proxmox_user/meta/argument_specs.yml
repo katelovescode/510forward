@@ -29,11 +29,22 @@ argument_specs:
         type: str
         required: true
         description: Username for the service user (e.g. opentofu, ansible).
+      proxmox_user_service_user_roles:
+        type: list
+        elements: dict
+        required: false
+        description: >
+          List of roles to create and assign to the group. Each entry must have
+          'name' (role ID) and 'privs' (list of privilege strings).
+          Mutually exclusive with proxmox_user_service_user_privs — use one or
+          the other. Use this when multiple distinct roles are needed (e.g. HA).
       proxmox_user_service_user_privs:
         type: list
         elements: str
-        required: true
-        description: List of Proxmox privilege strings to assign to the user's role.
+        required: false
+        description: >
+          Privilege list for a single role named after the user. Shorthand for
+          the common case. Ignored when proxmox_user_service_user_roles is set.
       proxmox_user_service_user_realm:
         type: str
         required: false

@@ -1,4 +1,8 @@
 ---
+- name: Proxmox user
+  ansible.builtin.include_tasks: proxmox_user.yml
+  tags: [home_assistant]
+
 - name: Configuration
   ansible.builtin.include_tasks: configuration.yml
   tags: [home_assistant, configuration]
