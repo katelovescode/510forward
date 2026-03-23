@@ -256,6 +256,134 @@ resource "null_resource" "codsworth_disk" {
   ]
 }
 
+resource "proxmox_virtual_environment_vm" "memory_alpha" {
+  name      = "memory-alpha"
+  node_name = "enterprise"
+  on_boot   = true
+
+  clone {
+    vm_id = module.ubuntu_noble_vm_template.vm_id
+    full  = true
+  }
+
+  cpu {
+    cores = 4
+    type  = "host"
+  }
+
+  memory {
+    dedicated = 8192
+  }
+
+  disk {
+    datastore_id = "local-lvm"
+    interface    = "scsi0"
+    size         = 50
+    discard      = "on"
+    ssd          = true
+  }
+
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+
+    user_account {
+      username = "ansible"
+      keys     = [var.ansible_public_key]
+    }
+
+    user_data_file_id = proxmox_virtual_environment_file.cloud_init_config_memory_alpha.id
+  }
+
+  network_device {
+    bridge      = "vmbr0"
+    model       = "virtio"
+    mac_address = "42:17:01:FD:A1:FA"
+    firewall    = true
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "hermes" {
+  name      = "hermes"
+  node_name = "enterprise"
+  on_boot   = true
+
+  clone {
+    vm_id = module.ubuntu_noble_vm_template.vm_id
+    full  = true
+  }
+
+  cpu {
+    cores = 2
+    type  = "host"
+  }
+
+  memory {
+    dedicated = 4096
+  }
+
+  disk {
+    datastore_id = "local-lvm"
+    interface    = "scsi0"
+    size         = 20
+    discard      = "on"
+    ssd          = true
+  }
+
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+
+    user_account {
+      username = "ansible"
+      keys     = [var.ansible_public_key]
+    }
+
+    user_data_file_id = proxmox_virtual_environment_file.cloud_init_config_hermes.id
+  }
+
+  network_device {
+    bridge      = "vmbr0"
+    model       = "virtio"
+    mac_address = "42:17:01:FD:E4:3D"
+    firewall    = true
+  }
+}
+
+resource "proxmox_virtual_environment_file" "cloud_init_config_memory_alpha" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = "enterprise"
+  source_raw {
+    data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
+      hostname            = "memory-alpha"
+      sysadmin_public_key = var.sysadmin_public_key
+      ansible_public_key  = var.ansible_public_key
+    })
+    file_name = "cloud-init-config-memory-alpha.yml"
+  }
+}
+
+resource "proxmox_virtual_environment_file" "cloud_init_config_hermes" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = "enterprise"
+  source_raw {
+    data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
+      hostname            = "hermes"
+      sysadmin_public_key = var.sysadmin_public_key
+      ansible_public_key  = var.ansible_public_key
+    })
+    file_name = "cloud-init-config-hermes.yml"
+  }
+}
+
 resource "proxmox_virtual_environment_file" "cloud_init_config_dorothy" {
   content_type = "snippets"
   datastore_id = "local"

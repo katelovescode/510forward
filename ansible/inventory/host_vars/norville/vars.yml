@@ -24,3 +24,7 @@ nginx_proxy_manager_proxy_hosts:
     port: 8123
     scheme: http
     allow_websocket_upgrade: true
+  - subdomain: memory-alpha
+    host: "{{ hostvars['memory-alpha'].ip_address }}"
+    port: 80
+    scheme: http
