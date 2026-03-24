@@ -1,0 +1,23 @@
+---
+# Creates the homepage@pve Proxmox user, assigns it a read-only role, and
+# upserts its API token to 1Password.
+
+- name: Create homepage Proxmox user and group structure
+  ansible.builtin.include_role:
+    name: proxmox_user
+    tasks_from: service_user
+  vars:
+    proxmox_user_service_user_name: homepage
+    proxmox_user_service_user_realm: pve
+    proxmox_user_service_user_privs: [VM.Audit, Sys.Audit, Datastore.Audit]
+  tags: homepage
+
+- name: Create homepage API token
+  ansible.builtin.include_role:
+    name: proxmox_user
+    tasks_from: api_token
+  vars:
+    proxmox_user_api_token_user: homepage
+    proxmox_user_api_token_realm: pve
+    proxmox_user_api_token_item_title: "Proxmox Homepage API Token"
+  tags: homepage

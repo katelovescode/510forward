@@ -1,0 +1,219 @@
+---
+# One-time bootstrap playbook.
+# Runs as root since the ansible user does not exist yet.
+#
+# Prerequisites:
+#   - "Proxmox Root User" must exist in 1Password with the root@pam password
+#     set during Proxmox installation. Bootstrap cannot create this — it must
+#     be added manually before running.
+#
+# SECURITY NOTE: Bootstrap plays that call community.proxmox modules set validate_certs: false
+# via play-level module_defaults because the Proxmox instance uses a self-signed certificate
+# before the ACME cert is issued. validate_certs: true is the global default everywhere else.
+
+- name: Bootstrap - Pre-flight Validation
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Verify proxmox_admin_password_salt is set
+      ansible.builtin.assert:
+        that:
+          - hostvars['enterprise']['proxmox_admin_password_salt'] is defined
+          - hostvars['enterprise']['proxmox_admin_password_salt'] | string | length > 0
+        fail_msg: "proxmox_admin_password_salt is not defined. Set it in group_vars/proxmox_nodes/secrets.yml."
+
+    - name: Verify enterprise is reachable
+      ansible.builtin.wait_for:
+        host: "{{ hostvars['enterprise'].ansible_host }}"
+        port: 22
+        timeout: 10
+      delegate_to: localhost
+
+    - name: Update known_hosts for enterprise
+      ansible.builtin.include_role:
+        name: identity
+        tasks_from: known_hosts
+      vars:
+        identity_target: "enterprise"
+
+- name: Bootstrap - Ansible User
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  roles:
+    - ansible
+
+- name: Bootstrap - DNS
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Check if DNS is working
+      ansible.builtin.command:
+        cmd: getent hosts cloud-images.ubuntu.com
+      register: dns_check
+      failed_when: false
+      changed_when: false
+
+    - name: Set temporary upstream DNS if resolution is failing
+      become: true
+      ansible.builtin.copy:
+        content: "nameserver 1.1.1.1\n"
+        dest: /etc/resolv.conf
+        mode: "0644"
+      when: dns_check.rc != 0
+
+- name: Bootstrap - Proxmox Admin User
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  tasks:
+    - name: Create OS admin user
+      ansible.builtin.include_role:
+        name: os_user
+        tasks_from: admin_user
+      vars:
+        os_user_admin_name: "{{ proxmox_admin_user }}"
+        os_user_admin_password_salt: "{{ proxmox_admin_password_salt }}"
+        os_user_admin_password_item_title: "Proxmox Admin Password"
+
+    - name: Create Proxmox admin user
+      ansible.builtin.include_role:
+        name: proxmox_user
+        tasks_from: admin_user
+
+- name: Bootstrap - Proxmox OpenTofu User
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  tasks:
+    - name: Create OS opentofu user
+      ansible.builtin.include_role:
+        name: os_user
+        tasks_from: service_user
+      vars:
+        os_user_name: opentofu
+
+    - name: Manage opentofu SSH key
+      ansible.builtin.include_role:
+        name: identity
+        tasks_from: upsert_key
+      vars:
+        identity_upsert_key_user: opentofu
+        identity_upsert_key_item_title: "OpenTofu SSH Key"
+
+    - name: Create Proxmox user and group structure
+      ansible.builtin.include_role:
+        name: proxmox_user
+        tasks_from: service_user
+      vars:
+        proxmox_user_service_user_name: opentofu
+        proxmox_user_service_user_privs:
+          - Datastore.Allocate
+          - Datastore.AllocateSpace
+          - Datastore.AllocateTemplate
+          - Datastore.Audit
+          - Sys.Audit
+          - Sys.Console
+          - Sys.Modify
+          - VM.Allocate
+          - VM.Audit
+          - VM.Clone
+          - VM.Config.CDROM
+          - VM.Config.Cloudinit
+          - VM.Config.CPU
+          - VM.Config.Disk
+          - VM.Config.HWType
+          - VM.Config.Memory
+          - VM.Config.Network
+          - VM.Config.Options
+          - VM.GuestAgent.Audit
+          - VM.PowerMgmt
+          - SDN.Use
+
+    - name: Manage OpenTofu API token
+      ansible.builtin.include_role:
+        name: proxmox_user
+        tasks_from: api_token
+      vars:
+        proxmox_user_api_token_user: opentofu
+        proxmox_user_api_token_item_title: "Proxmox OpenTofu API Token"
+
+- name: Bootstrap - Proxmox Ansible User
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  module_defaults:
+    group/community.proxmox.proxmox:
+      validate_certs: false
+  tasks:
+    - name: Create Proxmox ansible user and group structure
+      ansible.builtin.include_role:
+        name: proxmox_user
+        tasks_from: service_user
+      vars:
+        proxmox_user_service_user_name: ansible
+        proxmox_user_service_user_privs:
+          - Datastore.Audit
+          - Sys.Audit
+          - VM.Audit
+
+    - name: Manage Ansible API token
+      ansible.builtin.include_role:
+        name: proxmox_user
+        tasks_from: api_token
+      vars:
+        proxmox_user_api_token_user: ansible
+        proxmox_user_api_token_item_title: "Proxmox Ansible API Token"
+
+- name: Bootstrap - Proxmox Repositories
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Configure Proxmox repositories
+      ansible.builtin.include_role:
+        name: proxmox
+        tasks_from: nodes/repos
+
+- name: Bootstrap - Proxmox TLS
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Configure ACME and TLS certificate
+      ansible.builtin.include_role:
+        name: proxmox
+        tasks_from: nodes/acme
+
+- name: Bootstrap - Proxmox Storage
+  hosts: enterprise
+  gather_facts: false
+  remote_user: root
+  vars:
+    ansible_user: root
+  tasks:
+    - name: Configure local storage content types
+      ansible.builtin.include_role:
+        name: proxmox
+        tasks_from: nodes/storage

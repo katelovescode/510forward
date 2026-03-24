@@ -1,0 +1,11 @@
+{
+  "name": "510forward",
+  "version": "1.0.0",
+  "description": "Homelab Management",
+  "repository": "git@gitlab:kate/510forward.git",
+  "author": "Kate <kate@510forward.space>",
+  "license": "MIT",
+  "devDependencies": {
+    "dorita980": "^4.0.0"
+  }
+}

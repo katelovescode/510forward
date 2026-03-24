@@ -1,0 +1,3 @@
+---
+raspbian_desktop_user: kate
+raspbian_clock_time_format: "%-l:%M %p"

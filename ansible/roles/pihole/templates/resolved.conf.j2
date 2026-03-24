@@ -1,0 +1,9 @@
+# Managed by Ansible — do not edit manually
+[Resolve]
+DNS={{ pihole_dns_1 }} {{ pihole_dns_2 }}
+Domains=~.
+# Disable the stub listener so systemd-resolved does not bind 127.0.0.53:53.
+# Without this, the stub's presence on port 53 conflicts with pihole-FTL's
+# attempt to bind 0.0.0.0:53 on ARM64 (Raspberry Pi), causing FTL's embedded
+# dnsmasq to fail with "Address in use" on every startup.
+DNSStubListener=no

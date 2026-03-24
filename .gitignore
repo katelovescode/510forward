@@ -1,0 +1,50 @@
+# Proxmox installer (generated from template — contains secrets; ISOs are binary)
+proxmox_installer/answer.toml
+proxmox_installer/*.iso
+
+# IDE & Agents
+
+.windsurf/*
+.ansible/*
+.claude/*
+.gemini/*
+*.log
+CLAUDE.md
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Ansible
+**/secrets/*
+ansible/.cache/
+# secrets.yml files are vault-encrypted and committed intentionally.
+# The pre-commit hook (scripts/check_secrets.py) enforces encryption before every commit.
+
+# OpenTofu / Terraform
+tofu/**/.terraform/
+tofu/**/.terraform.lock.hcl
+tofu/**/terraform.tfvars
+tofu/**/terraform.tfstate
+tofu/**/terraform.tfstate.backup
+tofu/**/.terraform.tfstate.lock.info
+tofu/**/crash.log
+tofu/**/override.tf
+tofu/**/override.tf.json
+
+# Dev container
+ansible/.devcontainer/.env
+
+# direnv
+**/.envrc
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# JS
+**/node_modules

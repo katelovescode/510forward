@@ -1,0 +1,105 @@
+---
+- name: Check if item exists
+  ansible.builtin.command:
+    cmd: >-
+      op item get '{{ onepassword_item.title }}'
+      --vault "{{ onepassword_vault }}"
+      --reveal
+      --format json
+  become: true
+  become_user: "{{ onepassword_become_user }}"
+  delegate_to: localhost
+  register: _onepassword_existing
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Set existing item facts
+  ansible.builtin.set_fact:
+    _onepassword_exists: "{{ _onepassword_existing.rc == 0 and _onepassword_existing.stdout | length > 0 }}"
+    _onepassword_existing_item: >-
+      {{
+        _onepassword_existing.stdout | from_json
+        if _onepassword_existing.rc == 0 and _onepassword_existing.stdout | length > 0
+        else {}
+      }}
+  no_log: true
+
+- name: Resolve password
+  ansible.builtin.set_fact:
+    _onepassword_resolved_password: >-
+      {{
+        onepassword_item.password
+        if onepassword_item.password is defined
+        else (
+          _onepassword_existing_item.fields |
+          selectattr('id', 'equalto', 'password') |
+          map(attribute='value') | first | default('')
+          if _onepassword_exists
+          else lookup('community.general.random_string', length=32, special=false)
+        )
+      }}
+  no_log: true
+
+- name: Check if write is needed
+  ansible.builtin.set_fact:
+    _onepassword_needs_write: >-
+      {%- set current = _onepassword_existing_item.fields | default([]) -%}
+      {%- set needs_write = namespace(value=false) -%}
+      {%- if not _onepassword_exists -%}
+        {%- set needs_write.value = true -%}
+      {%- endif -%}
+      {%- if onepassword_item.username is defined and
+          onepassword_item.username != (current | selectattr('id', 'equalto', 'username') | map(attribute='value') | first | default('')) -%}
+        {%- set needs_write.value = true -%}
+      {%- endif -%}
+      {%- if onepassword_item.password is defined and
+          onepassword_item.password != (current | selectattr('id', 'equalto', 'password') | map(attribute='value') | first | default('')) -%}
+        {%- set needs_write.value = true -%}
+      {%- endif -%}
+      {%- for field in onepassword_item.custom_fields | default([]) -%}
+        {%- if field.value != (current | selectattr('label', 'equalto', field.label) | map(attribute='value') | first | default('')) -%}
+          {%- set needs_write.value = true -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ needs_write.value }}
+  no_log: true
+
+- name: Write item
+  when: _onepassword_needs_write | bool
+  block:
+    - name: Set temp file path
+      ansible.builtin.set_fact:
+        _onepassword_temp_file: "/tmp/op-item-{{ onepassword_item.title | regex_replace('[^a-zA-Z0-9]', '_') }}.json"
+      no_log: true
+
+    - name: Template item JSON
+      ansible.builtin.template:
+        src: item_template.j2
+        dest: "{{ _onepassword_temp_file }}"
+        mode: "0600"
+      delegate_to: localhost
+      no_log: true
+
+    - name: Create or update item
+      ansible.builtin.shell: # noqa: command-instead-of-shell
+        cmd: >-
+          {{ 'op item create' if not _onepassword_exists else 'op item edit ' + _onepassword_existing_item.id }}
+          --template "{{ _onepassword_temp_file }}"
+          --vault "{{ onepassword_vault }}"
+          </dev/null
+        executable: /bin/bash
+      become: true
+      become_user: "{{ onepassword_become_user }}"
+      delegate_to: localhost
+      changed_when: true
+      no_log: true
+
+    - name: Remove temp file
+      ansible.builtin.file:
+        path: "{{ _onepassword_temp_file }}"
+        state: absent
+      delegate_to: localhost
+
+- name: Read item result
+  ansible.builtin.include_tasks: read.yml

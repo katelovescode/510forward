@@ -1,0 +1,75 @@
+---
+# Create a Proxmox API token and store it in 1Password.
+# Idempotent: skips creation if the token exists in both Proxmox and 1Password.
+# If out of sync (exists in one but not the other), deletes and recreates.
+#
+# Required vars:
+#   proxmox_user_api_token_user        - OS username (e.g. opentofu, ansible)
+#   proxmox_user_api_token_item_title  - 1Password item title for the token
+
+- name: Check token in 1Password - {{ proxmox_user_api_token_user }}
+  become: true
+  become_user: "{{ onepassword_become_user }}"
+  delegate_to: localhost
+  no_log: true
+  ansible.builtin.command:
+    cmd: >-
+      op item get "{{ proxmox_user_api_token_item_title }}"
+      --vault "{{ onepassword_vault }}"
+  register: proxmox_user_api_token_1password_check
+  failed_when: false
+  changed_when: false
+
+- name: Check token in Proxmox - {{ proxmox_user_api_token_user }}
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      pvesh get
+      /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{ proxmox_user_api_token_user }}_token
+  register: proxmox_user_api_token_proxmox_check
+  failed_when: false
+  changed_when: false
+  delegate_to: enterprise
+
+- name: Set token exists fact - {{ proxmox_user_api_token_user }}
+  ansible.builtin.set_fact:
+    proxmox_user_api_token_exists: >-
+      {{
+        (proxmox_user_api_token_1password_check.rc == 0 and
+        proxmox_user_api_token_proxmox_check.rc == 0) | bool
+      }}
+
+- name: Create or recreate API token - {{ proxmox_user_api_token_user }}
+  when: not proxmox_user_api_token_exists
+  block:
+    - name: Delete existing Proxmox token if not in 1Password
+      become: true
+      ansible.builtin.command:
+        cmd: pvesh delete /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{
+          proxmox_user_api_token_user }}_token
+      failed_when: false
+      changed_when: true
+      delegate_to: enterprise
+
+    - name: Create API token - {{ proxmox_user_api_token_user }}
+      become: true
+      no_log: true
+      ansible.builtin.command:
+        cmd: >-
+          pvesh create
+          /access/users/{{ proxmox_user_api_token_user }}@{{ proxmox_user_api_token_realm | default('pam') }}/token/{{ proxmox_user_api_token_user }}_token
+          --privsep 0 --comment='Managed by Ansible' --output-format=json
+      register: proxmox_user_api_token_result
+      changed_when: true
+      delegate_to: enterprise
+
+    - name: Store token in 1Password - {{ proxmox_user_api_token_user }}
+      no_log: true
+      ansible.builtin.include_role:
+        name: onepassword
+      vars:
+        onepassword_action: upsert
+        onepassword_item:
+          title: "{{ proxmox_user_api_token_item_title }}"
+          username: "{{ (proxmox_user_api_token_result.stdout | from_json)['full-tokenid'] }}"
+          password: "{{ (proxmox_user_api_token_result.stdout | from_json).value }}"

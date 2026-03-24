@@ -1,0 +1,79 @@
+---
+# NPM proxy verification
+#
+# Two layers of checks:
+#
+# Two layers of checks:
+#
+# 1. Backend reachability — runs from norville directly to each backend IP,
+#    bypassing DNS and NPM entirely. Isolates the NPM → backend leg.
+#    Proxmox uses HTTPS with validate_certs: false (connecting by IP, no IP SANs).
+#    GitLab is NOT checked here — the uri module on norville's host fails with
+#    SSL errors against memory-alpha:80 regardless of scheme, likely due to
+#    Docker network stack differences. The end-to-end test covers it instead.
+#
+# 2. End-to-end — runs from localhost through the full chain: DNS → norville:443
+#    → backend. Catches misconfigured DNS, missing NPM proxy hosts, or backend
+#    failures that slip through the direct check.
+#
+# UNTESTED via NPM: Pi-hole UIs (centaurus, andromeda). Pi-hole refuses to
+# return norville's IP for its own hostname — FTL self-protection. Access
+# Pi-hole UIs directly at http://<ip> instead.
+
+- name: NPM | Homepage backend is reachable from norville
+  hosts: norville
+  gather_facts: false
+  tasks:
+    - name: Reach Homepage backend from norville
+      ansible.builtin.uri:
+        url: "http://{{ hostvars['dorothy']['ip_address'] }}:3000"
+        status_code: 200
+      tags: [verify, npm]
+
+- name: NPM | Home Assistant backend is reachable from norville
+  hosts: norville
+  gather_facts: false
+  tasks:
+    - name: Reach Home Assistant backend from norville
+      ansible.builtin.uri:
+        url: "http://{{ hostvars['codsworth']['ip_address'] }}:8123/"
+        status_code: 200
+      tags: [verify, npm, home_assistant]
+
+
+- name: NPM | Proxmox backend is reachable from norville
+  hosts: norville
+  gather_facts: false
+  tasks:
+    - name: Reach Proxmox backend from norville
+      ansible.builtin.uri:
+        url: "https://{{ hostvars['enterprise']['ip_address'] }}:8006"
+        validate_certs: false
+        status_code: [200, 301, 302]
+      tags: [verify, npm]
+
+- name: NPM | All proxied subdomains are reachable end-to-end
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  vars:
+    npm_proxied_hosts:
+      - subdomain: norville
+        expected_status: 200
+      - subdomain: enterprise
+        expected_status: [200, 301, 302]
+      - subdomain: dorothy
+        expected_status: 200
+      - subdomain: codsworth
+        expected_status: 200
+      - subdomain: memory-alpha
+        expected_status: [200, 301, 302]
+  tasks:
+    - name: Reach proxied subdomain via NPM
+      ansible.builtin.uri:
+        url: "https://{{ item.subdomain }}.{{ domain }}"
+        status_code: "{{ item.expected_status }}"
+      loop: "{{ npm_proxied_hosts }}"
+      loop_control:
+        label: "{{ item.subdomain }}.{{ domain }}"
+      tags: [verify, npm]

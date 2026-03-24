@@ -1,0 +1,133 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure Pi-hole v6
+    description: >
+      Installs Pi-hole v6 unattended using a pre-seeded pihole.toml,
+      sets the admin password via CLI (generated and stored in 1Password
+      automatically), and configures local DNS records for all inventory
+      hosts via custom.list. On the primary node, also installs and
+      configures nebula-sync for Pi-hole clustering.
+    options:
+      # ################################
+      # Shared vars — from group_vars/all/vars.yml
+      # ################################
+      domain:
+        type: str
+        required: true
+        description: >
+          Local domain for split-horizon DNS, e.g. 510forward.space.
+          Written to pihole.toml as the DNS domain setting.
+
+      # ################################
+      # Shared vars — from group_vars/all/secrets.yml
+      # ################################
+      onepassword_vault:
+        type: str
+        required: true
+        description: >
+          Name or UUID of the 1Password vault to operate on.
+          Defined in group_vars/all/secrets.yml.
+
+      onepassword_become_user:
+        type: str
+        required: true
+        description: >
+          Local user to become when running op CLI commands.
+          Defined in group_vars/all/secrets.yml.
+
+      # ################################
+      # Host vars — from host_vars/<host>/vars.yml
+      # ################################
+      ip_address:
+        type: str
+        required: true
+        description: >
+          IP address of this Pi-hole host. Written to pihole.toml
+          as reply_addr4. Must match the host's actual static IP.
+
+      fqdn:
+        type: str
+        required: true
+        description: >
+          FQDN of this Pi-hole host, e.g. centaurus.510forward.space.
+          Used when generating custom.list DNS entries for all hosts
+          in the inventory.
+
+      pihole_primary:
+        type: bool
+        required: false
+        description: >
+          Whether this host is the primary Pi-hole node. When true,
+          nebula-sync is installed to push config to replica nodes.
+          Defined in host_vars/centaurus/vars.yml.
+
+      # ################################
+      # Group vars — from group_vars/pihole_nodes/vars.yml
+      # ################################
+      pihole_dns_1:
+        type: str
+        required: true
+        description: >
+          Primary upstream DNS server, e.g. 1.1.1.1. Also written to the
+          systemd-resolved drop-in so the host OS does not depend on Pi-hole
+          itself for resolution.
+
+      pihole_dns_2:
+        type: str
+        required: true
+        description: >
+          Secondary upstream DNS server, e.g. 1.0.0.1. Also written to the
+          systemd-resolved drop-in so the host OS does not depend on Pi-hole
+          itself for resolution.
+
+
+      pihole_listening_mode:
+        type: str
+        required: false
+        description: >
+          Pi-hole DNS listening mode. Defaults to 'all' to accept queries
+          from all subnets/VLANs. Set to 'local' to restrict to the
+          Pi-hole host's own subnet only.
+
+      pihole_query_logging:
+        type: bool
+        required: true
+        description: >
+          Whether to enable DNS query logging.
+
+      pihole_installer_url:
+        type: str
+        required: true
+        description: >
+          URL for the Pi-hole installer script.
+
+      nebula_sync_version:
+        type: str
+        required: false
+        description: >
+          Version of nebula-sync to install, e.g. 0.11.1.
+          Required when pihole_primary is true.
+
+      nebula_sync_checksum:
+        type: str
+        required: false
+        description: >
+          SHA256 checksum for the nebula-sync binary tarball.
+          Required when pihole_primary is true.
+
+      pihole_adlists:
+        type: list
+        required: false
+        description: >
+          List of adlists to manage on the primary Pi-hole node. Each entry
+          must have a `url` field, and optionally `enabled` (default true)
+          and `comment`. Replicas receive adlists via nebula-sync.
+
+      nebula_sync_run_gravity:
+        type: bool
+        required: false
+        description: >
+          Whether nebula-sync should run gravity on the replica after
+          sync. Defaults to false due to known FTL webserver instability.
+          Required when pihole_primary is true.

@@ -1,0 +1,22 @@
+---
+- name: Ensure wf-panel-pi config directory exists
+  become: true
+  ansible.builtin.file:
+    path: /home/{{ raspbian_desktop_user }}/.config/wf-panel-pi
+    state: directory
+    owner: "{{ raspbian_desktop_user }}"
+    group: "{{ raspbian_desktop_user }}"
+    mode: "0755"
+  tags: raspbian
+
+- name: Configure panel clock format
+  become: true
+  community.general.ini_file:
+    path: /home/{{ raspbian_desktop_user }}/.config/wf-panel-pi/wf-panel-pi.ini
+    section: panel
+    option: clock_time_format
+    value: "{{ raspbian_clock_time_format }}"
+    owner: "{{ raspbian_desktop_user }}"
+    group: "{{ raspbian_desktop_user }}"
+    mode: "0644"
+  tags: raspbian

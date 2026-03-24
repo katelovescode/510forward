@@ -1,0 +1,33 @@
+---
+argument_specs:
+  admin_user:
+    short_description: Create an OS admin user with password, sudo, and static SSH key
+    options:
+      os_user_admin_name:
+        type: str
+        required: true
+        description: Username for the admin user.
+      os_user_admin_password_salt:
+        type: str
+        required: true
+        description: >
+          Stable salt used to reproduce the admin user's password hash across runs.
+          Must be consistent across runs or the password hash will change.
+      os_user_admin_password_item_title:
+        type: str
+        required: true
+        description: 1Password item title for the admin user's password.
+      sysadmin_public_key:
+        type: str
+        required: true
+        description: >
+          SSH public key to authorize for the admin user.
+          Set in group_vars/all/secrets.yml.
+
+  service_user:
+    short_description: Create a passwordless OS service account with sudo
+    options:
+      os_user_name:
+        type: str
+        required: true
+        description: Username for the OS service account (e.g. opentofu, ansible).

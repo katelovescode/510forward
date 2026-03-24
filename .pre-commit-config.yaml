@@ -1,0 +1,17 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-secrets
+        name: Check secrets are encrypted
+        entry: python ansible/scripts/check_secrets.py
+        language: python
+        pass_filenames: false
+        files: ^ansible/
+        additional_dependencies:
+          - PyYAML
+      - id: check-1password-titles
+        name: Check 1Password item titles exist in vault
+        entry: python ansible/scripts/check_1password_titles.py
+        language: python
+        pass_filenames: false
+        always_run: true

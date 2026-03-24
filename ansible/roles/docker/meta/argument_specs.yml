@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: Install Docker and add ansible user to docker group
+    description: >
+      Installs Docker CE via the official apt repository, ensures the
+      Docker service is running, and adds the ansible user to the
+      docker group. Resets the SSH connection so group membership
+      takes effect immediately within the same play.
+    options:
+      ansible_user:
+        type: str
+        required: true
+        description: >
+          The user to add to the docker group. Defined in
+          group_vars/all/vars.yml. Uses the Ansible connection
+          user — not a role-specific var.

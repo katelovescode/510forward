@@ -1,0 +1,68 @@
+---
+- name: Pre-flight
+  hosts: all
+  gather_facts: false
+  serial: 1
+  tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        timeout: 300
+      delegate_to: localhost
+
+    - name: Update known_hosts
+      ansible.builtin.include_role:
+        name: identity
+        tasks_from: known_hosts
+
+- name: Proxmox configuration
+  hosts: proxmox_nodes
+  roles:
+    - proxmox
+
+- name: QEMU VM configuration
+  hosts: qemu_vms
+  tasks:
+    - name: Configure qemu-guest-agent
+      ansible.builtin.include_role:
+        name: proxmox
+        tasks_from: vms/main
+      tags: proxmox_vm_guest_agent
+
+- name: Base configuration
+  hosts: all:!proxmox_nodes:!haos_nodes
+  vars:
+    ansible_user: "{{ first_run_user | default('ansible') }}"
+  roles:
+    - ansible
+
+- name: Raspbian configuration
+  hosts: raspbian_nodes
+  roles:
+    - raspbian
+
+- name: Pi-hole
+  hosts: pihole_nodes
+  roles:
+    - pihole
+
+- name: NGINX Proxy Manager
+  hosts: norville
+  roles:
+    - nginx_proxy_manager
+
+- name: Homepage
+  hosts: dorothy
+  roles:
+    - homepage
+
+- name: Home Assistant
+  hosts: haos_nodes
+  roles:
+    - home_assistant
+
+- name: GitLab
+  hosts: memory-alpha
+  roles:
+    - gitlab

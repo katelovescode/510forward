@@ -1,0 +1,5 @@
+# Managed by Ansible — do not edit manually
+search {{ domain }}
+{% for ns in proxmox_dns_servers %}
+nameserver {{ ns }}
+{% endfor %}

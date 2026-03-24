@@ -1,0 +1,101 @@
+---
+# nebula-sync is installed as a systemd service + timer rather than using
+# the binary's built-in CRON env var. This is intentional — systemd gives
+# us consistent logging via journald, clean manual trigger semantics via
+# systemctl start nebula-sync, and fits the rest of the stack.
+
+- name: Check if nebula-sync binary exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/nebula-sync
+  register: pihole_nebula_sync_binary
+
+- name: Update existing nebula-sync installation
+  when: pihole_nebula_sync_binary.stat.exists
+  block:
+    - name: Get current nebula-sync version
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          /usr/local/bin/nebula-sync --version | grep -oP 'nebula-sync version v\K[0-9.]*'
+        executable: /bin/bash
+      register: pihole_nebula_sync_current_version
+      changed_when: false
+
+    - name: Get latest nebula-sync version
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/lovelaze/nebula-sync/releases/latest
+        return_content: true
+      register: pihole_nebula_sync_latest_release
+      changed_when: false
+
+    - name: Set nebula-sync update needed fact
+      ansible.builtin.set_fact:
+        pihole_nebula_sync_needs_update: >-
+          {{
+            pihole_nebula_sync_current_version.stdout !=
+            (pihole_nebula_sync_latest_release.json.tag_name | regex_search('v[0-9.]*') | regex_replace('v', ''))
+          }}
+
+    - name: Install nebula-sync binary
+      ansible.builtin.include_tasks: install_nebula_sync_binary.yml
+      when: pihole_nebula_sync_needs_update
+
+- name: Install new nebula-sync
+  when: not pihole_nebula_sync_binary.stat.exists
+  block:
+    - name: Install nebula-sync binary
+      ansible.builtin.include_tasks: install_nebula_sync_binary.yml
+
+- name: Read Pi-hole admin password from 1Password
+  no_log: true
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: read
+    onepassword_item:
+      title: "Pi-hole Admin Password"
+
+- name: Set Pi-hole admin password fact
+  no_log: true
+  ansible.builtin.set_fact:
+    pihole_nebula_sync_admin_password: >-
+      {{ onepassword_item_result.fields | selectattr('id', 'equalto', 'password') | map(attribute='value') | first }}
+
+- name: Template nebula-sync env file
+  become: true
+  no_log: true
+  ansible.builtin.template:
+    src: nebula-sync.env.j2
+    dest: /etc/nebula-sync.env
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart nebula-sync
+
+- name: Template nebula-sync systemd service
+  become: true
+  ansible.builtin.template:
+    src: nebula-sync.service.j2
+    dest: /etc/systemd/system/nebula-sync.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nebula-sync
+
+- name: Template nebula-sync systemd timer
+  become: true
+  ansible.builtin.template:
+    src: nebula-sync.timer.j2
+    dest: /etc/systemd/system/nebula-sync.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nebula-sync
+
+- name: Enable and start nebula-sync timer
+  become: true
+  ansible.builtin.systemd:
+    name: nebula-sync.timer
+    enabled: true
+    state: started
+    daemon_reload: true

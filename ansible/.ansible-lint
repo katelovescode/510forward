@@ -1,0 +1,44 @@
+---
+profile: production
+strict: true
+
+# Prevent network dependency resolution in CI (optional but recommended)
+offline: true
+
+# Enable additional rules explicitly (opt-in rules)
+enable_list:
+  - fqcn
+  - no-log-password
+  - no-changed-when
+  - command-instead-of-module
+  - command-instead-of-shell
+  - risky-shell-pipe
+  - package-latest
+  - name
+  - var-naming
+  - yaml
+  - deprecated-module
+  - inline-env-var
+  - no-relative-paths
+  - no-free-form
+  - no-jinja-when
+  - partial-become
+  - risky-file-permissions
+
+# Enforce better task naming consistency
+task_name_prefix: "{stem} | "
+
+exclude_paths:
+  - .git/
+  - .venv/
+  - node_modules/
+  - collections/
+  - roles/external/
+  - .cache/
+  - "**/secrets.yml"
+
+# Parsing + safety
+verbosity: 1
+
+write_list:
+  - all

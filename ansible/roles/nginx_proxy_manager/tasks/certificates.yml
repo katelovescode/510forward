@@ -1,0 +1,87 @@
+---
+- name: Authenticate with NPM
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "{{ admin_email }}"
+      secret: "{{ nginx_proxy_manager_admin_password }}"
+    status_code: 200
+  register: nginx_proxy_manager_token
+  # no_log: true
+  tags: nginx_proxy_manager
+
+- name: Read Cloudflare API token from 1Password
+  no_log: true
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: read
+    onepassword_item:
+      title: "Cloudflare DNS API Token"
+  tags: nginx_proxy_manager
+
+- name: Set Cloudflare API token fact
+  ansible.builtin.set_fact:
+    nginx_proxy_manager_cloudflare_token: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('label', 'equalto', 'credential') |
+        map(attribute='value') | first
+      }}
+  no_log: true
+  tags: nginx_proxy_manager
+
+- name: Get existing certificates
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/nginx/certificates"
+    headers:
+      Authorization: "Bearer {{ nginx_proxy_manager_token.json.token }}"
+    status_code: 200
+  register: nginx_proxy_manager_existing_certs
+  tags: nginx_proxy_manager
+
+- name: Set existing wildcard certificate fact
+  ansible.builtin.set_fact:
+    nginx_proxy_manager_existing_cert: >-
+      {{
+        nginx_proxy_manager_existing_certs.json |
+        selectattr('domain_names', 'contains', nginx_proxy_manager_certificate_domain) |
+        list | first | default({})
+      }}
+  tags: nginx_proxy_manager
+
+- name: Request wildcard certificate via Cloudflare DNS-01 [~2 min]
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/nginx/certificates"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ nginx_proxy_manager_token.json.token }}"
+    body_format: json
+    body:
+      provider: letsencrypt
+      nice_name: "{{ nginx_proxy_manager_certificate_domain }}"
+      domain_names:
+        - "{{ nginx_proxy_manager_certificate_domain }}"
+      meta:
+        dns_challenge: true
+        dns_provider: cloudflare
+        dns_provider_credentials: "dns_cloudflare_api_token = {{ nginx_proxy_manager_cloudflare_token }}"
+    status_code: 201
+    timeout: 120
+  when: nginx_proxy_manager_existing_cert == {}
+  register: nginx_proxy_manager_new_cert
+  # no_log: true
+  changed_when: true
+  tags: nginx_proxy_manager
+
+- name: Set certificate ID fact
+  ansible.builtin.set_fact:
+    nginx_proxy_manager_certificate_id: >-
+      {{
+        nginx_proxy_manager_new_cert.json.id
+        if (nginx_proxy_manager_new_cert is not skipped)
+        else nginx_proxy_manager_existing_cert.id
+      }}
+  tags: nginx_proxy_manager

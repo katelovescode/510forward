@@ -1,0 +1,15 @@
+[Unit]
+Description=Homepage Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=homepage
+WorkingDirectory=/opt/homepage
+ExecStart=/usr/local/bin/pnpm start
+Restart=on-failure
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+
+[Install]
+WantedBy=multi-user.target

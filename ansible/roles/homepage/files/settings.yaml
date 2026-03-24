@@ -1,0 +1,17 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/settings/
+
+title: 510 Forward
+
+favicon: favicon.png
+
+background:
+  image: tenforward.jpg
+  saturate: 50
+  brightness: 50
+  opacity: 50
+
+providers:
+  openweathermap: openweathermapapikey
+  weatherapi: weatherapiapikey

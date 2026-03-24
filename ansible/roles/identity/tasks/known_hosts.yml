@@ -1,0 +1,87 @@
+---
+- name: Set identity target host
+  ansible.builtin.set_fact:
+    identity_target_host: "{{ inventory_hostname }}"
+    identity_target_ip: "{{ ansible_host }}"
+
+- name: Override identity target values if specified as a different host than being run on
+  ansible.builtin.set_fact:
+    identity_target_host: "{{ identity_target }}"
+    identity_target_ip: "{{ hostvars[identity_target].ansible_host }}"
+  when: identity_target is defined
+
+- name: Check if host key already exists
+  delegate_to: localhost
+  ansible.builtin.shell:
+    cmd: |
+      ssh-keygen -F {{ identity_target_ip }} -f ~/.ssh/known_hosts >/dev/null 2>&1
+    executable: /bin/bash
+  register: identity_key_exists
+  failed_when: false
+  changed_when: false
+
+- name: Get current host keys from known_hosts
+  delegate_to: localhost
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      grep "^{{ identity_target_ip }} " ~/.ssh/known_hosts 2>/dev/null | sort || echo ""
+    executable: /bin/bash
+  register: identity_current_keys
+  changed_when: false
+
+- name: Get scanned host keys
+  delegate_to: localhost
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      ssh-keyscan -q {{ identity_target_ip }} 2>/dev/null | grep -v '^#' | sort || true
+    executable: /bin/bash
+  register: identity_scanned_keys
+  failed_when: false
+  changed_when: false
+  retries: 5
+  delay: 3
+  until: identity_scanned_keys.stdout | length > 0
+
+- name: Remove existing host key entries if they differ
+  delegate_to: localhost
+  when:
+    - identity_scanned_keys.stdout | length > 0
+    - identity_key_exists.rc == 0
+    - identity_current_keys.stdout != identity_scanned_keys.stdout
+
+  block:
+    - name: Remove hostname comment line
+      ansible.builtin.lineinfile:
+        path: ~/.ssh/known_hosts
+        regexp: "^# {{ identity_target_host }} SSH host keys$"
+        state: absent
+
+    - name: Remove host key entries
+      ansible.builtin.lineinfile:
+        path: ~/.ssh/known_hosts
+        regexp: "^{{ identity_target_ip }} "
+        state: absent
+- name: Add host keys with hostname comments
+  delegate_to: localhost
+  ansible.builtin.shell:
+    cmd: |
+      echo "# {{ identity_target_host }} SSH host keys" >> ~/.ssh/known_hosts
+      echo "{{ identity_scanned_keys.stdout }}" >> ~/.ssh/known_hosts
+      echo "" >> ~/.ssh/known_hosts
+    executable: /bin/bash
+  changed_when: identity_key_exists.rc != 0 or identity_current_keys.stdout != identity_scanned_keys.stdout
+  when:
+    - identity_scanned_keys.stdout | length > 0
+    - identity_key_exists.rc != 0 or identity_current_keys.stdout != identity_scanned_keys.stdout
+
+- name: Clean up blank lines from known_hosts
+  delegate_to: localhost
+  ansible.builtin.replace:
+    path: ~/.ssh/known_hosts
+    regexp: "^[[:space:]]*$"
+    replace: ""
+  when:
+    - identity_scanned_keys.stdout | length > 0
+    - identity_key_exists.rc != 0 or identity_current_keys.stdout != identity_scanned_keys.stdout

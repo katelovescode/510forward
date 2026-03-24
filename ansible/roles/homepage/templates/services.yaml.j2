@@ -1,0 +1,77 @@
+---
+# Managed by Ansible — do not edit directly
+
+- SmartHouse:
+    - Calendar:
+        icon: fastmail
+        widget:
+          type: calendar
+          showTime: true
+          integrations:
+            - type: ical
+              url: https://user.fm/calendar/v1-e65c72543a6af26cc0b0f7c4c09f70ea/Kate.ics
+              name: Kate
+              color: violet
+            - type: ical
+              url: https://user.fm/calendar/v1-4bc0cc9c89a54a8d64ebfeafab1582ac/Kate%20Loves%20Code.ics
+              name: Kate Loves Code
+              color: zinc
+            - type: ical
+              url: https://user.fm/calendar/v1-39fd8b39e215005889a6b360716c3d00/Fam.ics
+              name: Fam
+              color: amber
+
+- Network:
+    - NGINX Proxy Manager:
+        icon: nginx-proxy-manager
+        href: https://norville.{{ domain }}/
+        ping: https://norville.{{ domain }}
+        widget:
+          type: npm
+          url: https://norville.{{ domain }}
+          username: {{ _homepage_npm_email }}
+          password: {{ _homepage_npm_password }}
+    - PiHole:
+        icon: pi-hole
+        href: http://centaurus.{{ domain }}/
+        ping: http://centaurus.{{ domain }}
+        widget:
+          type: pihole
+          url: http://centaurus.{{ domain }}/
+          version: 6
+          key: {{ _homepage_pihole_password }}
+
+- HomeLab:
+    - Proxmox:
+        - Server:
+            icon: proxmox
+            href: https://enterprise.{{ domain }}/
+            ping: https://enterprise.{{ domain }}
+            widget:
+              type: proxmox
+              url: https://enterprise.{{ domain }}
+              username: {{ _homepage_proxmox_token_id }}
+              password: {{ _homepage_proxmox_token_secret }}
+              node: enterprise
+        - Centaurus:
+            icon: pi-hole
+            href: http://centaurus.{{ domain }}/
+            ping: http://centaurus.{{ domain }}
+            description: Pi-hole primary
+            proxmoxNode: enterprise
+            proxmoxVMID: {{ homepage_proxmox_vmids.centaurus }}
+        - Norville:
+            icon: nginx-proxy-manager
+            href: https://norville.{{ domain }}/
+            ping: https://norville.{{ domain }}
+            description: NGINX Proxy Manager
+            proxmoxNode: enterprise
+            proxmoxVMID: {{ homepage_proxmox_vmids.norville }}
+        - Dorothy:
+            icon: homepage
+            href: https://dorothy.{{ domain }}/
+            ping: https://dorothy.{{ domain }}
+            description: Dashboard
+            proxmoxNode: enterprise
+            proxmoxVMID: {{ homepage_proxmox_vmids.dorothy }}
+            proxmoxType: lxc

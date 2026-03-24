@@ -1,0 +1,10 @@
+---
+ansible_host: 192.168.30.111
+ansible_user: hassio
+ansible_become: true
+ansible_python_interpreter: /usr/bin/python3
+ansible_ssh_transfer_method: piped
+ip_address: 192.168.30.111
+fqdn: codsworth.510forward.space
+mac_address: "42:17:01:FD:C0:D5"
+npm_proxied: true

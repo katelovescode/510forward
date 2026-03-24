@@ -1,0 +1,11 @@
+# Managed by Ansible — do not edit manually
+{% for host in groups['all'] %}
+{% set hv = hostvars[host] %}
+{% if hv.ip_address is defined and hv.fqdn is defined %}
+{% if hv.npm_proxied | default(false) %}
+address=/{{ hv.fqdn }}/{{ hostvars['norville']['ip_address'] }}
+{% else %}
+address=/{{ hv.fqdn }}/{{ hv.ip_address }}
+{% endif %}
+{% endif %}
+{% endfor %}

@@ -1,0 +1,10 @@
+# Pre-seeded by Ansible before Pi-hole installation.
+# Post-install configuration is managed via pihole-FTL --config.
+
+[dns]
+upstreams = ["{{ pihole_dns_1 }}", "{{ pihole_dns_2 }}"]
+listeningMode = "{{ pihole_listening_mode }}"
+dnssec = true
+
+[misc]
+etc_dnsmasq_d = true
