@@ -31,7 +31,7 @@
       tags: proxmox_vm_guest_agent
 
 - name: Base configuration
-  hosts: all:!proxmox_nodes:!haos_nodes
+  hosts: all:!proxmox_nodes:!haos_nodes:!nas_nodes
   vars:
     ansible_user: "{{ first_run_user | default('ansible') }}"
   roles:
