@@ -15,3 +15,20 @@ argument_specs:
         description: >
           strftime format string for the wf-panel-pi clock widget.
           e.g. "%R" for 24h, "%l:%M %p" for 12h.
+      raspbian_kiosk_enabled:
+        type: bool
+        required: false
+        default: false
+        description: >
+          Whether to configure a dedicated kiosk user with Chromium
+          launching in kiosk mode on autologin.
+      raspbian_kiosk_url:
+        type: str
+        required: false
+        description: >
+          URL to open in kiosk mode. Required when raspbian_kiosk_enabled is true.
+      raspbian_kiosk_user:
+        type: str
+        required: false
+        default: kiosk
+        description: Username for the dedicated kiosk OS user.
