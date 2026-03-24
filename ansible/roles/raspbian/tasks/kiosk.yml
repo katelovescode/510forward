@@ -1,0 +1,48 @@
+---
+- name: Create kiosk OS user
+  become: true
+  ansible.builtin.user:
+    name: "{{ raspbian_kiosk_user }}"
+    shell: /bin/bash
+    password: "!"
+    create_home: true
+  tags: raspbian
+
+- name: Install Chromium
+  become: true
+  ansible.builtin.apt:
+    name: chromium
+    state: present
+  tags: raspbian
+
+- name: Configure lightdm autologin for kiosk user
+  become: true
+  community.general.ini_file:
+    path: /etc/lightdm/lightdm.conf
+    section: "Seat:*"
+    option: autologin-user
+    value: "{{ raspbian_kiosk_user }}"
+    mode: "0644"
+  tags: raspbian
+
+- name: Ensure labwc config directory exists for kiosk user
+  become: true
+  ansible.builtin.file:
+    path: /home/{{ raspbian_kiosk_user }}/.config/labwc
+    state: directory
+    owner: "{{ raspbian_kiosk_user }}"
+    group: "{{ raspbian_kiosk_user }}"
+    mode: "0755"
+  tags: raspbian
+
+- name: Configure kiosk autostart
+  become: true
+  ansible.builtin.copy:
+    content: |
+      #!/bin/sh
+      chromium --kiosk --ozone-platform=wayland --noerrdialogs --disable-infobars --no-first-run --password-store=basic {{ raspbian_kiosk_url }}
+    dest: /home/{{ raspbian_kiosk_user }}/.config/labwc/autostart
+    owner: "{{ raspbian_kiosk_user }}"
+    group: "{{ raspbian_kiosk_user }}"
+    mode: "0755"
+  tags: raspbian

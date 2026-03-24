@@ -1,3 +1,7 @@
 ---
 - name: Configure desktop
   ansible.builtin.import_tasks: desktop.yml
+
+- name: Configure kiosk
+  ansible.builtin.include_tasks: kiosk.yml
+  when: raspbian_kiosk_enabled | default(false)
