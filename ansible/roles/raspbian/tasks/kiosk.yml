@@ -11,26 +11,17 @@
 - name: Install Chromium
   become: true
   ansible.builtin.apt:
-    name: chromium-browser
+    name: chromium
     state: present
-  tags: raspbian
-
-- name: Ensure lightdm conf.d directory exists
-  become: true
-  ansible.builtin.file:
-    path: /etc/lightdm/lightdm.conf.d
-    state: directory
-    mode: "0755"
   tags: raspbian
 
 - name: Configure lightdm autologin for kiosk user
   become: true
-  ansible.builtin.copy:
-    content: |
-      [Seat:*]
-      autologin-user={{ raspbian_kiosk_user }}
-      autologin-user-timeout=0
-    dest: /etc/lightdm/lightdm.conf.d/50-kiosk-autologin.conf
+  community.general.ini_file:
+    path: /etc/lightdm/lightdm.conf
+    section: "Seat:*"
+    option: autologin-user
+    value: "{{ raspbian_kiosk_user }}"
     mode: "0644"
   tags: raspbian
 
@@ -49,7 +40,7 @@
   ansible.builtin.copy:
     content: |
       #!/bin/sh
-      chromium-browser --kiosk --ozone-platform=wayland --noerrdialogs --disable-infobars --no-first-run {{ raspbian_kiosk_url }}
+      chromium --kiosk --ozone-platform=wayland --noerrdialogs --disable-infobars --no-first-run --password-store=basic {{ raspbian_kiosk_url }}
     dest: /home/{{ raspbian_kiosk_user }}/.config/labwc/autostart
     owner: "{{ raspbian_kiosk_user }}"
     group: "{{ raspbian_kiosk_user }}"
