@@ -65,6 +65,20 @@ make edit-secret FILE=ansible/inventory/group_vars/all/secrets.yml  # Edit a vau
 
 `make bootstrap` is only required for initial setup or disaster recovery. Adding new services starts at `make tofu-proxmox ARGS='apply'` or `make play` depending on whether new VMs are needed.
 
+### Upgrades
+
+```bash
+make upgrade                     # all apt-managed hosts, one at a time
+make upgrade LIMIT=andromeda     # single host
+make upgrade LIMIT=qemu_vms      # group
+```
+
+Prompts before upgrading each host and again before rebooting if a reboot is required. Hosts are processed serially to avoid taking both Pi-hole nodes down simultaneously.
+
+**memory-alpha is excluded** even with `LIMIT=memory-alpha`. GitLab CE is installed via the apt repo, so `apt upgrade` would pull a new GitLab version. GitLab upgrades must follow a specific version path (no skipping major versions) and need to be intentional — they're not safe to run as part of a general upgrade sweep. To upgrade memory-alpha OS packages without touching GitLab, hold the package first: `apt-mark hold gitlab-ce`.
+
+HAOS (codsworth) is also excluded — it manages its own updates.
+
 ---
 
 ## Adding a new service

@@ -6,6 +6,7 @@ help:
 	@echo "  uninstall          Remove installed dependencies"
 	@echo "  bootstrap          Run the one-time lab bootstrap playbook"
 	@echo "  play               Run the main Ansible playbook"
+	@echo "  upgrade            Interactively upgrade apt packages (excludes haos_nodes, memory-alpha): make upgrade [LIMIT=host_or_group]"
 	@echo "  verify             Run the verify playbook against live infrastructure"
 	@echo "  lint               Run ansible-lint and tflint"
 	@echo "  edit-secret        Edit a vault-encrypted file: make edit-secret FILE=path"
@@ -51,6 +52,9 @@ bootstrap-log:
 
 play:
 	cd ansible && ansible-playbook playbook.yml
+
+upgrade:
+	cd ansible && ansible-playbook upgrade.yml $(if $(LIMIT),--limit $(LIMIT),)
 
 verify:
 	cd ansible && ansible-playbook verify.yml

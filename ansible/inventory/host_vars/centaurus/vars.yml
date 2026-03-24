@@ -5,3 +5,4 @@ fqdn: centaurus.510forward.space
 mac_address: "42:17:01:FD:F7:A4"
 
 pihole_primary: true
+upgrade_risk: "low-moderate risk — watch for pihole-FTL in upgradable list; andromeda stays up during upgrade"
