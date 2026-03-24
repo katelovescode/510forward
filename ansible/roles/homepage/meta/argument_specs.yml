@@ -1,0 +1,44 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure Homepage dashboard
+    description: >
+      Installs Homepage v{{ homepage_version }} from source (Node.js/pnpm), sets up a
+      systemd service, and templates config files with secrets pulled from 1Password.
+      Secrets managed: Pi-hole admin password, NPM admin credentials, and Proxmox API token
+      (homepage@pve). Also creates the homepage@pve Proxmox user and token if not present,
+      delegating pvesh commands to enterprise.
+    options:
+      homepage_version:
+        type: str
+        required: true
+        description: >
+          Homepage release version to install, e.g. "1.5.0". Defined in
+          host_vars/dorothy/vars.yml. Installation is skipped if the installed
+          version matches.
+
+      proxmox_api_node:
+        type: str
+        required: true
+        description: >
+          Hostname of the Proxmox node to target for API calls and pvesh commands.
+          Defined in group_vars/all/vars.yml.
+
+      domain:
+        type: str
+        required: true
+        description: >
+          Local domain, e.g. 510forward.space. Used to construct service URLs.
+          Defined in group_vars/all/vars.yml.
+
+      onepassword_vault:
+        type: str
+        required: true
+        description: >
+          1Password vault name. Defined in group_vars/all/secrets.yml.
+
+      onepassword_become_user:
+        type: str
+        required: true
+        description: >
+          Local user for op CLI. Defined in group_vars/all/secrets.yml.

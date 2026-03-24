@@ -1,0 +1,9 @@
+---
+- name: Install NGINX Proxy Manager
+  ansible.builtin.import_tasks: install.yml
+
+- name: Configure TLS certificate
+  ansible.builtin.import_tasks: certificates.yml
+
+- name: Configure proxy hosts
+  ansible.builtin.import_tasks: proxy_hosts.yml

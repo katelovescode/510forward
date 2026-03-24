@@ -1,0 +1,173 @@
+---
+- name: Ensure pihole group exists
+  become: true
+  ansible.builtin.group:
+    name: pihole
+    state: present
+
+- name: Ensure pihole user exists
+  become: true
+  ansible.builtin.user:
+    name: pihole
+    home: /home/pihole
+    shell: /usr/sbin/nologin
+    comment: Pi-hole
+    group: pihole
+    password: "*"
+    state: present
+
+- name: Ensure /etc/pihole directory exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/pihole
+    state: directory
+    owner: pihole
+    group: pihole
+    mode: "0755"
+
+- name: Check if Pi-hole config exists
+  ansible.builtin.stat:
+    path: /etc/pihole/pihole.toml
+  register: pihole_config_file
+
+- name: Update existing Pi-hole installation
+  when: pihole_config_file.stat.exists
+
+  block:
+    - name: Get current Pi-hole version
+      become: true
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          pihole -v | grep -oP 'Core version is v\K[0-9.]*'
+        executable: /bin/bash
+      register: pihole_current_version
+      changed_when: false
+
+    - name: Get latest Pi-hole version
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/pi-hole/pi-hole/releases/latest
+        return_content: true
+        timeout: 10
+      register: pihole_latest_release
+      changed_when: false
+      failed_when: false
+
+    - name: Update Pi-hole if version differs
+      ansible.builtin.command:
+        cmd: pihole -up
+      become: true
+      when:
+        - pihole_latest_release.status == 200
+        - pihole_current_version.stdout != (pihole_latest_release.json.tag_name | regex_search('v[0-9.]*') | regex_replace('v', ''))
+      changed_when: pihole_current_version.stdout != (pihole_latest_release.json.tag_name | regex_search('v[0-9.]*') | regex_replace('v', ''))
+- name: Install new Pi-hole
+  when: not pihole_config_file.stat.exists
+
+  block:
+    - name: Template pihole.toml pre-install config
+      become: true
+      ansible.builtin.template:
+        src: pihole.toml.j2
+        dest: /etc/pihole/pihole.toml
+        owner: pihole
+        group: pihole
+        mode: "0644"
+
+    - name: Download Pi-hole installer
+      ansible.builtin.get_url:
+        url: "{{ pihole_installer_url }}"
+        dest: /tmp/pihole_install.sh
+        mode: "0755"
+
+    - name: Run Pi-hole unattended installer [~2-3 min] # noqa: command-instead-of-shell
+      become: true
+      ansible.builtin.shell:
+        cmd: bash /tmp/pihole_install.sh --unattended
+        creates: /etc/systemd/system/pihole-FTL.service
+
+    - name: Remove Pi-hole installer script
+      ansible.builtin.file:
+        path: /tmp/pihole_install.sh
+        state: absent
+
+- name: Build Pi-hole settings list
+  ansible.builtin.set_fact:
+    _pihole_settings: >-
+      {{
+        _pihole_base_settings +
+        ([] if (pihole_primary | default(false)) else _pihole_replica_settings)
+      }}
+  vars:
+    _pihole_base_settings:
+      - { key: "dns.upstreams", value: "[ {{ pihole_dns_1 }}, {{ pihole_dns_2 }} ]" }
+      - { key: "dns.dnssec", value: "true" }
+      - { key: "dns.listeningMode", value: "{{ pihole_listening_mode }}" }
+      - { key: "dns.domain.name", value: "{{ domain }}" }
+      - { key: "dns.queryLogging", value: "{{ pihole_query_logging | lower }}" }
+      - { key: "database.maxDBdays", value: "{{ pihole_max_db_days | string }}" }
+      - { key: "webserver.port", value: "80,[::]:80" }
+      - { key: "misc.etc_dnsmasq_d", value: "true" }
+      - { key: "resolver.resolveIPv6", value: "false" }
+    _pihole_replica_settings:
+      - { key: "webserver.api.app_sudo", value: "true" }
+  tags: pihole
+
+- name: Read Pi-hole settings
+  become: true
+  ansible.builtin.command:
+    cmd: pihole-FTL --config {{ item.key }}
+  register: _pihole_config_reads
+  changed_when: false
+  loop: "{{ _pihole_settings }}"
+  loop_control:
+    label: "{{ item.key }}"
+  tags: pihole
+
+- name: Apply Pi-hole settings
+  become: true
+  ansible.builtin.command:
+    argv:
+      - pihole-FTL
+      - --config
+      - "{{ item.item.key }}"
+      - "{{ item.item.value }}"
+  when: item.stdout | trim != item.item.value
+  changed_when: true
+  loop: "{{ _pihole_config_reads.results }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  notify: Restart pihole dns
+  tags: pihole
+
+- name: Ensure Pi-hole password exists in 1Password
+  no_log: true
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: upsert
+    onepassword_item:
+      title: "Pi-hole Admin Password"
+  run_once: true
+
+- name: Check if Pi-hole password is already correct
+  ansible.builtin.uri:
+    url: "http://localhost/api/auth"
+    method: POST
+    body_format: json
+    body:
+      password: "{{ onepassword_item_result.fields | selectattr('id', 'equalto', 'password') | map(attribute='value') | first | trim }}"
+    status_code: [200, 401]
+  register: pihole_auth_check
+  no_log: true
+
+- name: Set Pi-hole web password
+  become: true
+  ansible.builtin.command:
+    argv:
+      - pihole
+      - setpassword
+      - "{{ onepassword_item_result.fields | selectattr('id', 'equalto', 'password') | map(attribute='value') | first | mandatory }}"
+  no_log: true
+  changed_when: true
+  when: pihole_auth_check.status == 401

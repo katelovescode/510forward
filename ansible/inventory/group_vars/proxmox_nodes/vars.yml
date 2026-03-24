@@ -1,0 +1,28 @@
+---
+proxmox_admin_user: kate
+proxmox_admin_api_user: "{{ proxmox_admin_user }}@pam"
+
+#################################
+# Proxmox repositories
+# Even though PVE is on Bookworm, the no-subscription repo is trixie.
+#################################
+proxmox_repo_uri: "http://download.proxmox.com/debian/pve"
+proxmox_repo_suite: trixie
+proxmox_repo_components: "pve-no-subscription"
+
+#################################
+# ACME / TLS
+#################################
+proxmox_acme_account: default
+proxmox_acme_plugin_id: cloudflare
+proxmox_acme_domain: "enterprise.{{ domain }}"
+proxmox_acme_tos_url: "https://letsencrypt.org/documents/LE-SA-v1.6-August-18-2025.pdf"
+
+# Network Configuration
+proxmox_network_cidr: "24"
+proxmox_network_bridge_name: "vmbr0"
+
+#################################
+# DNS
+#################################
+proxmox_dns_servers: "{{ groups['pihole_nodes'] | map('extract', hostvars, 'ip_address') | list + public_dns_servers[:1] }}"

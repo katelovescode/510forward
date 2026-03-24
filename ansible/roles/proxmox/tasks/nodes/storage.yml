@@ -1,0 +1,16 @@
+---
+# Configure Proxmox local storage content types
+
+- name: Get current local storage content types
+  become: true
+  ansible.builtin.shell: # noqa: command-instead-of-shell
+    cmd: "awk '/^dir: local/,/content/ {if (/content/) print}' /etc/pve/storage.cfg || echo ''"
+  register: proxmox_storage_content_types
+  changed_when: false
+
+- name: Enable snippets on local storage
+  become: true
+  ansible.builtin.command:
+    cmd: pvesm set local --content vztmpl,backup,iso,snippets
+  when: "'snippets' not in proxmox_storage_content_types.stdout"
+  changed_when: true

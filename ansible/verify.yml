@@ -1,0 +1,24 @@
+---
+# verify.yml — acceptance tests for live infrastructure
+# Run after make play: make verify
+#
+# Destructive / stateful failover tests (stopping pihole-FTL, etc.) are omitted —
+# run those manually per the checklist in .windsurf/plans/homelab-ansible-plan.md.
+
+- name: DNS
+  import_playbook: verify/dns.yml
+
+- name: QEMU guest agent
+  import_playbook: verify/qemu.yml
+
+- name: NPM proxy
+  import_playbook: verify/npm.yml
+
+- name: TLS certificates
+  import_playbook: verify/tls.yml
+
+- name: Home Assistant
+  import_playbook: verify/home_assistant.yml
+
+- name: GitLab
+  import_playbook: verify/gitlab.yml

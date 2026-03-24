@@ -1,0 +1,73 @@
+---
+- name: Get QEMU VM list
+  become: true
+  ansible.builtin.command:
+    cmd: pvesh get /nodes/{{ proxmox_api_node }}/qemu --output-format json
+  register: _proxmox_vm_list
+  changed_when: false
+  tags: proxmox_vm_guest_agent
+
+- name: Get VM config for each QEMU VM
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      pvesh get /nodes/{{ proxmox_api_node }}/qemu/{{ vmid }}/config
+      --output-format json
+  vars:
+    vmid: >-
+      {{ ((_proxmox_vm_list.stdout | from_json) |
+          selectattr('name', 'equalto', item) |
+          map(attribute='vmid') | list + [0]) | first }}
+  register: _proxmox_vm_configs
+  changed_when: false
+  loop: "{{ groups['qemu_vms'] }}"
+  loop_control:
+    label: "{{ item }}"
+  tags: proxmox_vm_guest_agent
+
+- name: Enable guest agent channel in Proxmox VM config
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      pvesh set /nodes/{{ proxmox_api_node }}/qemu/{{ vmid }}/config
+      --agent enabled=1
+  vars:
+    vmid: >-
+      {{ ((_proxmox_vm_list.stdout | from_json) |
+          selectattr('name', 'equalto', item.item) |
+          map(attribute='vmid') | list + [0]) | first }}
+  when: >-
+    (item.stdout | from_json).agent | default('') is not search('enabled=1')
+  loop: "{{ _proxmox_vm_configs.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  changed_when: true
+  register: _proxmox_agent_enabled
+  tags: proxmox_vm_guest_agent
+
+- name: Reboot VMs where agent channel was just enabled # noqa: no-handler
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      qm reboot {{ ((_proxmox_vm_list.stdout | from_json) |
+          selectattr('name', 'equalto', item.item.item) |
+          map(attribute='vmid') | list + [0]) | first }}
+  when: item.changed
+  loop: "{{ _proxmox_agent_enabled.results }}"
+  loop_control:
+    label: "{{ item.item.item }}"
+  changed_when: true
+  tags: proxmox_vm_guest_agent
+
+- name: Wait for rebooted VMs to come back up # noqa: no-handler
+  ansible.builtin.wait_for:
+    host: "{{ hostvars[item.item.item]['ansible_host'] }}"
+    port: 22
+    timeout: 300
+    delay: 10
+  when: item.changed
+  loop: "{{ _proxmox_agent_enabled.results }}"
+  loop_control:
+    label: "{{ item.item.item }}"
+  delegate_to: localhost
+  tags: proxmox_vm_guest_agent

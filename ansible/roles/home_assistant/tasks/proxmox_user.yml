@@ -1,0 +1,32 @@
+---
+# Creates homeassistant@pve with four purpose-specific roles per the proxmoxve
+# integration's recommended permission model. Stores the API token in 1Password.
+# https://github.com/dougiteixeira/proxmoxve#suggestion-for-creating-permission-roles-for-use-with-integration
+
+- name: Create homeassistant Proxmox user and group structure
+  ansible.builtin.include_role:
+    name: proxmox_user
+    tasks_from: service_user
+  vars:
+    proxmox_user_service_user_name: homeassistant
+    proxmox_user_service_user_realm: pve
+    proxmox_user_service_user_roles:
+      - name: HomeAssistant.Audit
+        privs: [VM.Audit, Sys.Audit, Datastore.Audit]
+      - name: HomeAssistant.NodePowerMgmt
+        privs: [Sys.PowerMgmt]
+      - name: HomeAssistant.Update
+        privs: [Sys.Modify]
+      - name: HomeAssistant.VMPowerMgmt
+        privs: [VM.PowerMgmt]
+  tags: home_assistant
+
+- name: Create homeassistant API token
+  ansible.builtin.include_role:
+    name: proxmox_user
+    tasks_from: api_token
+  vars:
+    proxmox_user_api_token_user: homeassistant
+    proxmox_user_api_token_realm: pve
+    proxmox_user_api_token_item_title: "Proxmox Home Assistant API Token"
+  tags: home_assistant

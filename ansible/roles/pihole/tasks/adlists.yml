@@ -1,0 +1,45 @@
+---
+- name: Check adlist state
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      sqlite3 /etc/pihole/gravity.db
+      "SELECT enabled FROM adlist WHERE address='{{ item.url }}'"
+  register: _pihole_adlist_checks
+  changed_when: false
+  loop: "{{ pihole_adlists }}"
+  loop_control:
+    label: "{{ item.url }}"
+  tags: pihole
+
+- name: Insert adlists
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      sqlite3 /etc/pihole/gravity.db
+      "INSERT INTO adlist (address, enabled, comment)
+       VALUES ('{{ item.item.url }}', {{ item.item.enabled | default(true) | int }}, '{{ item.item.comment | default('') }}')"
+  when: item.stdout == ""
+  loop: "{{ _pihole_adlist_checks.results }}"
+  loop_control:
+    label: "{{ item.item.url }}"
+  changed_when: true
+  notify: Update pihole gravity
+  tags: pihole
+
+- name: Update adlist enabled state
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      sqlite3 /etc/pihole/gravity.db
+      "UPDATE adlist SET enabled={{ item.item.enabled | default(true) | int }}
+       WHERE address='{{ item.item.url }}'"
+  when:
+    - item.stdout != ""
+    - item.stdout | int != (item.item.enabled | default(true) | int)
+  loop: "{{ _pihole_adlist_checks.results }}"
+  loop_control:
+    label: "{{ item.item.url }}"
+  changed_when: true
+  notify: Update pihole gravity
+  tags: pihole

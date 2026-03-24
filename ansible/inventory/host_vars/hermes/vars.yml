@@ -1,0 +1,5 @@
+---
+ansible_host: 192.168.30.28
+ip_address: 192.168.30.28
+fqdn: hermes.510forward.space
+mac_address: "42:17:01:FD:E4:3D"

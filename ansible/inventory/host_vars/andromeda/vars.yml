@@ -1,0 +1,5 @@
+---
+ansible_host: 192.168.30.55
+ip_address: 192.168.30.55
+fqdn: andromeda.510forward.space
+first_run_user: kate

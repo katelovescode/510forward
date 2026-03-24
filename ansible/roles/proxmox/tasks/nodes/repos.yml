@@ -1,0 +1,32 @@
+---
+- name: Remove Proxmox enterprise repository
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+  tags: proxmox
+
+- name: Remove Ceph enterprise repository
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/ceph.list
+    state: absent
+  tags: proxmox
+
+- name: Configure Proxmox no-subscription repository
+  become: true
+  ansible.builtin.template:
+    src: proxmox-no-subscription.sources.j2
+    dest: /etc/apt/sources.list.d/proxmox.sources
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apt dist-upgrade
+  tags: proxmox
+
+- name: Update apt cache
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+  tags: proxmox

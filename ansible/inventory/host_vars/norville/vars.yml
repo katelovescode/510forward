@@ -1,0 +1,30 @@
+---
+ansible_host: 192.168.30.58
+ip_address: 192.168.30.58
+fqdn: norville.510forward.space
+mac_address: "42:17:01:FD:72:77"
+
+nginx_proxy_manager_certificate_domain: "*.{{ domain }}"
+
+nginx_proxy_manager_proxy_hosts:
+  - subdomain: enterprise
+    host: "{{ hostvars['enterprise'].ip_address }}"
+    port: 8006
+    scheme: https
+    allow_websocket_upgrade: true
+  - subdomain: norville
+    host: 127.0.0.1
+    port: 81
+  - subdomain: dorothy
+    host: "{{ hostvars['dorothy'].ip_address }}"
+    port: 3000
+    scheme: http
+  - subdomain: codsworth
+    host: "{{ hostvars['codsworth'].ip_address }}"
+    port: 8123
+    scheme: http
+    allow_websocket_upgrade: true
+  - subdomain: memory-alpha
+    host: "{{ hostvars['memory-alpha'].ip_address }}"
+    port: 80
+    scheme: http

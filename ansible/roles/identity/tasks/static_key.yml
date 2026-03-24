@@ -1,0 +1,10 @@
+---
+# Authorize a pre-existing SSH key for a user
+# Used for users that should have a static, non-rotating SSH key
+
+- name: Authorize static SSH key for user
+  become: true
+  ansible.posix.authorized_key:
+    user: "{{ identity_static_key_user }}"
+    key: "{{ identity_static_key_public_key }}"
+    state: present

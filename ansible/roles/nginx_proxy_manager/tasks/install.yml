@@ -1,0 +1,61 @@
+---
+- name: Install Docker
+  ansible.builtin.include_role:
+    name: docker
+  tags: nginx_proxy_manager
+
+- name: Create /opt/nginx-proxy-manager directory
+  become: true
+  ansible.builtin.file:
+    path: /opt/nginx-proxy-manager
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  tags: nginx_proxy_manager
+
+- name: Ensure NPM admin credentials exist in 1Password
+  no_log: true
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: upsert
+    onepassword_item:
+      title: "NGINX Proxy Manager Admin Password"
+      username: "{{ admin_email }}"
+  tags: nginx_proxy_manager
+
+- name: Set NPM admin password fact
+  ansible.builtin.set_fact:
+    nginx_proxy_manager_admin_password: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('id', 'equalto', 'password') |
+        map(attribute='value') | first
+      }}
+  no_log: true
+  tags: nginx_proxy_manager
+
+- name: Template docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/nginx-proxy-manager/docker-compose.yml
+    mode: "0644"
+  tags: nginx_proxy_manager
+
+- name: Deploy NGINX Proxy Manager stack
+  community.docker.docker_compose_v2:
+    project_src: /opt/nginx-proxy-manager
+    state: present
+    pull: missing
+  tags: nginx_proxy_manager
+
+- name: Wait for NPM API to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/"
+    status_code: 200
+  register: nginx_proxy_manager_health
+  retries: 12
+  delay: 5
+  until: nginx_proxy_manager_health is not failed
+  tags: nginx_proxy_manager
