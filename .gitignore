@@ -1,3 +1,7 @@
+# Proxmox installer (generated from template — contains secrets; ISOs are binary)
+proxmox_installer/answer.toml
+proxmox_installer/*.iso
+
 # IDE & Agents
 
 .windsurf/*

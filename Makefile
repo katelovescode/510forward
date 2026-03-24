@@ -13,6 +13,8 @@ help:
 	@echo "  tofu-recreate      Recreate VMs by name: make tofu-recreate HOSTS=centaurus,norville"
 	@echo "  reboot-vms         Reboot all QEMU VMs (centaurus, norville, dorothy)"
 	@echo "  sync-pihole        Manually trigger nebula-sync on centaurus"
+	@echo "  generate-proxmox-answer  Generate proxmox_installer/answer.toml from template + 1Password"
+	@echo "  build-proxmox-iso        Build auto-install ISO — runs generate-proxmox-answer automatically (PVE_ISO_VERSION=9.1-1)"
 	@echo "  help               Show this help message"
 	@echo ""
 
@@ -79,3 +81,33 @@ reboot-vms:
 
 sync-pihole:
 	cd ansible && ansible -b -m systemd -a "name=nebula-sync state=started" centaurus
+
+PVE_ISO_VERSION ?= 9.1-1
+
+generate-proxmox-answer:
+	$(eval ROOT_PASS := $(shell op item get "Proxmox Root User" --fields password --reveal))
+	$(eval ROOT_PASS_HASHED := $(shell python3 -c "from passlib.hash import sha512_crypt; print(sha512_crypt.hash('$(ROOT_PASS)'))"))
+	$(eval SYSADMIN_KEY := $(shell op item get "SysAdmin SSH Key" --fields "public key"))
+	@sed \
+	  -e 's|%%ROOT_PASSWORD_HASHED%%|$(ROOT_PASS_HASHED)|' \
+	  -e 's|%%SYSADMIN_PUBLIC_KEY%%|$(SYSADMIN_KEY)|' \
+	  proxmox_installer/answer.toml.template > proxmox_installer/answer.toml
+	@echo "Generated proxmox_installer/answer.toml"
+
+build-proxmox-iso: generate-proxmox-answer
+	docker run --rm \
+	  -v "$(PWD)/proxmox_installer:/work" \
+	  debian:trixie \
+	  bash -c "set -e && \
+	    apt-get update -qq && \
+	    apt-get install -y -qq wget gnupg2 && \
+	    wget -qO /etc/apt/trusted.gpg.d/proxmox-release-trixie.gpg https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg && \
+	    echo 'deb http://download.proxmox.com/debian/pve trixie pve-no-subscription' > /etc/apt/sources.list.d/pve.list && \
+	    apt-get update -qq && \
+	    apt-get install -y -qq proxmox-auto-install-assistant && \
+	    wget -q --show-progress -O /tmp/proxmox-ve.iso https://enterprise.proxmox.com/iso/proxmox-ve_$(PVE_ISO_VERSION).iso && \
+	    proxmox-auto-install-assistant prepare-iso /tmp/proxmox-ve.iso \
+	      --fetch-from iso \
+	      --answer-file /work/answer.toml \
+	      --output /work/proxmox-ve_$(PVE_ISO_VERSION)-auto.iso"
+	@echo "Built proxmox_installer/proxmox-ve_$(PVE_ISO_VERSION)-auto.iso"
