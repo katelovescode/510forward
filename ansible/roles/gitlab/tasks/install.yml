@@ -30,7 +30,7 @@
   failed_when: false
   tags: gitlab
 
-- name: Install GitLab CE {{ gitlab_version }} [~2-3 min]
+- name: Install GitLab CE [~2-3 min] {{ gitlab_version }}
   become: true
   ansible.builtin.apt:
     name: "gitlab-ce={{ gitlab_version }}-ce.0"
