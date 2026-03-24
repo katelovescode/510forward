@@ -90,17 +90,28 @@ That's it. `make play` applies both changes and every device on the network pick
 
 ## Secret management
 
-**Vault-encrypted in repo** (bootstrap-time, before `op` is usable):
-- `onepassword_vault`, `onepassword_become_user` — op CLI config
-- `sysadmin_public_key` — kate's SSH public key
-- `proxmox_admin_password_salt` — stable across runs for hash reproduction
+**Decision framework:**
 
-**1Password at runtime** (everything else — fetched via `op` CLI):
-- Proxmox root credentials, admin password, API tokens
-- SSH key pairs (ansible, opentofu, sysadmin)
-- Pi-hole, NPM, GitLab passwords
-- Cloudflare DNS API token
-- Ansible vault password (fetched by `ansible/scripts/vault_password.sh`)
+| | Secret | Not secret |
+|---|---|---|
+| **Multiple tools** | `.envrc` | `.envrc` or hardcoded |
+| **OpenTofu only** | gitignored `.tfvars` (escape hatch — currently unused, tofu secrets go via 1Password) | `.tf` variable defaults |
+| **Ansible only** | vault-encrypted file in `ansible/` | regular `vars.yml` |
+
+**1Password is the canonical store for all secrets** except the `op` token itself (circular dependency — you need `op` to read from 1Password). Everything that can go in 1Password does. The layers above are access mechanisms, not separate secret stores.
+
+**Current state:**
+
+- **`.envrc`** — controller bootstrap config, loaded by `direnv`, never committed:
+  - `OP_SERVICE_ACCOUNT_TOKEN` — root op credential; the only secret that can't live in 1Password
+  - `OP_VAULT_ID` — 1Password vault ID; used by both `tofu/tofu.sh` and `ansible/scripts/vault_password.sh`
+  - `SYSADMIN_PUBLIC_KEY` — kate's SSH public key; used by `tofu/tofu.sh`
+  - Git author config and other non-secret controller config
+- **Ansible vault** — `onepassword_vault`, `onepassword_become_user`, `sysadmin_public_key`, `proxmox_admin_password_salt`. These predate the 1Password-first approach; `OP_VAULT_ID` and `SYSADMIN_PUBLIC_KEY` are already in `.envrc` (vault copies are redundant). Candidates for full elimination — see below.
+- **1Password** — all runtime secrets: Proxmox credentials and API tokens, SSH key pairs, Pi-hole/NPM/GitLab passwords, Cloudflare DNS token, ansible vault password.
+- **OpenTofu** — no `.tfvars` secrets; all sensitive values fetched from 1Password at runtime via `tofu/tofu.sh`.
+
+> **Planned simplification:** Ansible vault is redundant. `onepassword_vault` duplicates `OP_VAULT_ID`; `sysadmin_public_key` duplicates `SYSADMIN_PUBLIC_KEY` — both already in `.envrc`. `onepassword_become_user` is non-sensitive and becomes a plaintext var. `proxmox_admin_password_salt` moves to 1Password. Once vault is empty, `vault_password.sh`, the vault password item in 1Password, and all `secrets.yml` files can be removed. See future work in the plan doc.
 
 A pre-commit hook (`ansible/scripts/check_secrets.py`) blocks commits if any secrets in `ansible/` are unencrypted. A second hook (`ansible/scripts/check_1password_titles.py`) validates that all 1Password item title references in code match items that exist in your 1Password vault.
 
