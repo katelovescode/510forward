@@ -148,10 +148,6 @@
     onepassword_action: upsert
     onepassword_item:
       title: "Pi-hole Admin Password"
-      custom_fields:
-        - label: Notes
-          value: "Managed by Ansible. Do not rename this item."
-          field_type: STRING
   run_once: true
 
 - name: Check if Pi-hole password is already correct
@@ -160,12 +156,7 @@
     method: POST
     body_format: json
     body:
-      password: >-
-        {{
-          onepassword_item_result.fields |
-          selectattr('id', 'equalto', 'password') |
-          map(attribute='value') | first
-        }}
+      password: "{{ onepassword_item_result.fields | selectattr('id', 'equalto', 'password') | map(attribute='value') | first | trim }}"
     status_code: [200, 401]
   register: pihole_auth_check
   no_log: true
