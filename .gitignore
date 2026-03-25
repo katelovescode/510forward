@@ -4,10 +4,10 @@ proxmox_installer/*.iso
 
 # IDE & Agents
 
-.windsurf/*
-.ansible/*
-.claude/*
-.gemini/*
+.windsurf
+**/.ansible
+.claude
+.gemini
 *.log
 CLAUDE.md
 
@@ -48,3 +48,4 @@ venv/
 
 # JS
 **/node_modules
+.yarn
