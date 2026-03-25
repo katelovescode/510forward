@@ -10,23 +10,25 @@ Homelab infrastructure as code. Proxmox-based home server managed with Ansible (
 ## Architecture
 
 ```
-OpenTofu          →  what exists       (VMs, templates)
-Ansible bootstrap →  one-time setup    (users, tokens, TLS cert, storage)
-Ansible playbook  →  ongoing config    (services, idempotent, safe to re-run)
+OpenTofu          →  what exists                (VMs, templates)
+Ansible bootstrap →  one-time setup             (users, tokens, TLS cert, storage)
+Ansible playbook  →  ongoing config             (services, idempotent, safe to re-run)
+Ansible verify    →  post-install verification
 ```
 
 **Hosts:**
 
-| Host         | Type                      | Role                          |
-| ------------ | ------------------------- | ----------------------------- |
-| enterprise   | Physical (mini PC)        | Proxmox VE node               |
-| andromeda    | Physical (Raspberry Pi 5) | Pi-hole secondary, desktop    |
-| centaurus    | QEMU VM                   | Pi-hole primary + nebula-sync |
-| norville     | QEMU VM                   | NGINX Proxy Manager (Docker)  |
-| dorothy      | QEMU VM                   | Homepage dashboard            |
-| codsworth    | QEMU VM (HAOS)            | Home Assistant                |
-| memory-alpha | QEMU VM                   | GitLab CE                     |
-| hermes       | QEMU VM                   | TBD                           |
+| Host         | Type                                        | Role                                   |
+| ------------ | ------------------------------------------- | -------------------------------------- |
+| enterprise   | Physical (mini PC)                          | Proxmox VE node                        |
+| andromeda    | Physical (Raspberry Pi 5, touchscreen case) | Pi-hole secondary, HomeAssistant kiosk |
+| centaurus    | QEMU VM                                     | Pi-hole primary + nebula-sync          |
+| norville     | QEMU VM                                     | NGINX Proxy Manager (Docker)           |
+| dorothy      | QEMU VM                                     | Homepage dashboard                     |
+| codsworth    | QEMU VM (HAOS)                              | Home Assistant                         |
+| memory-alpha | QEMU VM                                     | GitLab CE                              |
+| hermes       | QEMU VM                                     | GitLab Runner                          |
+| alexandria   | Physical (Tower, TrueNAS installed)         | NAS                                    |
 
 **DNS + reverse proxy pattern:** Pi-hole returns norville's IP for all `*.510forward.space` subdomains. NPM on norville handles TLS termination and proxies to backends. Pi-hole nodes resolve directly to their own IPs (FTL self-protection) and are accessed via HTTP by IP.
 
@@ -149,6 +151,76 @@ Fetches credentials from 1Password, downloads the PVE ISO, and produces a ready-
 
 ## Verification
 
-`make verify` runs automated acceptance tests after `make play`. Tests are organized in `ansible/verify/` by concern: DNS, QEMU guest agent, NPM, TLS, Home Assistant, GitLab.
+`make verify` runs automated acceptance tests after `make play`. These and manual tests are documented in `ansible/verify/README.md`.
 
-Some checks require manual intervention because they're stateful or destructive — stopping `pihole-FTL` to verify failover, or stopping both Pi-hole nodes to confirm fallback to `1.1.1.1`. These are documented in `ansible/verify/README.md`.
+### Adding a new service (runbook note)
+
+Every time a new service needs a browser-accessible URL, two things must happen:
+
+1. **NPM proxy host** — add an entry to `nginx_proxy_manager_proxy_hosts` in
+   `ansible/inventory/host_vars/norville/vars.yml` with the subdomain, backend
+   host IP, port, and scheme.
+
+2. **Pi-hole DNS** — add `npm_proxied: true` to the host's
+   `ansible/inventory/host_vars/<host>/vars.yml`. This makes Pi-hole's DNS
+   template return norville's IP for that hostname instead of the host's own IP.
+   NPM is not involved in this step — it's purely a Pi-hole DNS config change.
+
+Then `make play` — no other configuration needed. Every device on the network
+picks up the new DNS answer automatically via Pi-hole.
+
+Services that don't need a browser URL (background daemons, APIs only accessed
+by other services, etc.) need neither step — just access them by IP.
+
+### The Proxmox conflict and how to resolve it
+
+`enterprise.510forward.space` is currently used for two things:
+
+1. The Proxmox web UI (`https://enterprise.510forward.space:8006`)
+2. The Proxmox API (OpenTofu and Ansible connect here for TLS-validated API calls)
+
+Both use port 8006 explicitly and TLS-validated connections. If DNS points
+`enterprise.510forward.space` at norville, port 8006 doesn't exist there and
+both break.
+
+Resolved: `enterprise.510forward.space` routes through NPM on port 443 for
+browser access. OpenTofu connects directly to `https://192.168.30.170:8006`
+(IP, `insecure = true`) — bypassing DNS and NPM entirely, which is required for
+disaster recovery when those VMs don't exist yet. See `disaster-recovery-runbook.md`.
+
+## Key Design Decisions
+
+### SSH keys
+
+Two separate keys, separate purposes:
+
+- `id_ed25519_510forward` — kate's personal sysadmin key. Static, never rotated by
+  Ansible. In 1Password, set on kate OS user via `identity/static_key`.
+- `id_ed25519_ansible_510forward` — ansible automation key. Managed by Ansible via
+  `identity/upsert_key`. Fetched from 1Password by `.envrc` and written to disk.
+  Referenced in `ansible.cfg` as `private_key_file`.
+
+Cloud-init provisions VMs with the ansible key (not the sysadmin key). This means
+Ansible can connect to new VMs immediately without any manual key setup.
+
+### first_run_user pattern
+
+- Default: `ansible` (cloud-init VMs, enterprise after bootstrap)
+- `first_run_user: kate` — andromeda only. Raspbian doesn't have a `root` user; `kate`
+  is the privileged user. SSH hardening is skipped for `raspbian_nodes` group.
+- Only referenced in the Base configuration play in `playbook.yml` — not global.
+
+  **Kiosk escape / recovery:**
+
+  To get out of kiosk mode temporarily (e.g. for maintenance):
+  1. Press `Alt+F4` or `Ctrl+Alt+T` to attempt to close/escape Chromium (may not work
+     in strict kiosk mode).
+  2. More reliably: switch to a virtual terminal with `Ctrl+Alt+F2`, log in as kate,
+     do what you need, then `Ctrl+Alt+F7` (or F1) to return to the display.
+  3. From the VT: `sudo systemctl stop lightdm` drops to console entirely; restart
+     with `sudo systemctl start lightdm` when done.
+
+  To boot outside kiosk mode (e.g. for a session as kate on the desktop):
+  - Temporarily set `autologin-user=kate` in `/etc/lightdm/lightdm.conf` and reboot,
+    OR run `make play` with `raspbian_kiosk_enabled: false` in group_vars to disable
+    autologin and revert to the login screen. Re-enable when done.
