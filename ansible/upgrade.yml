@@ -9,16 +9,10 @@
 # Hosts are processed one at a time (serial: 1) to avoid taking both
 # Pi-hole nodes down simultaneously.
 #
-# Excludes haos_nodes (HAOS manages its own updates) and memory-alpha
-# (GitLab CE upgrades must follow a specific version path and are managed
-# separately to avoid accidental major version jumps via apt).
-#
-# Future: add plays here for non-apt services (GitLab CE, HAOS, etc.),
-# conditioned on the relevant host groups, so all system updates run
-# from a single entry point.
+# Excludes self_managed_os hosts
 
 - name: Upgrade apt packages
-  hosts: all:!haos_nodes:!memory-alpha
+  hosts: all:!self_managed_os
   serial: 1
   gather_facts: false
   tasks:

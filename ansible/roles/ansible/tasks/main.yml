@@ -39,7 +39,7 @@
         line: PasswordAuthentication no
       notify: Restart sshd
 
-- name: Secure SSH on non-hypervisor nodes
+- name: Secure SSH (disabled on proxmox and raspbian hosts)
   when:
     - '"proxmox_nodes" not in group_names'
     - '"raspbian_nodes" not in group_names'
