@@ -5,4 +5,4 @@ fqdn: memory-alpha.510forward.space
 mac_address: "42:17:01:FD:A1:FA"
 npm_proxied: true
 
-gitlab_version: "18.5.2"
+gitlab_version: "18.10.1"
