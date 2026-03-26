@@ -35,12 +35,69 @@
     mode: "0755"
   tags: raspbian
 
+- name: Read HA kiosk token from 1Password
+  ansible.builtin.include_role:
+    name: onepassword
+  vars:
+    onepassword_action: read
+    onepassword_item:
+      title: "{{ raspbian_kiosk_ha_token_op_item }}"
+  no_log: true
+  when: raspbian_kiosk_ha_token_op_item is defined
+  tags: raspbian
+
+- name: Set HA kiosk token fact
+  ansible.builtin.set_fact:
+    _raspbian_kiosk_ha_token: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('label', 'equalto', 'access_token') |
+        map(attribute='value') | first
+      }}
+  no_log: true
+  when: raspbian_kiosk_ha_token_op_item is defined
+  tags: raspbian
+
+- name: Create HA auth extension directory
+  become: true
+  ansible.builtin.file:
+    path: /home/{{ raspbian_kiosk_user }}/.config/chromium-ha-auth
+    state: directory
+    owner: "{{ raspbian_kiosk_user }}"
+    group: "{{ raspbian_kiosk_user }}"
+    mode: "0755"
+  when: raspbian_kiosk_ha_token_op_item is defined
+  tags: raspbian
+
+- name: Template HA auth extension manifest
+  become: true
+  ansible.builtin.template:
+    src: ha-auth-manifest.json.j2
+    dest: /home/{{ raspbian_kiosk_user }}/.config/chromium-ha-auth/manifest.json
+    owner: "{{ raspbian_kiosk_user }}"
+    group: "{{ raspbian_kiosk_user }}"
+    mode: "0644"
+  when: raspbian_kiosk_ha_token_op_item is defined
+  tags: raspbian
+
+- name: Template HA auth extension inject script
+  become: true
+  ansible.builtin.template:
+    src: ha-auth-inject.js.j2
+    dest: /home/{{ raspbian_kiosk_user }}/.config/chromium-ha-auth/inject.js
+    owner: "{{ raspbian_kiosk_user }}"
+    group: "{{ raspbian_kiosk_user }}"
+    mode: "0644"
+  no_log: true
+  when: raspbian_kiosk_ha_token_op_item is defined
+  tags: raspbian
+
 - name: Configure kiosk autostart
   become: true
   ansible.builtin.copy:
     content: |
       #!/bin/sh
-      chromium --kiosk --ozone-platform=wayland --noerrdialogs --disable-infobars --no-first-run --password-store=basic {{ raspbian_kiosk_url }}
+      chromium --kiosk --ozone-platform=wayland --noerrdialogs --disable-infobars --no-first-run --password-store=basic{% if raspbian_kiosk_ha_token_op_item is defined %} --load-extension=/home/{{ raspbian_kiosk_user }}/.config/chromium-ha-auth{% endif %} {{ raspbian_kiosk_url }}
     dest: /home/{{ raspbian_kiosk_user }}/.config/labwc/autostart
     owner: "{{ raspbian_kiosk_user }}"
     group: "{{ raspbian_kiosk_user }}"

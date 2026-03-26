@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "HA Kiosk Auth",
+  "version": "1.0",
+  "content_scripts": [{
+    "matches": ["{{ raspbian_kiosk_url }}/*"],
+    "js": ["inject.js"],
+    "run_at": "document_start"
+  }]
+}

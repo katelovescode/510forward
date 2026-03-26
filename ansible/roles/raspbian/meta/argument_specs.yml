@@ -32,3 +32,11 @@ argument_specs:
         required: false
         default: kiosk
         description: Username for the dedicated kiosk OS user.
+      raspbian_kiosk_ha_token_op_item:
+        type: str
+        required: false
+        description: >
+          1Password item title containing a long-lived Home Assistant access token
+          in a field labelled 'access_token'. When set, deploys a Chromium extension
+          that injects the token into localStorage so the kiosk auto-authenticates
+          after HA restarts.

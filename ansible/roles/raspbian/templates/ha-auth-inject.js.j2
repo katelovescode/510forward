@@ -1,0 +1,15 @@
+(function () {
+  if (!sessionStorage.getItem('ha-auth-injected')) {
+    sessionStorage.setItem('ha-auth-injected', '1');
+    localStorage.setItem('hassTokens', JSON.stringify({
+      hassUrl: '{{ raspbian_kiosk_url }}',
+      clientId: '{{ raspbian_kiosk_url }}/',
+      expires_in: 1800,
+      expires: 9999999999999,
+      refresh_token: '',
+      access_token: '{{ _raspbian_kiosk_ha_token }}',
+      token_type: 'Bearer'
+    }));
+    location.reload();
+  }
+}());
