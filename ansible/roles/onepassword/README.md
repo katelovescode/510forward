@@ -12,7 +12,7 @@ Abstraction over the `op` CLI for reading, upserting, and deleting 1Password ite
 
 This role requires the 1Password desktop app (beta build) with integrations enabled. The `op` CLI runs on the controller — all commands are delegated to localhost where the service account token is available via `.envrc`.
 
-**All secrets must come from 1Password via this role.** Never hardcode credentials, store them in plaintext vars, or prompt at runtime. If a credential does not exist in 1Password yet, add a task to create it first (see `proxmox_user/tasks/api_token.yml` for an example).
+**All secrets must come from 1Password via this role.** Never hardcode credentials, store them in plaintext vars, or prompt at runtime. If a credential does not exist in 1Password yet, add a task to create it first (see `proxmox_user/tasks/api_token.yml` for an example). See the main README for the exceptions - .envrc handles those.
 
 ## Interface reference
 
@@ -20,14 +20,14 @@ This role requires the 1Password desktop app (beta build) with integrations enab
 
 ```yaml
 onepassword_item:
-  title: "..."           # required; must match the item title in 1Password exactly
-  category: LOGIN        # required for upsert; 1Password-native (LOGIN, PASSWORD, API_CREDENTIAL, etc.)
-  tags: [ansible-managed]  # caller declares; role always adds "ansible" automatically
+  title: "..." # required; must match the item title in 1Password exactly
+  category: LOGIN # required for upsert; 1Password-native (LOGIN, PASSWORD, API_CREDENTIAL, etc.)
+  tags: [ansible-managed] # caller declares; role always adds "ansible" automatically
   fields:
-    - id: username       # stable identifier; used for change detection and result lookup
+    - id: username # stable identifier; used for change detection and result lookup
       type: STRING
-      purpose: USERNAME  # optional; 1Password-native (USERNAME, PASSWORD)
-      label: username    # display name in 1Password UI
+      purpose: USERNAME # optional; 1Password-native (USERNAME, PASSWORD)
+      label: username # display name in 1Password UI
       value: "{{ admin_email }}"
     - id: password
       type: CONCEALED
@@ -38,15 +38,16 @@ onepassword_item:
 
 ### Role variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `onepassword_action` | yes | `read`, `upsert`, or `delete` |
-| `onepassword_item` | yes | Item descriptor (see above) |
-| `onepassword_item_result` | — | Set as a fact after `read` or `upsert`; contains the full item including `fields` |
+| Variable                  | Required | Description                                                                       |
+| ------------------------- | -------- | --------------------------------------------------------------------------------- |
+| `onepassword_action`      | yes      | `read`, `upsert`, or `delete`                                                     |
+| `onepassword_item`        | yes      | Item descriptor (see above)                                                       |
+| `onepassword_item_result` | —        | Set as a fact after `read` or `upsert`; contains the full item including `fields` |
 
 ### Auto-generation
 
 Any `CONCEALED` field with no `value` key is auto-generated:
+
 - Item does not exist: generate a random string and store it.
 - Item exists: use the stored value — no comparison, no write for that field.
 
@@ -56,13 +57,14 @@ Default generation parameters: `length: 32, special: true`. Override per field:
 - id: password
   type: CONCEALED
   label: password
-  length: 16      # optional, default 32
-  special: false  # optional, default true — use for services that reject special characters
+  length: 16 # optional, default 32
+  special: false # optional, default true — use for services that reject special characters
 ```
 
 ### Tags
 
 The role stamps the `ansible` tag on every write. The caller also declares one of:
+
 - `ansible-managed` — Ansible owns the full lifecycle; reconciles on every run.
 - `ansible-bootstrap` — Ansible created this once; will not modify it after creation.
 
@@ -115,7 +117,7 @@ When adding a new credential, find the pattern that matches and copy it.
 
 ### Pattern A — Login (username + password)
 
-*Use for: NPM, GitLab, OS admin user*
+_Use for: NPM, GitLab, OS admin user_
 
 ```yaml
 onepassword_item:
@@ -123,7 +125,13 @@ onepassword_item:
   category: LOGIN
   tags: [ansible-managed]
   fields:
-    - { id: username, type: STRING, purpose: USERNAME, label: username, value: "{{ admin_email }}" }
+    - {
+        id: username,
+        type: STRING,
+        purpose: USERNAME,
+        label: username,
+        value: "{{ admin_email }}",
+      }
     - { id: password, type: CONCEALED, purpose: PASSWORD, label: password }
     # omit value → auto-generated (length: 32, special: true)
 ```
@@ -132,7 +140,7 @@ onepassword_item:
 
 ### Pattern B — Password only
 
-*Use for: Pi-hole, any service with no username concept*
+_Use for: Pi-hole, any service with no username concept_
 
 ```yaml
 onepassword_item:
@@ -149,7 +157,7 @@ onepassword_item:
 
 ### Pattern C — API token
 
-*Use for: Proxmox API tokens, bearer tokens with a separate ID and secret. Omit `token_id` if the token is a single opaque string.*
+_Use for: Proxmox API tokens, bearer tokens with a separate ID and secret. Omit `token_id` if the token is a single opaque string._
 
 ```yaml
 # With token ID and secret
@@ -174,7 +182,7 @@ onepassword_item:
 
 ### Pattern D — Manually managed (read only)
 
-*Use for: any credential a human creates and maintains in 1Password*
+_Use for: any credential a human creates and maintains in 1Password_
 
 ```yaml
 onepassword_action: read
@@ -185,7 +193,7 @@ onepassword_item:
 
 **Known manually managed items:**
 
-| Item | Field id | Notes |
-|---|---|---|
-| Proxmox Root User | `password` | Standard LOGIN item |
+| Item                             | Field id     | Notes                                |
+| -------------------------------- | ------------ | ------------------------------------ |
+| Proxmox Root User                | `password`   | Standard LOGIN item                  |
 | Home Assistant Ansible API Token | `credential` | Field id confirmed via `op item get` |
