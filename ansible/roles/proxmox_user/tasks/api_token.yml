@@ -71,5 +71,14 @@
         onepassword_action: upsert
         onepassword_item:
           title: "{{ proxmox_user_api_token_item_title }}"
-          username: "{{ (proxmox_user_api_token_result.stdout | from_json)['full-tokenid'] }}"
-          password: "{{ (proxmox_user_api_token_result.stdout | from_json).value }}"
+          category: API_CREDENTIAL
+          tags: [ansible-bootstrap]
+          fields:
+            - id: token_id
+              type: STRING
+              label: "token id"
+              value: "{{ (proxmox_user_api_token_result.stdout | from_json)['full-tokenid'] }}"
+            - id: credential
+              type: CONCEALED
+              label: credential
+              value: "{{ (proxmox_user_api_token_result.stdout | from_json).value }}"
