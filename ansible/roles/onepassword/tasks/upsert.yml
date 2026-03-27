@@ -25,20 +25,46 @@
       }}
   no_log: true
 
-- name: Resolve password
+- name: Handle category mismatch
+  when:
+    - _onepassword_exists | bool
+    - _onepassword_existing_item.category | upper != onepassword_item.category | upper
+  block:
+    - name: Delete item with wrong category
+      ansible.builtin.command:
+        cmd: op item delete '{{ _onepassword_existing_item.id }}' --vault "{{ onepassword_vault }}"
+      become: true
+      become_user: "{{ onepassword_become_user }}"
+      delegate_to: localhost
+      changed_when: true
+      no_log: true
+
+    - name: Reset existence facts
+      ansible.builtin.set_fact:
+        _onepassword_exists: false
+        _onepassword_existing_item: {}
+      no_log: true
+
+- name: Resolve fields
   ansible.builtin.set_fact:
-    _onepassword_resolved_password: >-
-      {{
-        onepassword_item.password
-        if onepassword_item.password is defined
-        else (
-          _onepassword_existing_item.fields |
-          selectattr('id', 'equalto', 'password') |
-          map(attribute='value') | first | default('')
-          if _onepassword_exists
-          else lookup('community.general.random_string', length=32, special=false)
-        )
-      }}
+    _onepassword_resolved_fields: >-
+      {%- set resolved = [] -%}
+      {%- for field in onepassword_item.fields -%}
+        {%- if field.type | upper == 'CONCEALED' and field.value is not defined -%}
+          {%- set existing_value = _onepassword_existing_item.fields | default([]) |
+              selectattr('id', 'equalto', field.id) | map(attribute='value') | first | default('') -%}
+          {%- if existing_value -%}
+            {%- set _ = resolved.append(field | combine({'value': existing_value})) -%}
+          {%- else -%}
+            {%- set _ = resolved.append(field | combine({'value': lookup('community.general.random_string',
+                length=field.length | default(32),
+                special=field.special | default(true))})) -%}
+          {%- endif -%}
+        {%- else -%}
+          {%- set _ = resolved.append(field) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ resolved }}
   no_log: true
 
 - name: Check if write is needed
@@ -49,20 +75,32 @@
       {%- if not _onepassword_exists -%}
         {%- set needs_write.value = true -%}
       {%- endif -%}
-      {%- if onepassword_item.username is defined and
-          onepassword_item.username != (current | selectattr('id', 'equalto', 'username') | map(attribute='value') | first | default('')) -%}
-        {%- set needs_write.value = true -%}
-      {%- endif -%}
-      {%- if onepassword_item.password is defined and
-          onepassword_item.password != (current | selectattr('id', 'equalto', 'password') | map(attribute='value') | first | default('')) -%}
-        {%- set needs_write.value = true -%}
-      {%- endif -%}
-      {%- for field in onepassword_item.custom_fields | default([]) -%}
-        {%- if field.value != (current | selectattr('label', 'equalto', field.label) | map(attribute='value') | first | default('')) -%}
-          {%- set needs_write.value = true -%}
+      {%- for field in onepassword_item.fields -%}
+        {%- if field.value is defined -%}
+          {%- set stored = current | selectattr('id', 'equalto', field.id) |
+              map(attribute='value') | first | default('') -%}
+          {%- if field.value | string != stored | string -%}
+            {%- set needs_write.value = true -%}
+          {%- endif -%}
         {%- endif -%}
       {%- endfor -%}
       {{ needs_write.value }}
+  no_log: true
+
+- name: Detect orphaned fields
+  ansible.builtin.set_fact:
+    _onepassword_orphaned_fields: >-
+      {%- set declared_ids = onepassword_item.fields | map(attribute='id') | list -%}
+      {%- set is_ansible_item = 'ansible' in (_onepassword_existing_item.tags | default([])) -%}
+      {%- set orphaned = [] -%}
+      {%- if _onepassword_needs_write | bool and _onepassword_exists | bool and is_ansible_item -%}
+        {%- for f in _onepassword_existing_item.fields | default([]) -%}
+          {%- if f.id not in declared_ids -%}
+            {%- set _ = orphaned.append(f.id) -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
+      {{ orphaned }}
   no_log: true
 
 - name: Write item
@@ -87,6 +125,7 @@
           {{ 'op item create' if not _onepassword_exists else 'op item edit ' + _onepassword_existing_item.id }}
           --template "{{ _onepassword_temp_file }}"
           --vault "{{ onepassword_vault }}"
+          --tags "{{ (['ansible'] + (onepassword_item.tags | default([]))) | join(',') }}"
           </dev/null
         executable: /bin/bash
       become: true
@@ -100,6 +139,13 @@
         path: "{{ _onepassword_temp_file }}"
         state: absent
       delegate_to: localhost
+
+- name: Notice orphaned fields
+  when: _onepassword_orphaned_fields | length > 0
+  ansible.builtin.debug:
+    msg: >-
+      Item '{{ onepassword_item.title }}' has undeclared fields: {{ _onepassword_orphaned_fields }}.
+      These were not modified. Remove manually in 1Password if no longer needed.
 
 - name: Read item result
   ansible.builtin.include_tasks: read.yml
