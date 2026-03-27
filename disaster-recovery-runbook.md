@@ -15,7 +15,6 @@ Verify the controller is ready before starting:
 cd ~/Projects/510forward
 direnv allow          # loads .envrc, fetches ansible SSH key from 1Password
 op vault list         # confirms 1Password is accessible
-ls ansible/secrets/vault_password  # confirms vault password is present
 make install          # if dependencies aren't installed
 ```
 
@@ -111,7 +110,4 @@ If the controller is also gone, reconstruct it first:
 3. Recreate `.envrc` — the 1Password service account token is embedded in the
    original `.envrc`. Without a backup, create a new service account in 1Password
    and update the token. **Back up `.envrc` externally.**
-4. Recover `ansible/secrets/vault_password`. If lost, all vault-encrypted files
-   in the repo are unrecoverable and everything would need to be re-encrypted.
-   **Store `vault_password` as a secure note in 1Password.**
-5. Run `direnv allow`, then proceed from Step 1.
+4. Run `direnv allow`, then proceed from Step 1.

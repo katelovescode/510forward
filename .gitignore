@@ -19,8 +19,6 @@ CLAUDE.md
 # Ansible
 **/secrets/*
 ansible/.cache/
-# secrets.yml files are vault-encrypted and committed intentionally.
-# The pre-commit hook (scripts/check_secrets.py) enforces encryption before every commit.
 
 # OpenTofu / Terraform
 tofu/**/.terraform/

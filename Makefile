@@ -9,7 +9,6 @@ help:
 	@echo "  upgrade                  Interactively upgrade apt packages (excludes self_managed_os hosts): make upgrade [LIMIT=host_or_group]"
 	@echo "  verify                   Run the verify playbook against live infrastructure"
 	@echo "  lint                     Run ansible-lint and tflint"
-	@echo "  edit-secret              Edit a vault-encrypted file: make edit-secret FILE=path"
 	@echo "  tofu-proxmox             Run OpenTofu for Proxmox: make tofu-proxmox ARGS='plan'"
 	@echo "  tofu-recreate            Recreate VMs by name: make tofu-recreate HOSTS=centaurus,norville"
 	@echo "  reboot-vms               Reboot all QEMU VMs (centaurus, norville, dorothy)"
@@ -69,9 +68,6 @@ lint:
 lint-fix:
 	cd ansible && ansible-lint --fix
 	cd tofu/proxmox && tflint --recursive --config "$(PWD)/tofu/proxmox/.tflint.hcl" --fix
-
-edit-secret:
-	cd ansible && ansible-vault edit $(FILE)
 
 tofu-proxmox:
 	cd tofu/proxmox && ../tofu.sh $(ARGS)

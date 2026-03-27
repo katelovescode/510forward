@@ -12,7 +12,7 @@ Abstraction over the `op` CLI for reading, upserting, and deleting 1Password ite
 
 ## Authentication pattern
 
-// TODO: some of the things stored in ansible vault are exceptions to this rule, but we should also make sure we haven't accidentally added things to vault that should be handled by 1Password. Also worth it to call out that in order to use this role you need the 1Password beta build and it needs to have integrations turned onn
+In order to use this role you need the 1Password beta build and it needs to have integrations turned on. This is an alternative to needing to have a hosted or self-hosted 1Password Connect server, and install relies on the locally installed 1Password app.
 
 **All secrets used by roles in this codebase must come from 1Password via this role.** Never hardcode credentials, store them in plaintext vars, or prompt the user to paste them at runtime. If a role needs a credential that doesn't exist in 1Password yet, add a task to create it there first (see `proxmox_user/tasks/api_token.yml` for an example of the upsert pattern).
 
@@ -21,7 +21,7 @@ To read a secret:
 ```yaml
 - name: Read my secret
   ansible.builtin.include_role:
-    name: onepassword
+    name: onepassword # automatically returns a onepassword_item_result object
   vars:
     onepassword_action: read
     onepassword_item:

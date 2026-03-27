@@ -3,7 +3,7 @@
 ![images/guinanpicard.jpg](images/guinanpicard.jpg)
 _"The idea of fitting in just repels me."_ — Guinan
 
-Homelab infrastructure as code. Proxmox-based home server managed with Ansible (configuration) and OpenTofu (provisioning). Secrets are stored in 1Password and injected at runtime via the `op` CLI; secrets that must be committed are encrypted with ansible-vault.
+Homelab infrastructure as code. Proxmox-based home server managed with Ansible (configuration) and OpenTofu (provisioning). Secrets are stored in 1Password and injected at runtime via the `op` CLI or `direnv` with `.envrc` depending on needs.
 
 ---
 
@@ -40,7 +40,7 @@ Before running anything, the following must be done manually:
 
 1. Proxmox VE installed on enterprise, accessible at its static IP
 2. 1Password CLI (`op`) installed and authenticated on the controller
-3. The following 1Password items created manually in your vault:
+3. The following 1Password items created manually in the target vault:
    - **"Proxmox Root User"** — root credentials for enterprise
    - **"Cloudflare DNS API Token"** — token with DNS edit permissions, field label `credential`, field name `DNS Homelab`
    - **"1Password Automation API Token"** — op service account token for Ansible/OpenTofu
@@ -103,19 +103,9 @@ Every service that needs a browser URL requires two changes, then `make play`:
 
 ## Secret management
 
-**Decision framework:**
+Things that are either already defined in env vars or on the controller (GIT_AUTHOR_NAME, etc.), information needed for both tofu & ansible (SysAdmin SSH Key, etc.), or required for 1Password vault access (OP_SERVICE_ACCOUNT_TOKEN, etc.) live in .envrc. Everything else is in 1Password and pulled from there.
 
-|                    | Secret                                  | Not secret              |
-| ------------------ | --------------------------------------- | ----------------------- |
-| **Multiple tools** | `.envrc` - OP Vault info and Git info   | `.envrc` or hardcoded   |
-| **OpenTofu only**  | gitignored `.tfvars` (currently unused) | `.tf` variable defaults |
-| **Ansible only**   | vault-encrypted file in `ansible/`      | regular `vars.yml`      |
-
-Everything that can go in 1Password does.
-
-> **Planned simplification:** Ansible vault is redundant. `onepassword_vault` duplicates `OP_VAULT_ID`; `sysadmin_public_key` duplicates `SYSADMIN_PUBLIC_KEY` — both already in `.envrc`. `onepassword_become_user` is non-sensitive and becomes a plaintext var. `proxmox_admin_password_salt` moves to 1Password. Once vault is empty, `vault_password.sh`, the vault password item in 1Password, and all `secrets.yml` files can be removed. See future work in the plan doc.
-
-A pre-commit hook (`ansible/scripts/check_secrets.py`) blocks commits if any secrets in `ansible/` are unencrypted. A second hook (`ansible/scripts/check_1password_titles.py`) validates that all 1Password item title references in code match items that exist in your 1Password vault.
+A pre-commit hook (`ansible/scripts/check_1password_titles.py`) validates that all 1Password item title references in code match items that exist in the 1Password vault.
 
 ---
 

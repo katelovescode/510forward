@@ -27,7 +27,7 @@ Custom DNS entries go in `/etc/dnsmasq.d/`. `misc.etc_dnsmasq_d = true` must be 
 
 Pi-hole nodes cannot use themselves as DNS resolvers — if Pi-hole is down, the node loses DNS and can't restart the service. centaurus and andromeda use `1.1.1.1` and `1.0.0.1` as upstreams directly.
 
-The resolver is managed via a systemd-resolved drop-in at `/etc/systemd/resolved.conf.d/ansible-dns.conf` with `DNSStubListener=no`. This also resolves the ARM64 FTL bug (see below). The drop-in is interface-agnostic, which matters for andromeda: it's on WiFi, and NetworkManager identifies connections by name (e.g. `netplan-wlan0-YourSSID`). Setting DNS per-interface via NM would require referencing that name, which breaks if the SSID changes or NM regenerates it. The systemd-resolved drop-in sets DNS system-wide without touching interface config.
+The resolver is managed via a systemd-resolved drop-in at `/etc/systemd/resolved.conf.d/ansible-dns.conf` with `DNSStubListener=no`. This also resolves the ARM64 FTL bug (see below). The drop-in is interface-agnostic, which matters for andromeda: it's on WiFi, and NetworkManager identifies connections by name (e.g. `netplan-wlan0-MySSID`). Setting DNS per-interface via NM would require referencing that name, which breaks if the SSID changes or NM regenerates it. The systemd-resolved drop-in sets DNS system-wide without touching interface config.
 
 ## ARM64 FTL port 53 conflict (andromeda)
 
