@@ -25,8 +25,9 @@ argument_specs:
         type: dict
         required: true
         description: >
-          Item definition. Required key: title (str).
-          Optional keys: username (str), password (str),
-          custom_fields (list of dicts with label, value, field_type).
-          Password is auto-generated on create and preserved on update
-          if omitted. Provide explicitly to set or rotate a password.
+          Item definition. Required: title (str), category (str — 1Password-native: LOGIN,
+          PASSWORD, API_CREDENTIAL, etc.). Optional: tags (list of str — role always adds
+          'ansible'; callers add 'ansible-managed' or 'ansible-bootstrap'), fields (list of
+          dicts). Each field: id (str), type (str), label (str), value (str, optional),
+          purpose (str, optional), length (int, default 32), special (bool, default true).
+          CONCEALED fields with no value are auto-generated on create and preserved on update.
