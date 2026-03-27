@@ -51,33 +51,31 @@ Before running anything, the following must be done manually:
 
 ## Usage
 
-All commands run from the repo root via `make`:
+Run `make help` to find out all available commands. The most common:
 
 ```bash
-make install          # Install dependencies and pre-commit hooks
-make bootstrap        # One-time bootstrap (run once, as sysadmin, before tofu apply)
+make install                    # Install dependencies and pre-commit hooks
+make bootstrap                  # One-time bootstrap (run once, as sysadmin, before tofu apply)
 make tofu-proxmox ARGS='plan'   # Preview VM changes
 make tofu-proxmox ARGS='apply'  # Provision VMs
-make play             # Run main Ansible playbook (idempotent)
-make verify           # Run acceptance tests against live infrastructure
-make lint             # ansible-lint + tflint
-make sync-pihole      # Manually trigger nebula-sync on centaurus
-make edit-secret FILE=ansible/inventory/group_vars/all/secrets.yml  # Edit a vault-encrypted file
+make play                       # Run main Ansible playbook (idempotent)
+make verify                     # Run acceptance tests against live infrastructure
+make lint                       # ansible-lint + tflint
 ```
 
-`make bootstrap` is only required for initial setup or disaster recovery. Adding new services starts at `make tofu-proxmox ARGS='apply'` or `make play` depending on whether new VMs are needed.
+`make bootstrap` is only required for initial setup or disaster recovery, but it's still idempotent. It only acts on Proxmox and gets the system "ready".
 
 ### Upgrades
 
 ```bash
-make upgrade                     # all apt-managed hosts, one at a time
-make upgrade LIMIT=andromeda     # single host
-make upgrade LIMIT=qemu_vms      # group
+make upgrade                    # all apt-managed hosts, one at a time
+make upgrade LIMIT=andromeda    # single host
+make upgrade LIMIT=qemu_vms     # group
 ```
 
 Prompts before upgrading each host and again before rebooting if a reboot is required. Hosts are processed serially to avoid taking both Pi-hole nodes down simultaneously.
 
-**memory-alpha is excluded** even with `LIMIT=memory-alpha`. GitLab CE is installed via the apt repo, so `apt upgrade` would pull a new GitLab version. GitLab upgrades must follow a specific version path (no skipping major versions) and need to be intentional — they're not safe to run as part of a general upgrade sweep. To upgrade memory-alpha OS packages without touching GitLab, hold the package first: `apt-mark hold gitlab-ce`.
+**memory-alpha is excluded** even with `LIMIT=memory-alpha`. GitLab CE can be installed via the apt repo, so `apt upgrade` might pull a new GitLab version. GitLab upgrades must follow a specific version path (no skipping major versions) and need to be intentional — they're not safe to run as part of a general upgrade sweep. To upgrade memory-alpha OS packages without touching GitLab, hold the package first: `apt-mark hold gitlab-ce`.
 
 HAOS (codsworth) is also excluded — it manages its own updates.
 
@@ -101,32 +99,19 @@ Every service that needs a browser URL requires two changes, then `make play`:
    npm_proxied: true
    ```
 
-That's it. `make play` applies both changes and every device on the network picks up the new DNS answer automatically.
-
 ---
 
 ## Secret management
 
 **Decision framework:**
 
-|                    | Secret                                                                                | Not secret              |
-| ------------------ | ------------------------------------------------------------------------------------- | ----------------------- |
-| **Multiple tools** | `.envrc`                                                                              | `.envrc` or hardcoded   |
-| **OpenTofu only**  | gitignored `.tfvars` (escape hatch — currently unused, tofu secrets go via 1Password) | `.tf` variable defaults |
-| **Ansible only**   | vault-encrypted file in `ansible/`                                                    | regular `vars.yml`      |
+|                    | Secret                                  | Not secret              |
+| ------------------ | --------------------------------------- | ----------------------- |
+| **Multiple tools** | `.envrc` - OP Vault info and Git info   | `.envrc` or hardcoded   |
+| **OpenTofu only**  | gitignored `.tfvars` (currently unused) | `.tf` variable defaults |
+| **Ansible only**   | vault-encrypted file in `ansible/`      | regular `vars.yml`      |
 
-**1Password is the canonical store for all secrets** except the `op` token itself (circular dependency — you need `op` to read from 1Password). Everything that can go in 1Password does. The layers above are access mechanisms, not separate secret stores.
-
-**Current state:**
-
-- **`.envrc`** — controller bootstrap config, loaded by `direnv`, never committed:
-  - `OP_SERVICE_ACCOUNT_TOKEN` — root op credential; the only secret that can't live in 1Password
-  - `OP_VAULT_ID` — 1Password vault ID; used by both `tofu/tofu.sh` and `ansible/scripts/vault_password.sh`
-  - `SYSADMIN_PUBLIC_KEY` — kate's SSH public key; used by `tofu/tofu.sh`
-  - Git author config and other non-secret controller config
-- **Ansible vault** — `onepassword_vault`, `onepassword_become_user`, `sysadmin_public_key`, `proxmox_admin_password_salt`. These predate the 1Password-first approach; `OP_VAULT_ID` and `SYSADMIN_PUBLIC_KEY` are already in `.envrc` (vault copies are redundant). Candidates for full elimination — see below.
-- **1Password** — all runtime secrets: Proxmox credentials and API tokens, SSH key pairs, Pi-hole/NPM/GitLab passwords, Cloudflare DNS token, ansible vault password.
-- **OpenTofu** — no `.tfvars` secrets; all sensitive values fetched from 1Password at runtime via `tofu/tofu.sh`.
+Everything that can go in 1Password does.
 
 > **Planned simplification:** Ansible vault is redundant. `onepassword_vault` duplicates `OP_VAULT_ID`; `sysadmin_public_key` duplicates `SYSADMIN_PUBLIC_KEY` — both already in `.envrc`. `onepassword_become_user` is non-sensitive and becomes a plaintext var. `proxmox_admin_password_salt` moves to 1Password. Once vault is empty, `vault_password.sh`, the vault password item in 1Password, and all `secrets.yml` files can be removed. See future work in the plan doc.
 
@@ -138,7 +123,7 @@ A pre-commit hook (`ansible/scripts/check_secrets.py`) blocks commits if any sec
 
 See `disaster-recovery-runbook.md` for the full DR procedure.
 
-A pre-built auto-installer ISO lives on a USB stick. If you ever need to rebuild it (e.g. to update the PVE version or regenerate with new credentials), `make build-proxmox-iso` handles it — no lab hosts required, runs via Docker:
+A pre-built Proxmox auto-installer ISO lives on a USB stick. If you ever need to rebuild the auto-installer ISO (e.g. to update the PVE version or regenerate with new credentials), `make build-proxmox-iso` handles it — no lab hosts required, runs via Docker:
 
 ```bash
 make build-proxmox-iso                        # default PVE 9.1-1
@@ -153,41 +138,6 @@ Fetches credentials from 1Password, downloads the PVE ISO, and produces a ready-
 
 `make verify` runs automated acceptance tests after `make play`. These and manual tests are documented in `ansible/verify/README.md`.
 
-### Adding a new service (runbook note)
-
-Every time a new service needs a browser-accessible URL, two things must happen:
-
-1. **NPM proxy host** — add an entry to `nginx_proxy_manager_proxy_hosts` in
-   `ansible/inventory/host_vars/norville/vars.yml` with the subdomain, backend
-   host IP, port, and scheme.
-
-2. **Pi-hole DNS** — add `npm_proxied: true` to the host's
-   `ansible/inventory/host_vars/<host>/vars.yml`. This makes Pi-hole's DNS
-   template return norville's IP for that hostname instead of the host's own IP.
-   NPM is not involved in this step — it's purely a Pi-hole DNS config change.
-
-Then `make play` — no other configuration needed. Every device on the network
-picks up the new DNS answer automatically via Pi-hole.
-
-Services that don't need a browser URL (background daemons, APIs only accessed
-by other services, etc.) need neither step — just access them by IP.
-
-### The Proxmox conflict and how to resolve it
-
-`enterprise.510forward.space` is currently used for two things:
-
-1. The Proxmox web UI (`https://enterprise.510forward.space:8006`)
-2. The Proxmox API (OpenTofu and Ansible connect here for TLS-validated API calls)
-
-Both use port 8006 explicitly and TLS-validated connections. If DNS points
-`enterprise.510forward.space` at norville, port 8006 doesn't exist there and
-both break.
-
-Resolved: `enterprise.510forward.space` routes through NPM on port 443 for
-browser access. OpenTofu connects directly to `https://192.168.30.170:8006`
-(IP, `insecure = true`) — bypassing DNS and NPM entirely, which is required for
-disaster recovery when those VMs don't exist yet. See `disaster-recovery-runbook.md`.
-
 ## Key Design Decisions
 
 ### SSH keys
@@ -200,15 +150,13 @@ Two separate keys, separate purposes:
   `identity/upsert_key`. Fetched from 1Password by `.envrc` and written to disk.
   Referenced in `ansible.cfg` as `private_key_file`.
 
-Cloud-init provisions VMs with the ansible key (not the sysadmin key). This means
-Ansible can connect to new VMs immediately without any manual key setup.
+Cloud-init provisions VMs with both keys and users so ansible can connect immediately.
 
 ### first_run_user pattern
 
 - Default: `ansible` (cloud-init VMs, enterprise after bootstrap)
 - `first_run_user: kate` — andromeda only. Raspbian doesn't have a `root` user; `kate`
   is the privileged user. SSH hardening is skipped for `raspbian_nodes` group.
-- Only referenced in the Base configuration play in `playbook.yml` — not global.
 
   **Kiosk escape / recovery:**
 

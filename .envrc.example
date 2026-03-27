@@ -17,5 +17,5 @@ export OP_VAULT_ID
 SYSADMIN_PUBLIC_KEY=$(op read "op://${OP_VAULT_ID}/ITEM_TITLE/public key")
 export SYSADMIN_PUBLIC_KEY
 
-op read "op://${OP_VAULT_ID}/ITEM_TITLE/private key?ssh-format=openssh" > ~/.ssh/id_ed25519_ITEM_NAME
-chmod 600 ~/.ssh/id_ed25519_ITEM_NAME
+ANSIBLE_PUBLIC_KEY=$(op read "op://${OP_VAULT_ID}/ITEM_TITLE/private key?ssh-format=openssh")
+export ANSIBLE_PUBLIC_KEY
