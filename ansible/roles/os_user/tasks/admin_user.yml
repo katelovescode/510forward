@@ -1,8 +1,10 @@
 ---
-# Creates an OS admin user with password, sudo, and a static SSH key.
-# Used for human admin users like kate.
+# Creates an OS admin user with Bootstrap console password, nopassword sudo, and SSH key.
+# Password is generated once and stored in 1Password — only used for KVM console emergency access.
+# update_password: on_create — password_hash generates a new salt each run but is only applied
+# at user creation. The hash is never compared on subsequent runs, so no salt needs to be stored.
 
-- name: Ensure admin user item exists in 1Password
+- name: Ensure admin user credentials exist in 1Password
   no_log: true
   ansible.builtin.include_role:
     name: onepassword
@@ -10,17 +12,11 @@
     onepassword_action: upsert
     onepassword_item:
       title: "{{ os_user_admin_password_item_title }}"
-      username: "{{ os_user_admin_name }}"
-
-- name: Set OS admin user salt fact
-  ansible.builtin.set_fact:
-    _os_user_admin_password_salt: >-
-      {{
-        onepassword_item_result.fields |
-        selectattr('id', 'equalto', 'salt') |
-        map(attribute='value') | first
-      }}
-  no_log: true
+      category: LOGIN
+      tags: [ansible-bootstrap]
+      fields:
+        - { id: username, type: STRING, purpose: USERNAME, label: username, value: "{{ os_user_admin_name }}" }
+        - { id: password, type: CONCEALED, purpose: PASSWORD, label: password }
 
 - name: Create OS admin user
   become: true
@@ -33,8 +29,9 @@
         onepassword_item_result.fields |
         selectattr('id', 'equalto', 'password') |
         map(attribute='value') | first
-        | password_hash(salt=_os_user_admin_password_salt, hashtype='sha512')
+        | password_hash('sha512')
       }}
+    update_password: on_create
 
 - name: Grant admin user sudo
   become: true
@@ -44,7 +41,7 @@
     runas: ALL
     state: present
     user: "{{ os_user_admin_name }}"
-    nopassword: false
+    nopassword: true
 
 - name: Authorize sysadmin SSH key for admin user
   ansible.builtin.include_role:
