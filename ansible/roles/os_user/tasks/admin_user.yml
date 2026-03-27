@@ -2,7 +2,7 @@
 # Creates an OS admin user with password, sudo, and a static SSH key.
 # Used for human admin users like kate.
 
-- name: Ensure admin user password exists in 1Password
+- name: Ensure admin user item exists in 1Password
   no_log: true
   ansible.builtin.include_role:
     name: onepassword
@@ -11,6 +11,16 @@
     onepassword_item:
       title: "{{ os_user_admin_password_item_title }}"
       username: "{{ os_user_admin_name }}"
+
+- name: Set OS admin user salt fact
+  ansible.builtin.set_fact:
+    _os_user_admin_password_salt: >-
+      {{
+        onepassword_item_result.fields |
+        selectattr('id', 'equalto', 'salt') |
+        map(attribute='value') | first
+      }}
+  no_log: true
 
 - name: Create OS admin user
   become: true
@@ -23,7 +33,7 @@
         onepassword_item_result.fields |
         selectattr('id', 'equalto', 'password') |
         map(attribute='value') | first
-        | password_hash(salt=os_user_admin_password_salt, hashtype='sha512')
+        | password_hash(salt=_os_user_admin_password_salt, hashtype='sha512')
       }}
 
 - name: Grant admin user sudo

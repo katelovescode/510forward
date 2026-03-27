@@ -22,7 +22,7 @@ argument_specs:
         required: true
         description: >
           SSH public key to authorize for the admin user.
-          Set in group_vars/all/secrets.yml.
+          Set in group_vars/all/secrets.yml, pulled from .envrc.
 
   service_user:
     short_description: Create a passwordless OS service account with sudo

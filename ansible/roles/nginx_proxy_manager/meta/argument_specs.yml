@@ -38,13 +38,13 @@ argument_specs:
         type: str
         required: true
         description: >
-          Name or UUID of the 1Password vault to operate on.
+          1Password vault name. Defined in group_vars/all/vars.yml, pulled from .envrc.
 
       onepassword_become_user:
         type: str
         required: true
         description: >
-          Local user to become when running op CLI commands.
+          Local user for op CLI. Defined in group_vars/all/vars.yml, pulled from .envrc.
 
       # ################################
       # Host vars — from host_vars/norville/vars.yml

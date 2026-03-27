@@ -26,15 +26,13 @@ argument_specs:
         type: str
         required: true
         description: >
-          Name or UUID of the 1Password vault to operate on.
-          Defined in group_vars/all/secrets.yml.
+          1Password vault name. Defined in group_vars/all/vars.yml, pulled from .envrc.
 
       onepassword_become_user:
         type: str
         required: true
         description: >
-          Local user to become when running op CLI commands.
-          Defined in group_vars/all/secrets.yml.
+          Local user for op CLI. Defined in group_vars/all/vars.yml, pulled from .envrc.
 
       # ################################
       # Host vars — from host_vars/<host>/vars.yml
@@ -80,7 +78,6 @@ argument_specs:
           Secondary upstream DNS server, e.g. 1.0.0.1. Also written to the
           systemd-resolved drop-in so the host OS does not depend on Pi-hole
           itself for resolution.
-
 
       pihole_listening_mode:
         type: str

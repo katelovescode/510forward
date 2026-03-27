@@ -32,10 +32,10 @@ argument_specs:
         type: str
         required: true
         description: >
-          1Password vault name. Defined in group_vars/all/secrets.yml.
+          1Password vault name. Defined in group_vars/all/vars.yml, pulled from .envrc.
 
       onepassword_become_user:
         type: str
         required: true
         description: >
-          Local user for op CLI. Defined in group_vars/all/secrets.yml.
+          Local user for op CLI. Defined in group_vars/all/vars.yml, pulled from .envrc.
