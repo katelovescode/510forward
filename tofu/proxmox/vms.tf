@@ -1,85 +1,18 @@
 locals {
   vm_memory = {
-    centaurus    = { bootstrap = 512,  runtime = 512,  balloon = 256  }
     norville     = { bootstrap = 1024, runtime = 768,  balloon = 256  }
-    dorothy      = { bootstrap = 512,  runtime = 512,  balloon = 256  }
     codsworth    = { bootstrap = 4096, runtime = 4096, balloon = 1024 }
     memory_alpha = { bootstrap = 8192, runtime = 4096, balloon = 1024 }
-    hermes       = { bootstrap = 2048, runtime = 2048, balloon = 512  }
+    # hermes: on hold — GitLab Runner executor decision pending (LXC vs VM)
+    # hermes = { bootstrap = 2048, runtime = 2048, balloon = 512 }
   }
 
   vm_phase = {
-    centaurus    = contains(var.bootstrapping_vms, "centaurus")    ? "bootstrap" : "runtime"
     norville     = contains(var.bootstrapping_vms, "norville")     ? "bootstrap" : "runtime"
-    dorothy      = contains(var.bootstrapping_vms, "dorothy")      ? "bootstrap" : "runtime"
     codsworth    = contains(var.bootstrapping_vms, "codsworth")    ? "bootstrap" : "runtime"
     memory_alpha = contains(var.bootstrapping_vms, "memory-alpha") ? "bootstrap" : "runtime"
-    hermes       = contains(var.bootstrapping_vms, "hermes")       ? "bootstrap" : "runtime"
-  }
-}
-
-resource "proxmox_virtual_environment_vm" "centaurus" {
-  name      = "centaurus"
-  node_name = "enterprise"
-  on_boot   = true
-
-  clone {
-    vm_id = module.ubuntu_noble_vm_template.vm_id
-    full  = true
-  }
-
-  cpu {
-    cores = 1
-    type  = "host"
-  }
-
-  memory {
-    dedicated = local.vm_memory.centaurus[local.vm_phase.centaurus]
-    floating  = local.vm_memory.centaurus.balloon
-  }
-
-  disk {
-    datastore_id = "local-lvm"
-    interface    = "scsi0"
-    size         = 10
-    discard      = "on"
-    ssd          = true
-  }
-
-  initialization {
-    ip_config {
-      ipv4 {
-        address = "dhcp"
-      }
-    }
-
-    user_account {
-      username = "ansible"
-      keys     = [var.ansible_public_key]
-    }
-    
-    user_data_file_id = proxmox_virtual_environment_file.cloud_init_config.id
-  }
-
-  network_device {
-    bridge      = "vmbr0"
-    model       = "virtio"
-    mac_address = "42:17:01:FD:F7:A4"
-    firewall    = true
-  }
-}
-
-resource "proxmox_virtual_environment_file" "cloud_init_config" {
-  content_type = "snippets"
-  datastore_id = "local"
-  node_name    = "enterprise"
-  source_raw {
-    data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
-      hostname            = "centaurus"
-      sysadmin_public_key = var.sysadmin_public_key
-      ansible_public_key  = var.ansible_public_key
-    })
-    file_name = "cloud-init-config.yml"
+    # hermes: on hold
+    # hermes = contains(var.bootstrapping_vms, "hermes") ? "bootstrap" : "runtime"
   }
 }
 
@@ -145,57 +78,6 @@ resource "proxmox_virtual_environment_file" "cloud_init_config_norville" {
       ansible_public_key  = var.ansible_public_key
     })
     file_name = "cloud-init-config-norville.yml"
-  }
-}
-
-resource "proxmox_virtual_environment_vm" "dorothy" {
-  name      = "dorothy"
-  node_name = "enterprise"
-  on_boot   = true
-
-  clone {
-    vm_id = module.ubuntu_noble_vm_template.vm_id
-    full  = true
-  }
-
-  cpu {
-    cores = 1
-    type  = "host"
-  }
-
-  memory {
-    dedicated = local.vm_memory.dorothy[local.vm_phase.dorothy]
-    floating  = local.vm_memory.dorothy.balloon
-  }
-
-  disk {
-    datastore_id = "local-lvm"
-    interface    = "scsi0"
-    size         = 8
-    discard      = "on"
-    ssd          = true
-  }
-
-  initialization {
-    ip_config {
-      ipv4 {
-        address = "dhcp"
-      }
-    }
-
-    user_account {
-      username = "ansible"
-      keys     = [var.ansible_public_key]
-    }
-
-    user_data_file_id = proxmox_virtual_environment_file.cloud_init_config_dorothy.id
-  }
-
-  network_device {
-    bridge      = "vmbr0"
-    model       = "virtio"
-    mac_address = "42:17:01:FD:72:48"
-    firewall    = true
   }
 }
 
@@ -331,56 +213,59 @@ resource "proxmox_virtual_environment_vm" "memory_alpha" {
   }
 }
 
-resource "proxmox_virtual_environment_vm" "hermes" {
-  name      = "hermes"
-  node_name = "enterprise"
-  on_boot   = true
-
-  clone {
-    vm_id = module.ubuntu_noble_vm_template.vm_id
-    full  = true
-  }
-
-  cpu {
-    cores = 2
-    type  = "host"
-  }
-
-  memory {
-    dedicated = local.vm_memory.hermes[local.vm_phase.hermes]
-    floating  = local.vm_memory.hermes.balloon
-  }
-
-  disk {
-    datastore_id = "local-lvm"
-    interface    = "scsi0"
-    size         = 20
-    discard      = "on"
-    ssd          = true
-  }
-
-  initialization {
-    ip_config {
-      ipv4 {
-        address = "dhcp"
-      }
-    }
-
-    user_account {
-      username = "ansible"
-      keys     = [var.ansible_public_key]
-    }
-
-    user_data_file_id = proxmox_virtual_environment_file.cloud_init_config_hermes.id
-  }
-
-  network_device {
-    bridge      = "vmbr0"
-    model       = "virtio"
-    mac_address = "42:17:01:FD:E4:3D"
-    firewall    = true
-  }
-}
+# hermes: GitLab Runner — on hold pending executor decision (shell vs Docker affects LXC eligibility)
+# Uncomment and restore memory/phase entries in locals when ready to provision.
+#
+# resource "proxmox_virtual_environment_vm" "hermes" {
+#   name      = "hermes"
+#   node_name = "enterprise"
+#   on_boot   = true
+#
+#   clone {
+#     vm_id = module.ubuntu_noble_vm_template.vm_id
+#     full  = true
+#   }
+#
+#   cpu {
+#     cores = 2
+#     type  = "host"
+#   }
+#
+#   memory {
+#     dedicated = local.vm_memory.hermes[local.vm_phase.hermes]
+#     floating  = local.vm_memory.hermes.balloon
+#   }
+#
+#   disk {
+#     datastore_id = "local-lvm"
+#     interface    = "scsi0"
+#     size         = 20
+#     discard      = "on"
+#     ssd          = true
+#   }
+#
+#   initialization {
+#     ip_config {
+#       ipv4 {
+#         address = "dhcp"
+#       }
+#     }
+#
+#     user_account {
+#       username = "ansible"
+#       keys     = [var.ansible_public_key]
+#     }
+#
+#     user_data_file_id = proxmox_virtual_environment_file.cloud_init_config_hermes.id
+#   }
+#
+#   network_device {
+#     bridge      = "vmbr0"
+#     model       = "virtio"
+#     mac_address = "42:17:01:FD:E4:3D"
+#     firewall    = true
+#   }
+# }
 
 resource "proxmox_virtual_environment_file" "cloud_init_config_memory_alpha" {
   content_type = "snippets"
@@ -396,30 +281,16 @@ resource "proxmox_virtual_environment_file" "cloud_init_config_memory_alpha" {
   }
 }
 
-resource "proxmox_virtual_environment_file" "cloud_init_config_hermes" {
-  content_type = "snippets"
-  datastore_id = "local"
-  node_name    = "enterprise"
-  source_raw {
-    data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
-      hostname            = "hermes"
-      sysadmin_public_key = var.sysadmin_public_key
-      ansible_public_key  = var.ansible_public_key
-    })
-    file_name = "cloud-init-config-hermes.yml"
-  }
-}
-
-resource "proxmox_virtual_environment_file" "cloud_init_config_dorothy" {
-  content_type = "snippets"
-  datastore_id = "local"
-  node_name    = "enterprise"
-  source_raw {
-    data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
-      hostname            = "dorothy"
-      sysadmin_public_key = var.sysadmin_public_key
-      ansible_public_key  = var.ansible_public_key
-    })
-    file_name = "cloud-init-config-dorothy.yml"
-  }
-}
+# resource "proxmox_virtual_environment_file" "cloud_init_config_hermes" {
+#   content_type = "snippets"
+#   datastore_id = "local"
+#   node_name    = "enterprise"
+#   source_raw {
+#     data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
+#       hostname            = "hermes"
+#       sysadmin_public_key = var.sysadmin_public_key
+#       ansible_public_key  = var.ansible_public_key
+#     })
+#     file_name = "cloud-init-config-hermes.yml"
+#   }
+# }

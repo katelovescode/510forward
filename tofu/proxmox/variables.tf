@@ -30,7 +30,7 @@ variable "bootstrapping_vms" {
   type        = list(string)
   default     = []
   validation {
-    condition     = alltrue([for v in var.bootstrapping_vms : contains(["centaurus", "norville", "dorothy", "codsworth", "memory-alpha", "hermes"], v)])
-    error_message = "bootstrapping_vms must only contain known VM names: centaurus, norville, dorothy, codsworth, memory-alpha, hermes."
+    condition     = alltrue([for v in var.bootstrapping_vms : contains(["centaurus", "norville", "dorothy", "codsworth", "memory-alpha"], v)])
+    error_message = "bootstrapping_vms must only contain known host names: centaurus, norville, dorothy, codsworth, memory-alpha."
   }
 }

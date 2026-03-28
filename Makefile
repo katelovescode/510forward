@@ -89,7 +89,7 @@ tofu-recreate:
 	cd tofu/proxmox && ../tofu.sh apply $(addprefix -replace=proxmox_virtual_environment_vm.,$(subst $(COMMA), ,$(HOSTS)))
 
 reboot-vms:
-	ssh -i ~/.ssh/id_ed25519_ansible_510forward ansible@enterprise "sudo qm reboot 100 && sudo qm reboot 101 && sudo qm reboot 102"
+	cd ansible && ansible -b -m ansible.builtin.reboot -a "reboot_timeout=300" qemu_vms
 
 sync-pihole:
 	cd ansible && ansible -b -m systemd -a "name=nebula-sync state=started" centaurus

@@ -1,6 +1,11 @@
-output "centaurus_vmid" {
-  description = "VMID assigned to centaurus by Proxmox"
-  value       = proxmox_virtual_environment_vm.centaurus.id
+output "centaurus_lxc_id" {
+  description = "Container ID assigned to centaurus by Proxmox"
+  value       = proxmox_virtual_environment_container.centaurus.id
+}
+
+output "dorothy_lxc_id" {
+  description = "Container ID assigned to dorothy by Proxmox"
+  value       = proxmox_virtual_environment_container.dorothy.id
 }
 
 output "codsworth_vmid" {
