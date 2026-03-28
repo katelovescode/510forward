@@ -50,3 +50,6 @@ venv/
 
 # Worktrees
 .worktrees/
+
+# Logs
+.tmp/

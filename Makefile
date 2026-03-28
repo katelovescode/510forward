@@ -1,3 +1,6 @@
+SHELL := /bin/bash
+LOG_DIR := $(CURDIR)/.tmp/logs
+
 help:
 	@echo ""
 	@echo "Usage: make <target>"
@@ -19,6 +22,8 @@ help:
 	@echo "  generate-proxmox-answer  Generate proxmox_installer/answer.toml from template + 1Password"
 	@echo "  build-proxmox-iso        Build auto-install ISO — runs generate-proxmox-answer automatically (PVE_ISO_VERSION=9.1-1)"
 	@echo "  help                     Show this help message"
+	@echo ""
+	@echo "  Logs are written to .tmp/logs/ automatically."
 	@echo ""
 
 # Install all dependencies and set up pre-commit hooks
@@ -47,28 +52,19 @@ else
 endif
 
 lab-bootstrap:
-	cd ansible && ansible-playbook lab_bootstrap.yml
-
-lab-bootstrap-log:
-	cd ansible && ansible-playbook lab_bootstrap.yml 2>&1 | tee bootstrap_output.log
+	mkdir -p $(LOG_DIR)
+	cd ansible && ansible-playbook lab_bootstrap.yml 2>&1 | tee $(LOG_DIR)/lab-bootstrap.log
 
 host-bootstrap:
 ifndef HOST
 	$(error HOST is required: make host-bootstrap HOST=centaurus)
 endif
-	cd tofu/proxmox && ../tofu.sh apply -var 'bootstrapping_vms=["$(HOST)"]'
-	cd ansible && ansible-playbook playbook.yml --limit $(HOST) || \
-		(cd tofu/proxmox && ../tofu.sh apply; exit 1)
-	cd tofu/proxmox && ../tofu.sh apply
-
-host-bootstrap-log:
-ifndef HOST
-	$(error HOST is required: make host-bootstrap-log HOST=centaurus)
-endif
-	cd tofu/proxmox && ../tofu.sh apply -var 'bootstrapping_vms=["$(HOST)"]' 2>&1 | tee host-bootstrap-$(HOST).log
-	cd ansible && ansible-playbook playbook.yml --limit $(HOST) 2>&1 | tee -a host-bootstrap-$(HOST).log || \
-		(cd tofu/proxmox && ../tofu.sh apply 2>&1 | tee -a host-bootstrap-$(HOST).log; exit 1)
-	cd tofu/proxmox && ../tofu.sh apply 2>&1 | tee -a host-bootstrap-$(HOST).log
+	mkdir -p $(LOG_DIR)
+	cd tofu/proxmox && ../tofu.sh apply -var 'bootstrapping_vms=["$(HOST)"]' 2>&1 | tee $(LOG_DIR)/host-bootstrap-$(HOST).log
+	cd ansible && ansible-playbook playbook.yml --limit $(HOST) 2>&1 | tee -a $(LOG_DIR)/host-bootstrap-$(HOST).log; \
+		ret=$${PIPESTATUS[0]}; \
+		[ $$ret -eq 0 ] || { cd $(CURDIR)/tofu/proxmox && ../tofu.sh apply 2>&1 | tee -a $(LOG_DIR)/host-bootstrap-$(HOST).log; exit 1; }
+	cd tofu/proxmox && ../tofu.sh apply 2>&1 | tee -a $(LOG_DIR)/host-bootstrap-$(HOST).log
 
 dr-bootstrap:
 	$(MAKE) host-bootstrap HOST=centaurus
@@ -78,16 +74,14 @@ dr-bootstrap:
 	$(MAKE) host-bootstrap HOST=memory-alpha
 
 play:
-	cd ansible && ansible-playbook playbook.yml
+	mkdir -p $(LOG_DIR)
+	cd ansible && ansible-playbook playbook.yml 2>&1 | tee $(LOG_DIR)/play.log
 
 upgrade:
 	cd ansible && ansible-playbook upgrade.yml $(if $(LIMIT),--limit $(LIMIT),)
 
 verify:
 	cd ansible && ansible-playbook verify.yml
-
-play-log:
-	cd ansible && ansible-playbook playbook.yml 2>&1 | tee play_output.log
 
 lint:
 	cd ansible && ansible-lint

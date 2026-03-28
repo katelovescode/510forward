@@ -171,13 +171,17 @@ If the service has a web UI, add a proxy host entry in
 ```bash
 # Provision the new host
 make tofu-proxmox ARGS='apply'
+```
 
+**If you used the DHCP alternative in Step 2:** the host will boot and receive
+an IP from DHCP. Check the Unifi client list for the new MAC address, then
+update `ansible_host` and `ip_address` in `host_vars/<hostname>/vars.yml`
+before continuing.
+
+```bash
 # Bootstrap it (elevates RAM, runs Ansible, restores RAM)
 make host-bootstrap HOST=<hostname>
 ```
-
-For memory-heavy bootstraps (e.g. a service requiring > 4 GB to initialize),
-run `host-bootstrap` alone and verify other hosts are idle first.
 
 ---
 
