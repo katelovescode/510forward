@@ -7,3 +7,9 @@ repos:
         language: python
         pass_filenames: false
         always_run: true
+      - id: check-docs-and-specs
+        name: Check runbook and argument_specs coverage
+        entry: python ansible/scripts/check_docs_and_specs.py
+        language: python
+        pass_filenames: false
+        always_run: true
