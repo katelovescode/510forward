@@ -17,3 +17,7 @@ pihole_adlists:
 nebula_sync_version: "0.11.1"
 nebula_sync_checksum: "sha256:c06b547ee2e1e599e6bcc5f4c0ee99042ea076df02b5964f271b41f92ad7d1ac"
 nebula_sync_run_gravity: false
+
+pihole_service_dns:
+  - subdomain: holodeck
+    target: norville

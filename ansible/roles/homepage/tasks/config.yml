@@ -62,13 +62,13 @@
     _homepage_proxmox_token_id: >-
       {{
         onepassword_item_result.fields |
-        selectattr('id', 'equalto', 'username') |
+        selectattr('id', 'equalto', 'token_id') |
         map(attribute='value') | first
       }}
     _homepage_proxmox_token_secret: >-
       {{
         onepassword_item_result.fields |
-        selectattr('id', 'equalto', 'password') |
+        selectattr('id', 'equalto', 'credential') |
         map(attribute='value') | first
       }}
   no_log: true

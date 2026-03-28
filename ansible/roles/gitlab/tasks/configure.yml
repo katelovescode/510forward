@@ -7,7 +7,11 @@
     onepassword_action: upsert
     onepassword_item:
       title: "GitLab Root Password"
-      username: root
+      category: LOGIN
+      tags: [ansible-managed]
+      fields:
+        - { id: username, type: STRING, purpose: USERNAME, label: username, value: root }
+        - { id: password, type: CONCEALED, purpose: PASSWORD, label: password }
   tags: gitlab
 
 - name: Set GitLab root password fact
@@ -63,6 +67,15 @@
     path: /etc/gitlab/gitlab.rb
     regexp: "^#?\\s*gitlab_rails\\['gitlab_ssh_host'\\].*"
     line: "gitlab_rails['gitlab_ssh_host'] = '{{ inventory_hostname }}'"
+  notify: reconfigure gitlab
+  tags: gitlab
+
+- name: Set GitLab trusted proxy for real IP forwarding
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "^#?\\s*nginx\\['real_ip_trusted_addresses'\\].*"
+    line: "nginx['real_ip_trusted_addresses'] = ['{{ hostvars['norville']['ip_address'] }}']"
   notify: reconfigure gitlab
   tags: gitlab
 

@@ -11,7 +11,15 @@
   delegate_to: localhost
   register: _onepassword_read_result
   changed_when: false
+  failed_when: false
   no_log: true
+
+- name: Fail if item not found
+  ansible.builtin.fail:
+    msg: >-
+      1Password item '{{ onepassword_item.title }}' not found in vault '{{ onepassword_vault }}'.
+      This item must be created manually before running this play.
+  when: _onepassword_read_result.rc != 0
 
 - name: Set item result fact
   ansible.builtin.set_fact:

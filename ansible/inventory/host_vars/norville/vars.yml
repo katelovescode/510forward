@@ -29,3 +29,8 @@ nginx_proxy_manager_proxy_hosts:
     host: "{{ hostvars['memory-alpha'].ip_address }}"
     port: 80
     scheme: http
+  - subdomain: holodeck
+    host: "{{ hostvars['alexandria'].ip_address }}"
+    port: 30013
+    scheme: http
+    allow_websocket_upgrade: true

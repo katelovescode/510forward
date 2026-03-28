@@ -22,7 +22,11 @@
     onepassword_action: upsert
     onepassword_item:
       title: "NGINX Proxy Manager Admin Password"
-      username: "{{ admin_email }}"
+      category: LOGIN
+      tags: [ansible-managed]
+      fields:
+        - { id: username, type: STRING, purpose: USERNAME, label: username, value: "{{ admin_email }}" }
+        - { id: password, type: CONCEALED, purpose: PASSWORD, label: password }
   tags: nginx_proxy_manager
 
 - name: Set NPM admin password fact

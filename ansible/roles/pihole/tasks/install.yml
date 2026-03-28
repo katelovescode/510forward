@@ -148,6 +148,10 @@
     onepassword_action: upsert
     onepassword_item:
       title: "Pi-hole Admin Password"
+      category: PASSWORD
+      tags: [ansible-managed]
+      fields:
+        - { id: password, type: CONCEALED, purpose: PASSWORD, label: password }
   run_once: true
 
 - name: Check if Pi-hole password is already correct
