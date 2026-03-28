@@ -81,7 +81,8 @@ upgrade:
 	cd ansible && ansible-playbook upgrade.yml $(if $(LIMIT),--limit $(LIMIT),)
 
 verify:
-	cd ansible && ansible-playbook verify.yml
+	mkdir -p $(LOG_DIR)
+	cd ansible && ansible-playbook verify.yml 2>&1 | tee $(LOG_DIR)/verify.log
 
 lint:
 	cd ansible && ansible-lint

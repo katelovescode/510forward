@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
-Pre-commit hook enforcing documentation and argument_specs requirements.
+Pre-commit hook enforcing argument_specs requirements for Ansible roles.
 
 Rules:
-  1. New ansible/inventory/host_vars/<hostname>/vars.yml files must declare
-     ip_address, mac_address, and fqdn.
-  2. New directory under ansible/roles/ → must contain meta/argument_specs.yml.
-  3. New role-prefixed variable ({{ rolename_* }}) added in a role task file →
+  1. New directory under ansible/roles/ → must contain meta/argument_specs.yml.
+  2. New role-prefixed variable ({{ rolename_* }}) added in a role task file →
      variable must be declared in the role's meta/argument_specs.yml.
 
 Exits 0 if all rules pass, 1 if any violations are found.
@@ -18,23 +16,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent.parent
 
-HOST_VARS_REQUIRED_FIELDS = ["ip_address", "mac_address", "fqdn"]
-
 
 def get_staged_files():
     result = subprocess.run(
         ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
-    )
-    return [Path(f) for f in result.stdout.splitlines() if f]
-
-
-def get_added_files():
-    """Return only newly added (not modified) staged files."""
-    result = subprocess.run(
-        ["git", "diff", "--cached", "--name-only", "--diff-filter=A"],
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
@@ -65,41 +50,8 @@ def read_staged_file(rel_path):
     return result.stdout
 
 
-def check_new_host_vars(added_files):
-    """Rule 1: New host_vars/<hostname>/vars.yml must have required fields."""
-    errors = []
-
-    for f in added_files:
-        parts = f.parts
-        if not (
-            len(parts) == 5
-            and parts[0] == "ansible"
-            and parts[1] == "inventory"
-            and parts[2] == "host_vars"
-            and parts[4] == "vars.yml"
-        ):
-            continue
-
-        hostname = parts[3]
-        content = read_staged_file(str(f))
-        if content is None:
-            path = REPO_ROOT / f
-            if not path.exists():
-                continue
-            content = path.read_text()
-
-        for field in HOST_VARS_REQUIRED_FIELDS:
-            if not re.search(r"^" + re.escape(field) + r"\s*:", content, re.MULTILINE):
-                errors.append(
-                    f"ansible/inventory/host_vars/{hostname}/vars.yml "
-                    f"is missing required field '{field}'"
-                )
-
-    return errors
-
-
 def check_new_roles(staged_files):
-    """Rule 2: New role directories must contain meta/argument_specs.yml."""
+    """Rule 1: New role directories must contain meta/argument_specs.yml."""
     errors = []
 
     role_dirs = set()
@@ -124,7 +76,7 @@ def check_new_roles(staged_files):
 
 
 def check_new_variables(diff_text):
-    """Rule 3: New role-prefixed variables in task files must appear in argument_specs."""
+    """Rule 2: New role-prefixed variables in task files must appear in argument_specs."""
     errors = []
 
     # Capture the primary variable name at the start of a Jinja2 expression.
@@ -165,7 +117,7 @@ def check_new_variables(diff_text):
         if specs_text is None:
             specs_path = REPO_ROOT / "ansible" / "roles" / role_name / "meta" / "argument_specs.yml"
             if not specs_path.exists():
-                # Rule 2 will report the missing specs file — don't double-report
+                # Rule 1 will report the missing specs file — don't double-report
                 continue
             specs_text = specs_path.read_text()
 
@@ -182,11 +134,9 @@ def check_new_variables(diff_text):
 
 def main():
     staged_files = get_staged_files()
-    added_files = get_added_files()
     diff_text = get_staged_diff()
 
     errors = []
-    errors.extend(check_new_host_vars(added_files))
     errors.extend(check_new_roles(staged_files))
     errors.extend(check_new_variables(diff_text))
 
@@ -195,7 +145,7 @@ def main():
             print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print("OK: documentation and argument_specs checks passed", file=sys.stderr)
+    print("OK: argument_specs checks passed", file=sys.stderr)
     sys.exit(0)
 
 

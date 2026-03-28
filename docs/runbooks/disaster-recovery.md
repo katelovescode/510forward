@@ -59,9 +59,15 @@ the same IPs as before.
 
 ## Step 3 — Bootstrap hosts (DNS first)
 
-`dr-bootstrap` automates the full sequence: centaurus comes up first (DNS),
-then remaining hosts are bootstrapped in order. Each host's RAM is elevated for
-provisioning and restored to runtime levels before the next host starts.
+`dr-bootstrap` automates the full sequence: centaurus must come first since it
+provides DNS for all other hosts. Remaining hosts are bootstrapped in order.
+Hosts run sequentially — Tofu state locking prevents concurrent applies.
+
+To bootstrap a single host (e.g. when adding a new one):
+
+```bash
+make host-bootstrap HOST=<hostname>
+```
 
 ```bash
 make dr-bootstrap

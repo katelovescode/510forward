@@ -29,8 +29,4 @@ variable "bootstrapping_vms" {
   description = "VMs currently being bootstrapped. These receive elevated RAM for initial service installation; all others use runtime RAM. Default empty = all VMs at runtime. Example: -var 'bootstrapping_vms=[\"memory-alpha\"]'"
   type        = list(string)
   default     = []
-  validation {
-    condition     = alltrue([for v in var.bootstrapping_vms : contains(["centaurus", "norville", "dorothy", "codsworth", "memory-alpha"], v)])
-    error_message = "bootstrapping_vms must only contain known host names: centaurus, norville, dorothy, codsworth, memory-alpha."
-  }
 }

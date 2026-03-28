@@ -115,14 +115,11 @@ apt_managed:     # if Ubuntu (almost always yes)
 ### `ansible/inventory/host_vars/<hostname>/vars.yml`
 
 The `ip_address` here is used by Pi-hole to generate local DNS records, so it
-needs to be known before the first playbook run. The two ways to get it:
+needs to be known before the first playbook run. Two paths:
 
-- **Recommended (DNS/NPM access needed):** complete Step 2 first — Unifi
-  fixed-IP reservation means the IP is assigned before the device boots and
-  can be hardcoded here immediately.
-- **Alternative (no DNS/NPM needed):** skip Step 2, let DHCP assign an IP on
-  first boot, then fill it in. Only appropriate for hosts that won't have an
-  FQDN and won't be proxied through NPM.
+**Recommended — MAC pre-assignment (needed for FQDN/NPM access):** complete
+Step 2 first. Unifi fixed-IP reservation means the IP is known before the
+device boots and can be hardcoded here immediately.
 
 ```yaml
 ---
@@ -130,7 +127,18 @@ ansible_host: <ip>
 ip_address: <ip>
 fqdn: <hostname>.510forward.space
 mac_address: "<reserved MAC>"
-npm_proxied: true       # if accessible via NPM
+npm_proxied: true
+```
+
+**Alternative — DHCP first (no FQDN needed):** skip Step 2 and omit `fqdn`,
+`mac_address`, and `npm_proxied`. Leave `ansible_host` and `ip_address` blank
+for now — you'll fill them in after first boot (see Step 7). Only appropriate
+for hosts that won't need a domain name or NPM proxy.
+
+```yaml
+---
+ansible_host: <fill in after first boot>
+ip_address: <fill in after first boot>
 ```
 
 ---
@@ -173,10 +181,10 @@ If the service has a web UI, add a proxy host entry in
 make tofu-proxmox ARGS='apply'
 ```
 
-**If you used the DHCP alternative in Step 2:** the host will boot and receive
-an IP from DHCP. Check the Unifi client list for the new MAC address, then
-update `ansible_host` and `ip_address` in `host_vars/<hostname>/vars.yml`
-before continuing.
+**If you used the DHCP path in Step 4:** the host will boot and receive an IP
+from DHCP. Before running bootstrap, check the Unifi client list for the new
+MAC address and update `ansible_host` and `ip_address` in
+`host_vars/<hostname>/vars.yml`. Bootstrap will fail without a reachable IP.
 
 ```bash
 # Bootstrap it (elevates RAM, runs Ansible, restores RAM)
