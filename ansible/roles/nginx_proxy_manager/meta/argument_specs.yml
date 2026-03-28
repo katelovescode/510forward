@@ -63,4 +63,6 @@ argument_specs:
         description: >
           List of proxy host definitions to configure via the NPM API.
           Each entry requires: subdomain (str), host (str), port (int).
-          Optional: scheme (str, default 'http').
+          Optional: scheme (str, default 'http'),
+          allow_websocket_upgrade (bool, default false),
+          advanced_config (str, default '') — raw nginx directives injected into the server block.

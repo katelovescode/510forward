@@ -50,6 +50,7 @@
       forward_scheme: "{{ item.scheme | default('http') }}"
       block_exploits: true
       allow_websocket_upgrade: "{{ item.allow_websocket_upgrade | default(false) }}"
+      advanced_config: "{{ item.advanced_config | default('') }}"
       access_list_id: 0
       certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
       ssl_forced: true
@@ -80,6 +81,9 @@
       allow_websocket_upgrade: >-
         {{ (nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
         item.domain_names | first | replace('.' ~ domain, '')) | first).allow_websocket_upgrade | default(false) }}
+      advanced_config: >-
+        {{ (nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+        item.domain_names | first | replace('.' ~ domain, '')) | first).advanced_config | default('') }}
       access_list_id: "{{ item.access_list_id }}"
       certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
       ssl_forced: true
@@ -94,6 +98,8 @@
     and (item.certificate_id | int != nginx_proxy_manager_certificate_id | int
     or not item.ssl_forced
     or item.allow_websocket_upgrade != ((nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
-    item.domain_names | first | replace('.' ~ domain, '')) | first).allow_websocket_upgrade | default(false)))
+    item.domain_names | first | replace('.' ~ domain, '')) | first).allow_websocket_upgrade | default(false))
+    or item.advanced_config | default('') != ((nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+    item.domain_names | first | replace('.' ~ domain, '')) | first).advanced_config | default('')))
   changed_when: true
   tags: nginx_proxy_manager

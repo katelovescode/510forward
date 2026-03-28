@@ -70,6 +70,15 @@
   notify: reconfigure gitlab
   tags: gitlab
 
+- name: Set GitLab trusted proxy for real IP forwarding
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "^#?\\s*nginx\\['real_ip_trusted_addresses'\\].*"
+    line: "nginx['real_ip_trusted_addresses'] = ['{{ hostvars['norville']['ip_address'] }}']"
+  notify: reconfigure gitlab
+  tags: gitlab
+
 - name: Set initial root password in gitlab.rb
   become: true
   ansible.builtin.lineinfile:

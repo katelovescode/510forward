@@ -9,3 +9,6 @@ address=/{{ hv.fqdn }}/{{ hv.ip_address }}
 {% endif %}
 {% endif %}
 {% endfor %}
+{% for entry in pihole_service_dns | default([]) %}
+address=/{{ entry.subdomain }}.{{ domain }}/{{ hostvars[entry.target].ip_address }}
+{% endfor %}
