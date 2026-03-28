@@ -52,17 +52,17 @@ If DNS on enterprise is broken, bootstrap temporarily writes `1.1.1.1` to
 make tofu-proxmox ARGS='apply'
 ```
 
-Creates all VMs and LXC containers. centaurus and dorothy are LXC containers;
-all others are QEMU VMs. MAC addresses are fixed so DHCP assigns the same IPs
-as before.
+Creates all VMs and LXC containers. MAC addresses are fixed so DHCP assigns
+the same IPs as before.
 
 ---
 
-## Step 3 — Bootstrap hosts (RAM-aware, DNS first)
+## Step 3 — Bootstrap hosts (DNS first)
 
-**Bootstrap one host at a time.** `host-bootstrap` elevates RAM for the target
-host, runs Ansible, then restores runtime RAM. The 15.37 GiB host limit means
-memory-alpha (8192 MB bootstrap) must be done alone while others are running.
+`host-bootstrap` elevates RAM for the target host, runs Ansible, then restores
+runtime RAM. Bootstrap one host at a time — the RAM elevation is sequential by
+design. Ballooning on all VMs means the host can accommodate any single host's
+bootstrap RAM while others run at runtime levels.
 
 ### 3a — DNS first
 
@@ -79,33 +79,23 @@ Verify DNS is working before continuing:
 dig @192.168.30.77 enterprise.510forward.space
 ```
 
-### 3b — Remaining hosts (except memory-alpha)
+### 3b — Remaining hosts
 
-These can be bootstrapped individually in any order. Their bootstrap RAM is
-low enough to run safely alongside each other.
+Bootstrap in any order.
 
 ```bash
 make host-bootstrap HOST=dorothy
 make host-bootstrap HOST=norville
 make host-bootstrap HOST=codsworth
+make host-bootstrap HOST=memory-alpha
 ```
 
 > codsworth (HAOS) manages its own initialization after first boot. The
 > host-bootstrap run configures the Proxmox VM resource only.
 
-### 3c — GitLab (memory-alpha, alone)
-
-GitLab requires 8192 MB to initialize. Run it alone — Proxmox will balloon
-down idle VMs to accommodate, but shouldn't be asked to do this while another
-heavy host is also bootstrapping.
-
-```bash
-make host-bootstrap HOST=memory-alpha
-```
-
 GitLab initialization takes several minutes after Ansible completes. Wait for
 the web UI to respond at `https://memory-alpha.510forward.space` before
-proceeding.
+proceeding to Step 4.
 
 ---
 

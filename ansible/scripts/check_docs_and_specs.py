@@ -3,9 +3,8 @@
 Pre-commit hook enforcing documentation and argument_specs requirements.
 
 Rules:
-  1. New proxmox_virtual_environment_vm or proxmox_virtual_environment_container
-     resource added in a .tf file → docs/runbooks/add-new-host.md must be
-     touched in the same commit.
+  1. New ansible/inventory/host_vars/<hostname>/vars.yml files must declare
+     ip_address, mac_address, and fqdn.
   2. New directory under ansible/roles/ → must contain meta/argument_specs.yml.
   3. New role-prefixed variable ({{ rolename_* }}) added in a role task file →
      variable must be declared in the role's meta/argument_specs.yml.
@@ -19,10 +18,23 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent.parent
 
+HOST_VARS_REQUIRED_FIELDS = ["ip_address", "mac_address", "fqdn"]
+
 
 def get_staged_files():
     result = subprocess.run(
         ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+    )
+    return [Path(f) for f in result.stdout.splitlines() if f]
+
+
+def get_added_files():
+    """Return only newly added (not modified) staged files."""
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=A"],
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
@@ -53,25 +65,37 @@ def read_staged_file(rel_path):
     return result.stdout
 
 
-def check_new_proxmox_resources(staged_files, diff_text):
-    """Rule 1: New VM/LXC resources require add-new-host.md to be touched."""
-    resource_pattern = re.compile(
-        r'^\+\s*resource\s+"'
-        r"(proxmox_virtual_environment_vm|proxmox_virtual_environment_container)"
-        r'"\s+"'
-    )
+def check_new_host_vars(added_files):
+    """Rule 1: New host_vars/<hostname>/vars.yml must have required fields."""
+    errors = []
 
-    found_new_resource = any(resource_pattern.match(line) for line in diff_text.splitlines())
-    if not found_new_resource:
-        return []
+    for f in added_files:
+        parts = f.parts
+        if not (
+            len(parts) == 5
+            and parts[0] == "ansible"
+            and parts[1] == "inventory"
+            and parts[2] == "host_vars"
+            and parts[4] == "vars.yml"
+        ):
+            continue
 
-    runbook = Path("docs/runbooks/add-new-host.md")
-    if runbook not in staged_files:
-        return [
-            "New Proxmox VM or LXC resource added but docs/runbooks/add-new-host.md "
-            "was not staged. Update the runbook or touch it to acknowledge the change."
-        ]
-    return []
+        hostname = parts[3]
+        content = read_staged_file(str(f))
+        if content is None:
+            path = REPO_ROOT / f
+            if not path.exists():
+                continue
+            content = path.read_text()
+
+        for field in HOST_VARS_REQUIRED_FIELDS:
+            if not re.search(r"^" + re.escape(field) + r"\s*:", content, re.MULTILINE):
+                errors.append(
+                    f"ansible/inventory/host_vars/{hostname}/vars.yml "
+                    f"is missing required field '{field}'"
+                )
+
+    return errors
 
 
 def check_new_roles(staged_files):
@@ -158,10 +182,11 @@ def check_new_variables(diff_text):
 
 def main():
     staged_files = get_staged_files()
+    added_files = get_added_files()
     diff_text = get_staged_diff()
 
     errors = []
-    errors.extend(check_new_proxmox_resources(staged_files, diff_text))
+    errors.extend(check_new_host_vars(added_files))
     errors.extend(check_new_roles(staged_files))
     errors.extend(check_new_variables(diff_text))
 

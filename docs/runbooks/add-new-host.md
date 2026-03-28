@@ -18,10 +18,13 @@ When in doubt, use a VM. You can always migrate to LXC later.
 
 ---
 
-## Step 2 — Reserve a MAC address
+## Step 2 — Reserve a MAC and assign a static IP in Unifi
 
-Pick an unused MAC in the lab's `42:17:01:FD:xx:xx` range. Check existing
-MACs in `tofu/proxmox/vms.tf` and `tofu/proxmox/lxcs.tf` to avoid conflicts.
+1. Pick an unused MAC in the lab's `42:17:01:FD:xx:xx` range. Check existing
+   MACs in `tofu/proxmox/vms.tf` and `tofu/proxmox/lxcs.tf` to avoid conflicts.
+2. In Unifi, create a fixed-IP DHCP reservation mapping the MAC to the chosen IP
+   before provisioning. This way the IP is known upfront and can be hardcoded in
+   `host_vars` — no need to look it up after first boot.
 
 ---
 
@@ -113,7 +116,7 @@ apt_managed:     # if Ubuntu (almost always yes)
 
 ```yaml
 ---
-ansible_host: <ip>      # DHCP-assigned; update after first boot
+ansible_host: <ip>      # from Unifi fixed-IP reservation (Step 2)
 ip_address: <ip>
 fqdn: <hostname>.510forward.space
 mac_address: "<reserved MAC>"

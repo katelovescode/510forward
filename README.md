@@ -18,17 +18,17 @@ Ansible verify    →  post-install verification
 
 **Hosts:**
 
-| Host         | Type                                        | Role                                   |
-| ------------ | ------------------------------------------- | -------------------------------------- |
-| enterprise   | Physical (mini PC)                          | Proxmox VE node                        |
-| andromeda    | Physical (Raspberry Pi 5, touchscreen case) | Pi-hole secondary, HomeAssistant kiosk |
-| centaurus    | LXC container                               | Pi-hole primary + nebula-sync          |
-| norville     | QEMU VM                                     | NGINX Proxy Manager (Docker)           |
-| dorothy      | LXC container                               | Homepage dashboard                     |
-| codsworth    | QEMU VM (HAOS)                              | Home Assistant                         |
-| memory-alpha | QEMU VM                                     | GitLab CE                              |
-| hermes       | QEMU VM (on hold)                           | GitLab Runner (executor TBD)           |
-| alexandria   | Physical (Tower, TrueNAS installed)         | NAS                                    |
+| Host         | Role                                   | Type                                        |
+| ------------ | -------------------------------------- | ------------------------------------------- |
+| enterprise   | Proxmox VE node                        | Physical (mini PC)                          |
+| andromeda    | Pi-hole secondary, HomeAssistant kiosk | Physical (Raspberry Pi 5, touchscreen case) |
+| centaurus    | Pi-hole primary + nebula-sync          | LXC container                               |
+| norville     | NGINX Proxy Manager (Docker)           | QEMU VM                                     |
+| dorothy      | Homepage dashboard                     | LXC container                               |
+| codsworth    | Home Assistant                         | QEMU VM (HAOS)                              |
+| memory-alpha | GitLab CE                              | QEMU VM                                     |
+| hermes       | GitLab Runner (executor TBD)           | QEMU VM (on hold)                           |
+| alexandria   | NAS                                    | Physical (Tower, TrueNAS installed)         |
 
 **DNS + reverse proxy pattern:** Pi-hole returns norville's IP for all `*.510forward.space` subdomains. NPM on norville handles TLS termination and proxies to backends. Pi-hole nodes resolve directly to their own IPs (FTL self-protection) and are accessed via HTTP by IP.
 
