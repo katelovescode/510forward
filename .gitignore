@@ -46,4 +46,4 @@ venv/
 
 # JS
 **/node_modules
-.yarn
+.yarn.worktrees/
