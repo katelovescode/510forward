@@ -1,3 +1,14 @@
+locals {
+  vm_memory = {
+    centaurus    = { bootstrap = 512,  runtime = 512  }
+    norville     = { bootstrap = 1024, runtime = 768  }
+    dorothy      = { bootstrap = 512,  runtime = 512  }
+    codsworth    = { bootstrap = 4096, runtime = 4096 }
+    memory_alpha = { bootstrap = 8192, runtime = 4096 }
+    hermes       = { bootstrap = 2048, runtime = 2048 }
+  }
+}
+
 resource "proxmox_virtual_environment_vm" "centaurus" {
   name      = "centaurus"
   node_name = "enterprise"
@@ -14,7 +25,7 @@ resource "proxmox_virtual_environment_vm" "centaurus" {
   }
 
   memory {
-    dedicated = 2048
+    dedicated = local.vm_memory.centaurus[var.phase]
   }
 
   disk {
@@ -78,7 +89,7 @@ resource "proxmox_virtual_environment_vm" "norville" {
   }
 
   memory {
-    dedicated = 3072
+    dedicated = local.vm_memory.norville[var.phase]
   }
 
   disk {
@@ -142,7 +153,7 @@ resource "proxmox_virtual_environment_vm" "dorothy" {
   }
 
   memory {
-    dedicated = 1536
+    dedicated = local.vm_memory.dorothy[var.phase]
   }
 
   disk {
@@ -199,7 +210,7 @@ resource "proxmox_virtual_environment_vm" "codsworth" {
   }
 
   memory {
-    dedicated = 2048
+    dedicated = local.vm_memory.codsworth[var.phase]
   }
 
   efi_disk {
@@ -272,7 +283,7 @@ resource "proxmox_virtual_environment_vm" "memory_alpha" {
   }
 
   memory {
-    dedicated = 8192
+    dedicated = local.vm_memory.memory_alpha[var.phase]
   }
 
   disk {
@@ -322,7 +333,7 @@ resource "proxmox_virtual_environment_vm" "hermes" {
   }
 
   memory {
-    dedicated = 4096
+    dedicated = local.vm_memory.hermes[var.phase]
   }
 
   disk {

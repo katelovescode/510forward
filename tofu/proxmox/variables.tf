@@ -24,3 +24,13 @@ variable "haos_version" {
   description = "Home Assistant OS version to deploy (check github.com/home-assistant/operating-system/releases)"
   type        = string
 }
+
+variable "phase" {
+  description = "Deployment phase. 'bootstrap' provisions VMs with elevated RAM for initial service installation; 'runtime' uses reduced steady-state RAM. Pass -var phase=bootstrap when initializing a new VM."
+  type        = string
+  default     = "runtime"
+  validation {
+    condition     = contains(["bootstrap", "runtime"], var.phase)
+    error_message = "phase must be 'bootstrap' or 'runtime'."
+  }
+}
