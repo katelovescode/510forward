@@ -22,12 +22,12 @@ Ansible verify    →  post-install verification
 | ------------ | ------------------------------------------- | -------------------------------------- |
 | enterprise   | Physical (mini PC)                          | Proxmox VE node                        |
 | andromeda    | Physical (Raspberry Pi 5, touchscreen case) | Pi-hole secondary, HomeAssistant kiosk |
-| centaurus    | QEMU VM                                     | Pi-hole primary + nebula-sync          |
+| centaurus    | LXC container                               | Pi-hole primary + nebula-sync          |
 | norville     | QEMU VM                                     | NGINX Proxy Manager (Docker)           |
-| dorothy      | QEMU VM                                     | Homepage dashboard                     |
+| dorothy      | LXC container                               | Homepage dashboard                     |
 | codsworth    | QEMU VM (HAOS)                              | Home Assistant                         |
 | memory-alpha | QEMU VM                                     | GitLab CE                              |
-| hermes       | QEMU VM                                     | GitLab Runner                          |
+| hermes       | QEMU VM (on hold)                           | GitLab Runner (executor TBD)           |
 | alexandria   | Physical (Tower, TrueNAS installed)         | NAS                                    |
 
 **DNS + reverse proxy pattern:** Pi-hole returns norville's IP for all `*.510forward.space` subdomains. NPM on norville handles TLS termination and proxies to backends. Pi-hole nodes resolve directly to their own IPs (FTL self-protection) and are accessed via HTTP by IP.
@@ -54,16 +54,17 @@ Before running anything, the following must be done manually:
 Run `make help` to find out all available commands. The most common:
 
 ```bash
-make install                    # Install dependencies and pre-commit hooks
-make bootstrap                  # One-time bootstrap (run once, as sysadmin, before tofu apply)
-make tofu-proxmox ARGS='plan'   # Preview VM changes
-make tofu-proxmox ARGS='apply'  # Provision VMs
-make play                       # Run main Ansible playbook (idempotent)
-make verify                     # Run acceptance tests against live infrastructure
-make lint                       # ansible-lint + tflint
+make install                         # Install dependencies and pre-commit hooks
+make lab-bootstrap                   # One-time Proxmox bootstrap (disaster recovery only)
+make tofu-proxmox ARGS='plan'        # Preview VM/LXC changes
+make tofu-proxmox ARGS='apply'       # Provision VMs and LXC containers
+make host-bootstrap HOST=centaurus   # Bootstrap a single host (handles RAM lifecycle)
+make play                            # Run main Ansible playbook (idempotent)
+make verify                          # Run acceptance tests against live infrastructure
+make lint                            # ansible-lint + tflint
 ```
 
-`make bootstrap` is only required for initial setup or disaster recovery, but it's still idempotent. It only acts on Proxmox and gets the system "ready".
+`make lab-bootstrap` is only required for initial setup or disaster recovery. It only acts on the Proxmox host (enterprise) and is idempotent. For provisioning individual VMs or LXC containers, use `make host-bootstrap HOST=<name>`. See `docs/runbooks/` for full procedures.
 
 ### Upgrades
 
