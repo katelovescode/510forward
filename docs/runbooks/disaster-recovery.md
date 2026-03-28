@@ -59,35 +59,18 @@ the same IPs as before.
 
 ## Step 3 — Bootstrap hosts (DNS first)
 
-`host-bootstrap` elevates RAM for the target host, runs Ansible, then restores
-runtime RAM. Bootstrap one host at a time — the RAM elevation is sequential by
-design. Ballooning on all VMs means the host can accommodate any single host's
-bootstrap RAM while others run at runtime levels.
-
-### 3a — DNS first
-
-centaurus must come up before anything else — Pi-hole is the DNS resolver for
-the whole lab.
+`dr-bootstrap` automates the full sequence: centaurus comes up first (DNS),
+then remaining hosts are bootstrapped in order. Each host's RAM is elevated for
+provisioning and restored to runtime levels before the next host starts.
 
 ```bash
-make host-bootstrap HOST=centaurus
+make dr-bootstrap
 ```
 
-Verify DNS is working before continuing:
+Verify DNS is working before it continues automatically, or check manually:
 
 ```bash
 dig @192.168.30.77 enterprise.510forward.space
-```
-
-### 3b — Remaining hosts
-
-Bootstrap in any order.
-
-```bash
-make host-bootstrap HOST=dorothy
-make host-bootstrap HOST=norville
-make host-bootstrap HOST=codsworth
-make host-bootstrap HOST=memory-alpha
 ```
 
 > codsworth (HAOS) manages its own initialization after first boot. The

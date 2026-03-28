@@ -11,6 +11,9 @@
 - name: QEMU guest agent
   import_playbook: verify/qemu.yml
 
+- name: LXC containers
+  import_playbook: verify/lxc.yml
+
 - name: NPM proxy
   import_playbook: verify/npm.yml
 

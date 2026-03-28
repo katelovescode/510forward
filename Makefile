@@ -7,7 +7,7 @@ help:
 	@echo "  lab-bootstrap            One-time Proxmox host bootstrap (enterprise only — disaster recovery)"
 	@echo "  host-bootstrap           Bootstrap a single VM/LXC: make host-bootstrap HOST=centaurus"
 	@echo "                           Elevates VM RAM for provisioning, runs Ansible, restores runtime RAM"
-	@echo "                           Run one host at a time — see docs/runbooks/disaster-recovery.md"
+	@echo "  dr-bootstrap             Bootstrap all hosts in DR order (centaurus first, then the rest)"
 	@echo "  play                     Run the main Ansible playbook against all hosts (idempotent)"
 	@echo "  upgrade                  Interactively upgrade apt packages (excludes self_managed_os hosts): make upgrade [LIMIT=host_or_group]"
 	@echo "  verify                   Run the verify playbook against live infrastructure"
@@ -60,6 +60,22 @@ endif
 	cd ansible && ansible-playbook playbook.yml --limit $(HOST) || \
 		(cd tofu/proxmox && ../tofu.sh apply; exit 1)
 	cd tofu/proxmox && ../tofu.sh apply
+
+host-bootstrap-log:
+ifndef HOST
+	$(error HOST is required: make host-bootstrap-log HOST=centaurus)
+endif
+	cd tofu/proxmox && ../tofu.sh apply -var 'bootstrapping_vms=["$(HOST)"]' 2>&1 | tee host-bootstrap-$(HOST).log
+	cd ansible && ansible-playbook playbook.yml --limit $(HOST) 2>&1 | tee -a host-bootstrap-$(HOST).log || \
+		(cd tofu/proxmox && ../tofu.sh apply 2>&1 | tee -a host-bootstrap-$(HOST).log; exit 1)
+	cd tofu/proxmox && ../tofu.sh apply 2>&1 | tee -a host-bootstrap-$(HOST).log
+
+dr-bootstrap:
+	$(MAKE) host-bootstrap HOST=centaurus
+	$(MAKE) host-bootstrap HOST=dorothy
+	$(MAKE) host-bootstrap HOST=norville
+	$(MAKE) host-bootstrap HOST=codsworth
+	$(MAKE) host-bootstrap HOST=memory-alpha
 
 play:
 	cd ansible && ansible-playbook playbook.yml

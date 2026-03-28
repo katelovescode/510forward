@@ -114,9 +114,19 @@ apt_managed:     # if Ubuntu (almost always yes)
 
 ### `ansible/inventory/host_vars/<hostname>/vars.yml`
 
+The `ip_address` here is used by Pi-hole to generate local DNS records, so it
+needs to be known before the first playbook run. The two ways to get it:
+
+- **Recommended (DNS/NPM access needed):** complete Step 2 first — Unifi
+  fixed-IP reservation means the IP is assigned before the device boots and
+  can be hardcoded here immediately.
+- **Alternative (no DNS/NPM needed):** skip Step 2, let DHCP assign an IP on
+  first boot, then fill it in. Only appropriate for hosts that won't have an
+  FQDN and won't be proxied through NPM.
+
 ```yaml
 ---
-ansible_host: <ip>      # from Unifi fixed-IP reservation (Step 2)
+ansible_host: <ip>
 ip_address: <ip>
 fqdn: <hostname>.510forward.space
 mac_address: "<reserved MAC>"
