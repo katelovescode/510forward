@@ -3,10 +3,6 @@ ansible_host: 192.168.30.60
 ip_address: 192.168.30.60
 fqdn: dorothy.510forward.space
 mac_address: "42:17:01:FD:72:48"
-# LXC containers inject SSH keys to root; ansible role creates the ansible
-# user on first host-bootstrap run. Remove after initial bootstrap if desired.
-first_run_user: root
-
 npm_proxied: true
 
 homepage_version: "1.5.0"

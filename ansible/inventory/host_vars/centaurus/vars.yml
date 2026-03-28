@@ -4,9 +4,5 @@ ip_address: 192.168.30.77
 fqdn: centaurus.510forward.space
 mac_address: "42:17:01:FD:F7:A4"
 
-# LXC containers inject SSH keys to root; ansible role creates the ansible
-# user on first host-bootstrap run. Remove after initial bootstrap if desired.
-first_run_user: root
-
 pihole_primary: true
 upgrade_risk: "low-moderate risk — watch for pihole-FTL in upgradable list; andromeda stays up during upgrade"
