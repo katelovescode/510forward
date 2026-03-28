@@ -21,3 +21,5 @@ nebula_sync_run_gravity: false
 pihole_service_dns:
   - subdomain: holodeck
     target: norville
+  - subdomain: arch
+    target: norville

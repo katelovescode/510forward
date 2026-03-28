@@ -51,7 +51,7 @@
       block_exploits: true
       allow_websocket_upgrade: "{{ item.allow_websocket_upgrade | default(false) }}"
       advanced_config: "{{ item.advanced_config | default('') }}"
-      access_list_id: 0
+      access_list_id: "{{ item.access_list_id | default(nginx_proxy_manager_default_access_list_id | default(0)) }}"
       certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
       ssl_forced: true
       meta:
@@ -84,7 +84,10 @@
       advanced_config: >-
         {{ (nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
         item.domain_names | first | replace('.' ~ domain, '')) | first).advanced_config | default('') }}
-      access_list_id: "{{ item.access_list_id }}"
+      access_list_id: >-
+        {{ (nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+        item.domain_names | first | replace('.' ~ domain, '')) | first).access_list_id
+        | default(nginx_proxy_manager_default_access_list_id | default(0)) }}
       certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
       ssl_forced: true
       meta:
@@ -100,6 +103,9 @@
     or item.allow_websocket_upgrade != ((nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
     item.domain_names | first | replace('.' ~ domain, '')) | first).allow_websocket_upgrade | default(false))
     or item.advanced_config | default('') != ((nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
-    item.domain_names | first | replace('.' ~ domain, '')) | first).advanced_config | default('')))
+    item.domain_names | first | replace('.' ~ domain, '')) | first).advanced_config | default(''))
+    or item.access_list_id | int != ((nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+    item.domain_names | first | replace('.' ~ domain, '')) | first).access_list_id
+    | default(nginx_proxy_manager_default_access_list_id | default(0)) | int))
   changed_when: true
   tags: nginx_proxy_manager

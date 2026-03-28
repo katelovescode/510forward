@@ -5,5 +5,8 @@
 - name: Configure TLS certificate
   ansible.builtin.import_tasks: certificates.yml
 
+- name: Configure access lists
+  ansible.builtin.import_tasks: access_lists.yml
+
 - name: Configure proxy hosts
   ansible.builtin.import_tasks: proxy_hosts.yml

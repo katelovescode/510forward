@@ -7,6 +7,13 @@ mac_address: "42:17:01:FD:72:77"
 
 nginx_proxy_manager_certificate_domain: "*.{{ domain }}"
 
+nginx_proxy_manager_default_access_list_name: "VLAN 30 only"
+nginx_proxy_manager_default_access_list_clients:
+  - address: 192.168.30.0/24
+    directive: allow
+  - address: all
+    directive: deny
+
 nginx_proxy_manager_proxy_hosts:
   - subdomain: enterprise
     host: "{{ hostvars['enterprise'].ip_address }}"
@@ -34,3 +41,8 @@ nginx_proxy_manager_proxy_hosts:
     port: 30013
     scheme: http
     allow_websocket_upgrade: true
+    access_list_id: 0
+  - subdomain: arch
+    host: "{{ hostvars['alexandria'].ip_address }}"
+    port: 30234
+    scheme: http

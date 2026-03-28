@@ -57,6 +57,21 @@ argument_specs:
           Issued via Cloudflare DNS-01 challenge using the "Cloudflare DNS API Token"
           item from 1Password.
 
+      nginx_proxy_manager_default_access_list_name:
+        type: str
+        required: false
+        description: >
+          Name of the NPM access list to apply to all proxy hosts by default.
+          If not set, all proxy hosts are unrestricted (access_list_id 0).
+
+      nginx_proxy_manager_default_access_list_clients:
+        type: list
+        required: false
+        description: >
+          Client rules for the default access list. Each entry needs
+          `address` (IP/CIDR or "all") and `directive` ("allow" or "deny").
+          Only used when nginx_proxy_manager_default_access_list_name is set.
+
       nginx_proxy_manager_proxy_hosts:
         type: list
         required: true
@@ -65,4 +80,5 @@ argument_specs:
           Each entry requires: subdomain (str), host (str), port (int).
           Optional: scheme (str, default 'http'),
           allow_websocket_upgrade (bool, default false),
-          advanced_config (str, default '') — raw nginx directives injected into the server block.
+          advanced_config (str, default '') — raw nginx directives injected into the server block,
+          access_list_id (int) — overrides the default access list; use 0 to disable restriction.
