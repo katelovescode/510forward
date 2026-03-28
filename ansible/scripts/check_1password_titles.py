@@ -46,8 +46,10 @@ def find_references(files):
     for path in files:
         if not path.is_file():
             continue
-        # Skip example/template files — they contain placeholder titles
+        # Skip example/template files and docs — they contain placeholder titles
         if path.name.endswith(".example") or ".example." in path.name:
+            continue
+        if path.suffix in (".md",):
             continue
         try:
             text = path.read_text()

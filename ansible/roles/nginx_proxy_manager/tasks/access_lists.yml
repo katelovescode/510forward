@@ -48,6 +48,25 @@
   changed_when: true
   tags: nginx_proxy_manager
 
+- name: Update default access list
+  ansible.builtin.uri:
+    url: "http://localhost:81/api/nginx/access-lists/{{ nginx_proxy_manager_existing_default_access_list.id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ nginx_proxy_manager_token.json.token }}"
+    body_format: json
+    body:
+      name: "{{ nginx_proxy_manager_default_access_list_name }}"
+      satisfy_any: false
+      clients: "{{ nginx_proxy_manager_default_access_list_clients }}"
+    status_code: 200
+  when: >-
+    nginx_proxy_manager_existing_default_access_list != {}
+    and (nginx_proxy_manager_existing_default_access_list.clients | default([]) | map(attribute='address') | sort | list) !=
+        (nginx_proxy_manager_default_access_list_clients | map(attribute='address') | sort | list)
+  changed_when: true
+  tags: nginx_proxy_manager
+
 - name: Set default access list ID fact
   ansible.builtin.set_fact:
     nginx_proxy_manager_default_access_list_id: >-

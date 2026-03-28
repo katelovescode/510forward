@@ -9,9 +9,11 @@ nginx_proxy_manager_certificate_domain: "*.{{ domain }}"
 
 nginx_proxy_manager_default_access_list_name: "VLAN 30 only"
 nginx_proxy_manager_default_access_list_clients:
+  - address: 192.168.1.0/24
+    directive: allow
   - address: 192.168.30.0/24
     directive: allow
-  - address: all
+  - address: 0.0.0.0/0
     directive: deny
 
 nginx_proxy_manager_proxy_hosts:
