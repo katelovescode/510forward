@@ -39,11 +39,11 @@
           Authorization: >-
             PVEAPIToken={{
               onepassword_item_result.fields |
-              selectattr('id', 'equalto', 'username') |
+              selectattr('id', 'equalto', 'token_id') |
               map(attribute='value') | first
             }}={{
               onepassword_item_result.fields |
-              selectattr('id', 'equalto', 'password') |
+              selectattr('id', 'equalto', 'credential') |
               map(attribute='value') | first
             }}
         validate_certs: false
