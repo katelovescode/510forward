@@ -6,8 +6,9 @@ argument_specs:
       Installs Pi-hole v6 unattended using a pre-seeded pihole.toml,
       sets the admin password via CLI (generated and stored in 1Password
       automatically), and configures local DNS records for all inventory
-      hosts via custom.list. On the primary node, also installs and
-      configures nebula-sync for Pi-hole clustering.
+      hosts via custom.list. On the primary node, also seeds gravity state
+      from the replica on fresh installs (via Pi-hole teleporter API),
+      manages adlists, and installs nebula-sync for Pi-hole clustering.
     options:
       # ################################
       # Shared vars — from group_vars/all/vars.yml
