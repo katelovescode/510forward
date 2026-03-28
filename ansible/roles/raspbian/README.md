@@ -33,6 +33,6 @@ andromeda is on WiFi. The NM connection name includes the SSID (`netplan-wlan0-<
 `first_run_user` overrides the default `ansible` connection user for the base configuration play:
 
 - **andromeda** — `first_run_user: kate`. Kate is the only privileged user available before the ansible user is created (no cloud-init on Raspberry Pi).
-- **centaurus, dorothy** — `first_run_user: root`. LXC containers inject SSH keys to root; the ansible user doesn't exist until after the first `make host-bootstrap` run.
+- **lxc_containers group** — `first_run_user: root` via `group_vars/lxc_containers/vars.yml`. LXC containers inject SSH keys to root; the ansible user doesn't exist until after the first `make host-bootstrap` run.
 
 All other hosts default to the `ansible` user, which cloud-init provisions at first boot.
