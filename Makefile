@@ -4,8 +4,11 @@ help:
 	@echo ""
 	@echo "  install                  Install dependencies and set up pre-commit hooks"
 	@echo "  uninstall                Remove installed dependencies"
-	@echo "  bootstrap                Run the one-time lab bootstrap playbook"
-	@echo "  play                     Run the main Ansible playbook"
+	@echo "  lab-bootstrap            One-time Proxmox host bootstrap (enterprise only — disaster recovery)"
+	@echo "  host-bootstrap           Bootstrap a single VM/LXC: make host-bootstrap HOST=centaurus"
+	@echo "                           Elevates VM RAM for provisioning, runs Ansible, restores runtime RAM"
+	@echo "                           Run one host at a time — see docs/runbooks/disaster-recovery.md"
+	@echo "  play                     Run the main Ansible playbook against all hosts (idempotent)"
 	@echo "  upgrade                  Interactively upgrade apt packages (excludes self_managed_os hosts): make upgrade [LIMIT=host_or_group]"
 	@echo "  verify                   Run the verify playbook against live infrastructure"
 	@echo "  lint                     Run ansible-lint and tflint"
@@ -43,11 +46,20 @@ else
 	pipx uninstall ansible-core
 endif
 
-bootstrap:
+lab-bootstrap:
 	cd ansible && ansible-playbook lab_bootstrap.yml
 
-bootstrap-log:
+lab-bootstrap-log:
 	cd ansible && ansible-playbook lab_bootstrap.yml 2>&1 | tee bootstrap_output.log
+
+host-bootstrap:
+ifndef HOST
+	$(error HOST is required: make host-bootstrap HOST=centaurus)
+endif
+	cd tofu/proxmox && ../tofu.sh apply -var 'bootstrapping_vms=["$(HOST)"]'
+	cd ansible && ansible-playbook playbook.yml --limit $(HOST) || \
+		(cd tofu/proxmox && ../tofu.sh apply; exit 1)
+	cd tofu/proxmox && ../tofu.sh apply
 
 play:
 	cd ansible && ansible-playbook playbook.yml
