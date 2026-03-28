@@ -25,12 +25,12 @@ variable "haos_version" {
   type        = string
 }
 
-variable "phase" {
-  description = "Deployment phase. 'bootstrap' provisions VMs with elevated RAM for initial service installation; 'runtime' uses reduced steady-state RAM. Pass -var phase=bootstrap when initializing a new VM."
-  type        = string
-  default     = "runtime"
+variable "bootstrapping_vms" {
+  description = "VMs currently being bootstrapped. These receive elevated RAM for initial service installation; all others use runtime RAM. Default empty = all VMs at runtime. Example: -var 'bootstrapping_vms=[\"memory-alpha\"]'"
+  type        = list(string)
+  default     = []
   validation {
-    condition     = contains(["bootstrap", "runtime"], var.phase)
-    error_message = "phase must be 'bootstrap' or 'runtime'."
+    condition     = alltrue([for v in var.bootstrapping_vms : contains(["centaurus", "norville", "dorothy", "codsworth", "memory-alpha", "hermes"], v)])
+    error_message = "bootstrapping_vms must only contain known VM names: centaurus, norville, dorothy, codsworth, memory-alpha, hermes."
   }
 }

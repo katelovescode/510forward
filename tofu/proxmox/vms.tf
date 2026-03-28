@@ -1,11 +1,20 @@
 locals {
   vm_memory = {
-    centaurus    = { bootstrap = 512,  runtime = 512  }
-    norville     = { bootstrap = 1024, runtime = 768  }
-    dorothy      = { bootstrap = 512,  runtime = 512  }
-    codsworth    = { bootstrap = 4096, runtime = 4096 }
-    memory_alpha = { bootstrap = 8192, runtime = 4096 }
-    hermes       = { bootstrap = 2048, runtime = 2048 }
+    centaurus    = { bootstrap = 512,  runtime = 512,  balloon = 256  }
+    norville     = { bootstrap = 1024, runtime = 768,  balloon = 256  }
+    dorothy      = { bootstrap = 512,  runtime = 512,  balloon = 256  }
+    codsworth    = { bootstrap = 4096, runtime = 4096, balloon = 1024 }
+    memory_alpha = { bootstrap = 8192, runtime = 4096, balloon = 1024 }
+    hermes       = { bootstrap = 2048, runtime = 2048, balloon = 512  }
+  }
+
+  vm_phase = {
+    centaurus    = contains(var.bootstrapping_vms, "centaurus")    ? "bootstrap" : "runtime"
+    norville     = contains(var.bootstrapping_vms, "norville")     ? "bootstrap" : "runtime"
+    dorothy      = contains(var.bootstrapping_vms, "dorothy")      ? "bootstrap" : "runtime"
+    codsworth    = contains(var.bootstrapping_vms, "codsworth")    ? "bootstrap" : "runtime"
+    memory_alpha = contains(var.bootstrapping_vms, "memory-alpha") ? "bootstrap" : "runtime"
+    hermes       = contains(var.bootstrapping_vms, "hermes")       ? "bootstrap" : "runtime"
   }
 }
 
@@ -25,7 +34,8 @@ resource "proxmox_virtual_environment_vm" "centaurus" {
   }
 
   memory {
-    dedicated = local.vm_memory.centaurus[var.phase]
+    dedicated = local.vm_memory.centaurus[local.vm_phase.centaurus]
+    floating  = local.vm_memory.centaurus.balloon
   }
 
   disk {
@@ -89,7 +99,8 @@ resource "proxmox_virtual_environment_vm" "norville" {
   }
 
   memory {
-    dedicated = local.vm_memory.norville[var.phase]
+    dedicated = local.vm_memory.norville[local.vm_phase.norville]
+    floating  = local.vm_memory.norville.balloon
   }
 
   disk {
@@ -153,7 +164,8 @@ resource "proxmox_virtual_environment_vm" "dorothy" {
   }
 
   memory {
-    dedicated = local.vm_memory.dorothy[var.phase]
+    dedicated = local.vm_memory.dorothy[local.vm_phase.dorothy]
+    floating  = local.vm_memory.dorothy.balloon
   }
 
   disk {
@@ -210,7 +222,8 @@ resource "proxmox_virtual_environment_vm" "codsworth" {
   }
 
   memory {
-    dedicated = local.vm_memory.codsworth[var.phase]
+    dedicated = local.vm_memory.codsworth[local.vm_phase.codsworth]
+    floating  = local.vm_memory.codsworth.balloon
   }
 
   efi_disk {
@@ -283,7 +296,8 @@ resource "proxmox_virtual_environment_vm" "memory_alpha" {
   }
 
   memory {
-    dedicated = local.vm_memory.memory_alpha[var.phase]
+    dedicated = local.vm_memory.memory_alpha[local.vm_phase.memory_alpha]
+    floating  = local.vm_memory.memory_alpha.balloon
   }
 
   disk {
@@ -333,7 +347,8 @@ resource "proxmox_virtual_environment_vm" "hermes" {
   }
 
   memory {
-    dedicated = local.vm_memory.hermes[var.phase]
+    dedicated = local.vm_memory.hermes[local.vm_phase.hermes]
+    floating  = local.vm_memory.hermes.balloon
   }
 
   disk {
