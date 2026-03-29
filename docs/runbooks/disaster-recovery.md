@@ -33,6 +33,7 @@ make lab-bootstrap
 ```
 
 Runs as root/sysadmin (before automation users exist). Creates:
+
 - OS users: `kate`, `ansible`, `opentofu`
 - Proxmox PAM users and roles with scoped API tokens
 - SSH keys and API tokens stored in 1Password
@@ -59,32 +60,23 @@ the same IPs as before.
 
 ## Step 3 — Bootstrap hosts (DNS first)
 
-`dr-bootstrap` automates the full sequence: centaurus must come first since it
-provides DNS for all other hosts. Remaining hosts are bootstrapped in order.
-Hosts run sequentially — Tofu state locking prevents concurrent applies.
-
-To bootstrap a single host (e.g. when adding a new one):
+Centaurus must come first since it provides DNS for all other hosts.
 
 ```bash
-make host-bootstrap HOST=<hostname>
+make play LIMIT=centaurus
 ```
 
-```bash
-make dr-bootstrap
+Verify DNS is working before continuing:
+
+`dig @192.168.30.77 enterprise.510forward.space`
+
+Then configure the remaining hosts:
+
+```
+make play
 ```
 
-Verify DNS is working before it continues automatically, or check manually:
-
-```bash
-dig @192.168.30.77 enterprise.510forward.space
-```
-
-> codsworth (HAOS) manages its own initialization after first boot. The
-> host-bootstrap run configures the Proxmox VM resource only.
-
-GitLab initialization takes several minutes after Ansible completes. Wait for
-the web UI to respond at `https://memory-alpha.510forward.space` before
-proceeding to Step 4.
+GitLab initialization takes several minutes after Ansible completes. Wait for the web UI to respond at https://memory-alpha.510forward.space before proceeding to Step 4.
 
 ---
 
@@ -115,11 +107,11 @@ If only one service is broken, target it directly:
 ```bash
 # Reprovision a single VM from scratch
 make tofu-recreate HOSTS=norville
-make host-bootstrap HOST=norville
+make play LIMIT=norville
 
 # Reprovision an LXC container from scratch
 make tofu-proxmox ARGS='apply -target=proxmox_virtual_environment_container.centaurus'
-make host-bootstrap HOST=centaurus
+make play LIMIT=centaurus
 
 # Service config drifted but host is fine
 make play                  # idempotent — only changed hosts will show tasks
