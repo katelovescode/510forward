@@ -1,6 +1,6 @@
 # proxmox_user role
 
-Creates Proxmox users, groups, roles, and API tokens. Stores tokens in 1Password. Used in bootstrap for the `ansible` and `opentofu` service accounts, and from other roles (homepage, home_assistant) for their service users.
+Creates Proxmox users, groups, roles, and API tokens. Stores tokens in 1Password. Used in bootstrap for the `ansible` and `opentofu` service accounts, and from other roles (home_assistant) for their service users.
 
 // TODO: Move these all to the proxmox nodes subdirectory I think
 
@@ -43,7 +43,7 @@ In both cases `privs` is a list — joined to a comma-separated string at the pv
 
 // TODO: Again, why aren't we just calling these tasks on the enterprise host instead of delegating_to
 
-pvesh is a Proxmox CLI tool that only exists on the Proxmox host. The `service_user` and `api_token` tasks were originally only called from bootstrap plays that run on enterprise directly. When roles started calling them from other VMs (homepage on dorothy, home_assistant on codsworth), delegation became necessary. `delegate_to: enterprise` is safe from bootstrap too — enterprise→enterprise delegation is a no-op.
+pvesh is a Proxmox CLI tool that only exists on the Proxmox host. The `service_user` and `api_token` tasks were originally only called from bootstrap plays that run on enterprise directly. When roles started calling them from other VMs (home_assistant on codsworth), delegation became necessary. `delegate_to: enterprise` is safe from bootstrap too — enterprise→enterprise delegation is a no-op.
 
 ## Why privsep=0 on API tokens
 
@@ -58,4 +58,4 @@ Proxmox creates API tokens with privilege separation enabled by default, giving 
 ## Realms: pam vs pve
 
 - `pam` — users that also exist as OS users on the Proxmox host (kate, ansible, opentofu). These can authenticate via PAM.
-- `pve` — API-only users with no OS account (homepage, homeassistant). The default realm is `pam`; specify `proxmox_user_service_user_realm: pve` for API-only accounts.
+- `pve` — API-only users with no OS account (homeassistant). The default realm is `pam`; specify `proxmox_user_service_user_realm: pve` for API-only accounts.

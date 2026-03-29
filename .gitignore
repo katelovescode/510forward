@@ -46,4 +46,10 @@ venv/
 
 # JS
 **/node_modules
-.yarn.worktrees/
+.yarn
+
+# Worktrees
+.worktrees/
+
+# Logs
+.tmp/

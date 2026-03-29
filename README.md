@@ -18,17 +18,15 @@ Ansible verify    →  post-install verification
 
 **Hosts:**
 
-| Host         | Type                                        | Role                                   |
-| ------------ | ------------------------------------------- | -------------------------------------- |
-| enterprise   | Physical (mini PC)                          | Proxmox VE node                        |
-| andromeda    | Physical (Raspberry Pi 5, touchscreen case) | Pi-hole secondary, HomeAssistant kiosk |
-| centaurus    | QEMU VM                                     | Pi-hole primary + nebula-sync          |
-| norville     | QEMU VM                                     | NGINX Proxy Manager (Docker)           |
-| dorothy      | QEMU VM                                     | Homepage dashboard                     |
-| codsworth    | QEMU VM (HAOS)                              | Home Assistant                         |
-| memory-alpha | QEMU VM                                     | GitLab CE                              |
-| hermes       | QEMU VM                                     | GitLab Runner                          |
-| alexandria   | Physical (Tower, TrueNAS installed)         | NAS                                    |
+| Host         | Role                                   | Type                                        |
+| ------------ | -------------------------------------- | ------------------------------------------- |
+| enterprise   | Proxmox VE node                        | Physical (mini PC)                          |
+| andromeda    | Pi-hole secondary, HomeAssistant kiosk | Physical (Raspberry Pi 5, touchscreen case) |
+| centaurus    | Pi-hole primary + nebula-sync          | LXC container                               |
+| norville     | NGINX Proxy Manager (Docker)           | QEMU VM                                     |
+| codsworth    | Home Assistant                         | QEMU VM (HAOS)                              |
+| memory-alpha | GitLab CE                              | QEMU VM                                     |
+| alexandria   | NAS                                    | Physical (Tower, TrueNAS installed)         |
 
 **DNS + reverse proxy pattern:** Pi-hole returns norville's IP for all `*.510forward.space` subdomains. NPM on norville handles TLS termination and proxies to backends. Pi-hole nodes resolve directly to their own IPs (FTL self-protection) and are accessed via HTTP by IP.
 
@@ -51,59 +49,18 @@ Before running anything, the following must be done manually:
 
 ## Usage
 
-Run `make help` to find out all available commands. The most common:
-
-```bash
-make install                    # Install dependencies and pre-commit hooks
-make bootstrap                  # One-time bootstrap (run once, as sysadmin, before tofu apply)
-make tofu-proxmox ARGS='plan'   # Preview VM changes
-make tofu-proxmox ARGS='apply'  # Provision VMs
-make play                       # Run main Ansible playbook (idempotent)
-make verify                     # Run acceptance tests against live infrastructure
-make lint                       # ansible-lint + tflint
-```
-
-`make bootstrap` is only required for initial setup or disaster recovery, but it's still idempotent. It only acts on Proxmox and gets the system "ready".
-
-### Upgrades
-
-```bash
-make upgrade                    # all apt-managed hosts, one at a time
-make upgrade LIMIT=andromeda    # single host
-make upgrade LIMIT=qemu_vms     # group
-```
-
-Prompts before upgrading each host and again before rebooting if a reboot is required. Hosts are processed serially to avoid taking both Pi-hole nodes down simultaneously.
-
-**memory-alpha is excluded** even with `LIMIT=memory-alpha`. GitLab CE can be installed via the apt repo, so `apt upgrade` might pull a new GitLab version. GitLab upgrades must follow a specific version path (no skipping major versions) and need to be intentional — they're not safe to run as part of a general upgrade sweep. To upgrade memory-alpha OS packages without touching GitLab, hold the package first: `apt-mark hold gitlab-ce`.
-
-HAOS (codsworth) is also excluded — it manages its own updates.
+Run `make help` to find out all available commands
 
 ---
 
 ## Adding a new service
 
-Every service that needs a browser URL requires two changes, then `make play`:
-
-1. **NPM proxy host** — add to `nginx_proxy_manager_proxy_hosts` in `ansible/inventory/host_vars/norville/vars.yml`:
-
-   ```yaml
-   - subdomain: myservice
-     host: "{{ hostvars['myservice']['ip_address'] }}"
-     port: 8080
-     scheme: http
-   ```
-
-2. **Pi-hole DNS** — add to `ansible/inventory/host_vars/myservice/vars.yml`:
-   ```yaml
-   npm_proxied: true
-   ```
-
----
+See [docs/add-new-host.md](docs/add-new-host.md)
 
 ## Secret management
 
-Things that are either already defined in env vars or on the controller (GIT_AUTHOR_NAME, etc.), information needed for both tofu & ansible (SysAdmin SSH Key, etc.), or required for 1Password vault access (OP_SERVICE_ACCOUNT_TOKEN, etc.) live in .envrc. Everything else is in 1Password and pulled from there.
+Information that is either already defined in env vars or on the controller (GIT_AUTHOR_NAME, etc.), is needed by both tofu & ansible (SysAdmin SSH Key, etc.), or is
+required for 1Password vault access (OP_SERVICE_ACCOUNT_TOKEN, etc.) live in .envrc. Everything else is in 1Password and pulled from there.
 
 A pre-commit hook (`ansible/scripts/check_1password_titles.py`) validates that all 1Password item title references in code match items that exist in the 1Password vault.
 
@@ -126,7 +83,7 @@ Fetches credentials from 1Password, downloads the PVE ISO, and produces a ready-
 
 ## Verification
 
-`make verify` runs automated acceptance tests after `make play`. These and manual tests are documented in `ansible/verify/README.md`.
+`ansible-playbook verify.yml` from the ansible directory - runs a verification playbook. See[ansible/verify/README.md](ansible/verify/README.md) for more info.
 
 ## Key Design Decisions
 
@@ -160,5 +117,6 @@ Cloud-init provisions VMs with both keys and users so ansible can connect immedi
 
   To boot outside kiosk mode (e.g. for a session as kate on the desktop):
   - Temporarily set `autologin-user=kate` in `/etc/lightdm/lightdm.conf` and reboot,
-    OR run `make play` with `raspbian_kiosk_enabled: false` in group_vars to disable
-    autologin and revert to the login screen. Re-enable when done.
+    OR run `ansible-playbook playbook.yml` from the ansible directory with
+    `raspbian_kiosk_enabled: false` in group_vars to disable autologin and
+    revert to the login screen. Re-enable when done.

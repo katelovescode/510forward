@@ -21,7 +21,7 @@ The correct pattern: read the current value with `pihole-FTL --config <key>`, co
 
 Array values are read back as `[ val1, val2 ]` (no quotes). Set them using the `argv:` form in Ansible to avoid shell word-splitting.
 
-Custom DNS entries go in `/etc/dnsmasq.d/`. `misc.etc_dnsmasq_d = true` must be set in `pihole.toml`. `make play` handles the restart automatically via a handler — no manual steps needed. If you're making changes directly on the machine for debugging, use `systemctl restart pihole-FTL` to apply them — `pihole restartdns` does not reload `dnsmasq.d` or `pihole.toml`.
+Custom DNS entries go in `/etc/dnsmasq.d/`. `misc.etc_dnsmasq_d = true` must be set in `pihole.toml`. `ansible-playbook playbook.yml` handles the restart automatically via a handler — no manual steps needed. If you're making changes directly on the machine for debugging, use `systemctl restart pihole-FTL` to apply them — `pihole restartdns` does not reload `dnsmasq.d` or `pihole.toml`.
 
 ## Why Pi-hole nodes use public DNS for themselves
 

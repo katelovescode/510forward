@@ -24,7 +24,7 @@
   loop_control:
     label: "{{ item.item.url }}"
   changed_when: true
-  notify: Update pihole gravity
+  notify: Update pihole gravity [~2-3 min]
   tags: pihole
 
 - name: Update adlist enabled state
@@ -41,5 +41,5 @@
   loop_control:
     label: "{{ item.item.url }}"
   changed_when: true
-  notify: Update pihole gravity
+  notify: Update pihole gravity [~2-3 min]
   tags: pihole

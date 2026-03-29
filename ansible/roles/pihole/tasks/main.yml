@@ -15,12 +15,6 @@
 - name: Configure DNS
   ansible.builtin.import_tasks: dns.yml
 
-- name: Seed from replica (fresh primary install only)
-  ansible.builtin.include_tasks: seed_from_replica.yml
-  when:
-    - pihole_primary | default(false)
-    - not pihole_config_file.stat.exists
-
 - name: Manage adlists
   ansible.builtin.include_tasks: adlists.yml
   when: pihole_primary | default(false)

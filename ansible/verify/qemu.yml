@@ -19,4 +19,5 @@
         that: ansible_facts.services['qemu-guest-agent.service'].state == 'running'
         fail_msg: "qemu-guest-agent is not running on {{ inventory_hostname }}"
         success_msg: "qemu-guest-agent is active on {{ inventory_hostname }}"
+      when: ansible_facts.services is defined
       tags: [verify, qemu]

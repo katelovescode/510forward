@@ -1,8 +1,0 @@
----
-# For configuration options and examples, please see:
-# https://gethomepage.dev/configs/bookmarks
-
-- Money Honey:
-    - YNAB:
-        - icon: ynab
-          href: https://app.ynab.com/26b7c0e6-ccae-46a0-ad48-340f3d37a0df/budget

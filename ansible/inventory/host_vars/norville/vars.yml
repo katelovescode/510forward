@@ -25,10 +25,6 @@ nginx_proxy_manager_proxy_hosts:
   - subdomain: norville
     host: 127.0.0.1
     port: 81
-  - subdomain: dorothy
-    host: "{{ hostvars['dorothy'].ip_address }}"
-    port: 3000
-    scheme: http
   - subdomain: codsworth
     host: "{{ hostvars['codsworth'].ip_address }}"
     port: 8123

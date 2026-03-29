@@ -6,7 +6,7 @@ Installs Docker CE on amd64 and arm64 hosts.
 
 - Adds the Docker apt repository and GPG key
 - Installs `docker-ce`, `docker-ce-cli`, `containerd.io`, and the Compose plugin
-- Handles both amd64 (norville, dorothy) and arm64 (andromeda) architectures
+- Handles both amd64 (norville) and arm64 (andromeda) architectures
 
 ## Why Docker CE and not the distro package
 
