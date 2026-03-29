@@ -1,4 +1,33 @@
+---
 repos:
+  - repo: https://github.com/AleksaC/terraform-py
+    rev: v1.14.8
+    hooks:
+      - id: tf-fmt
+      - id: tf-validate
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v25.11.0
+    hooks:
+      - id: ansible-lint
+        additional_dependencies:
+          - jmespath==1.0.1
+          - netaddr==1.3.0
+          - distlib
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: package.lock.json
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: detect-private-key
+      - id: forbid-submodules
+      - id: pretty-format-json
+      - id: trailing-whitespace
+  # -   id: ...
   - repo: local
     hooks:
       - id: check-1password-titles
