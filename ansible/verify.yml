@@ -1,6 +1,5 @@
 ---
 # verify.yml — acceptance tests for live infrastructure
-# Run after make play: make verify
 #
 # Destructive / stateful failover tests (stopping pihole-FTL, etc.) are omitted —
 # run those manually per the checklist in .windsurf/plans/homelab-ansible-plan.md.

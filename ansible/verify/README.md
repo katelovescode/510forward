@@ -1,6 +1,6 @@
 # verify/
 
-Acceptance tests for live infrastructure, organized by concern. Run via `make verify` after `make play`.
+Acceptance tests for live infrastructure, organized by concern. Run via `ansible-playbook verify.yml` after other playbooks.
 
 Each file is a self-contained playbook imported by `../verify.yml`:
 

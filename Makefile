@@ -6,10 +6,8 @@ help:
 	@echo ""
 	@echo "  install                  Install dependencies and set up pre-commit hooks"
 	@echo "  uninstall                Remove installed dependencies"
-	@echo "  lab-bootstrap            One-time Proxmox host bootstrap (enterprise only — disaster recovery)"
-	@echo "  play                     Run the main Ansible playbook against all hosts (idempotent): make play [LIMIT=host_or_group]"
-	@echo "  verify                   Run the verify playbook against live infrastructure: make verify [LIMIT=host_or_group] [SKIP_TAGS=tag1,tag2]"
 	@echo "  lint                     Run ansible-lint and tflint"
+	@echo "  lint-fix                 Run ansible-lint and tflint with autofix flags"
 	@echo "  tofu-proxmox             Run OpenTofu for Proxmox: make tofu-proxmox ARGS='plan'"
 	@echo "  tofu-recreate            Recreate VMs by name: make tofu-recreate HOSTS=centaurus,norville"
 	@echo "  sync-pihole              Manually trigger nebula-sync on centaurus"
@@ -42,15 +40,6 @@ ifdef VIRTUAL_ENV
 else
 	pipx uninstall ansible-core
 endif
-
-lab-bootstrap:
-	cd ansible && ansible-playbook lab_bootstrap.yml
-
-play:
-	cd ansible && ansible-playbook playbook.yml $(if $(LIMIT),--limit $(LIMIT),)
-
-verify:
-	cd ansible && ansible-playbook verify.yml $(if $(LIMIT),--limit $(LIMIT),) $(if $(SKIP_TAGS),--skip-tags $(SKIP_TAGS),)
 
 lint:
 	cd ansible && ansible-lint

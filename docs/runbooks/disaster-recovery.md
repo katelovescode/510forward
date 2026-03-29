@@ -29,7 +29,7 @@ make install          # if dependencies aren't installed
 ## Step 1 — Lab bootstrap (Proxmox host)
 
 ```bash
-make lab-bootstrap
+cd ansible && ansible-playbook lab_bootstrap.yml
 ```
 
 Runs as root/sysadmin (before automation users exist). Creates:
@@ -63,7 +63,7 @@ the same IPs as before.
 Centaurus must come first since it provides DNS for all other hosts.
 
 ```bash
-make play LIMIT=centaurus
+cd ansible && ansible-playbook playbook.yml LIMIT=centaurus
 ```
 
 Verify DNS is working before continuing:
@@ -72,8 +72,8 @@ Verify DNS is working before continuing:
 
 Then configure the remaining hosts:
 
-```
-make play
+```bash
+cd ansible && ansible-playbook playbook.yml
 ```
 
 GitLab initialization takes several minutes after Ansible completes. Wait for the web UI to respond at https://memory-alpha.510forward.space before proceeding to Step 4.
@@ -83,7 +83,7 @@ GitLab initialization takes several minutes after Ansible completes. Wait for th
 ## Step 4 — Full maintenance run
 
 ```bash
-make play
+cd ansible && ansible-playbook playbook.yml
 ```
 
 Applies all remaining configuration across all hosts. Safe to re-run.
@@ -93,7 +93,7 @@ Applies all remaining configuration across all hosts. Safe to re-run.
 ## Step 5 — Verify
 
 ```bash
-make verify
+cd ansible && ansible-playbook verify.yml
 ```
 
 Confirms the full stack is healthy.
@@ -107,14 +107,14 @@ If only one service is broken, target it directly:
 ```bash
 # Reprovision a single VM from scratch
 make tofu-recreate HOSTS=norville
-make play LIMIT=norville
+cd ansible && ansible-playbook playbook.yml LIMIT=norville
 
 # Reprovision an LXC container from scratch
 make tofu-proxmox ARGS='apply -target=proxmox_virtual_environment_container.centaurus'
-make play LIMIT=centaurus
+cd ansible && ansible-playbook playbook.yml LIMIT=centaurus
 
 # Service config drifted but host is fine
-make play                  # idempotent — only changed hosts will show tasks
+cd ansible && ansible-playbook playbook.yml # idempotent — only changed hosts will show tasks
 
 # Force Pi-hole sync from primary to replica
 make sync-pihole
