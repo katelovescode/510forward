@@ -24,9 +24,3 @@ variable "haos_version" {
   description = "Home Assistant OS version to deploy (check github.com/home-assistant/operating-system/releases)"
   type        = string
 }
-
-variable "bootstrapping_vms" {
-  description = "VMs currently being bootstrapped. These receive elevated RAM for initial service installation; all others use runtime RAM. Default empty = all VMs at runtime. Example: -var 'bootstrapping_vms=[\"memory-alpha\"]'"
-  type        = list(string)
-  default     = []
-}

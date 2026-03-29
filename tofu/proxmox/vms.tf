@@ -1,21 +1,3 @@
-locals {
-  vm_memory = {
-    norville     = { bootstrap = 1024, runtime = 768,  balloon = 256  }
-    codsworth    = { bootstrap = 4096, runtime = 4096, balloon = 1024 }
-    memory_alpha = { bootstrap = 8192, runtime = 4096, balloon = 1024 }
-    # hermes: on hold — GitLab Runner executor decision pending (LXC vs VM)
-    # hermes = { bootstrap = 2048, runtime = 2048, balloon = 512 }
-  }
-
-  vm_phase = {
-    norville     = contains(var.bootstrapping_vms, "norville")     ? "bootstrap" : "runtime"
-    codsworth    = contains(var.bootstrapping_vms, "codsworth")    ? "bootstrap" : "runtime"
-    memory_alpha = contains(var.bootstrapping_vms, "memory-alpha") ? "bootstrap" : "runtime"
-    # hermes: on hold
-    # hermes = contains(var.bootstrapping_vms, "hermes") ? "bootstrap" : "runtime"
-  }
-}
-
 resource "proxmox_virtual_environment_vm" "norville" {
   name      = "norville"
   node_name = "enterprise"
@@ -32,8 +14,8 @@ resource "proxmox_virtual_environment_vm" "norville" {
   }
 
   memory {
-    dedicated = local.vm_memory.norville[local.vm_phase.norville]
-    floating  = local.vm_memory.norville.balloon
+    dedicated = 768
+    floating  = 256
   }
 
   disk {
@@ -104,8 +86,8 @@ resource "proxmox_virtual_environment_vm" "codsworth" {
   }
 
   memory {
-    dedicated = local.vm_memory.codsworth[local.vm_phase.codsworth]
-    floating  = local.vm_memory.codsworth.balloon
+    dedicated = 4096
+    floating  = 1024
   }
 
   efi_disk {
@@ -178,8 +160,8 @@ resource "proxmox_virtual_environment_vm" "memory_alpha" {
   }
 
   memory {
-    dedicated = local.vm_memory.memory_alpha[local.vm_phase.memory_alpha]
-    floating  = local.vm_memory.memory_alpha.balloon
+    dedicated = 8192
+    floating  = 1024
   }
 
   disk {
