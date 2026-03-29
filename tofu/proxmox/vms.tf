@@ -211,6 +211,12 @@ resource "proxmox_virtual_environment_vm" "memory_alpha" {
     mac_address = "42:17:01:FD:A1:FA"
     firewall    = true
   }
+
+  # Prevent tofu from starting memory_alpha during applies while it is
+  # intentionally shut down (e.g. during Forgejo migration / OOM recovery).
+  lifecycle {
+    ignore_changes = [started]
+  }
 }
 
 # hermes: GitLab Runner — on hold pending executor decision (shell vs Docker affects LXC eligibility)

@@ -54,6 +54,7 @@
   ansible.builtin.command:
     cmd: fallocate -l 1G /swapfile
     creates: /swapfile
+  when: ansible_virtualization_type != 'lxc'
   tags: homepage
 
 - name: Set swapfile permissions
@@ -63,6 +64,7 @@
     owner: root
     group: root
     mode: "0600"
+  when: ansible_virtualization_type != 'lxc'
   tags: homepage
 
 - name: Check if swapfile is formatted
@@ -71,13 +73,16 @@
     cmd: file /swapfile
   register: _homepage_swapfile_type
   changed_when: false
+  when: ansible_virtualization_type != 'lxc'
   tags: homepage
 
 - name: Format swapfile
   become: true
   ansible.builtin.command:
     cmd: mkswap /swapfile
-  when: "'swap file' not in _homepage_swapfile_type.stdout"
+  when:
+    - ansible_virtualization_type != 'lxc'
+    - "'swap file' not in _homepage_swapfile_type.stdout"
   changed_when: true
   tags: homepage
 
@@ -87,13 +92,16 @@
   register: _homepage_swap_active
   failed_when: false
   changed_when: false
+  when: ansible_virtualization_type != 'lxc'
   tags: homepage
 
 - name: Enable swapfile
   become: true
   ansible.builtin.command:
     cmd: swapon /swapfile
-  when: _homepage_swap_active.rc != 0
+  when:
+    - ansible_virtualization_type != 'lxc'
+    - _homepage_swap_active.rc != 0
   changed_when: true
   tags: homepage
 
@@ -103,6 +111,7 @@
     path: /etc/fstab
     line: /swapfile none swap sw 0 0
     state: present
+  when: ansible_virtualization_type != 'lxc'
   tags: homepage
 
 - name: Install Homepage v{{ homepage_version }}
