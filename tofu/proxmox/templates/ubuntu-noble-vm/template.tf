@@ -4,7 +4,7 @@ resource "proxmox_virtual_environment_file" "cloud_init_user_data" {
   node_name    = "enterprise"
 
   source_raw {
-    data      = templatefile("${path.module}/cloud-init.yml.tftpl", {
+    data = templatefile("${path.module}/cloud-init.yml.tftpl", {
       hostname            = "ubuntu-cloud-template"
       sysadmin_public_key = var.sysadmin_public_key
       ansible_public_key  = var.ansible_public_key
@@ -29,6 +29,10 @@ resource "proxmox_virtual_environment_vm" "ubuntu_cloud_template" {
   template  = true
   started   = false
   on_boot   = false
+
+  agent {
+    enabled = true
+  }
 
   cpu {
     cores = 2

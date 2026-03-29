@@ -6,10 +6,14 @@ help:
 	@echo ""
 	@echo "  install                  Install dependencies and set up pre-commit hooks"
 	@echo "  uninstall                Remove installed dependencies"
+	@echo "  bootstrap                Lab recovery playbook - only acts on enterprise"
+	@echo "  play                     Regular maintenance playbook"
+	@echo "  verify                   Verification playbook after ansible application"
 	@echo "  lint                     Run ansible-lint and tflint"
 	@echo "  lint-fix                 Run ansible-lint and tflint with autofix flags"
 	@echo "  tofu-proxmox             Run OpenTofu for Proxmox: make tofu-proxmox ARGS='plan'"
-	@echo "  tofu-recreate            Recreate VMs by name: make tofu-recreate HOSTS=centaurus,norville"
+	@echo "  tofu-recreate-vm         Recreate VMs by name: make tofu-recreate HOSTS=norville,codsworth"
+	@echo "  tofu-recreate-container  Recreate containers by name: make tofu-recreate HOSTS=centaurus"
 	@echo "  sync-pihole              Manually trigger nebula-sync on centaurus"
 	@echo "  generate-proxmox-answer  Generate proxmox_installer/answer.toml from template + 1Password"
 	@echo "  build-proxmox-iso        Build auto-install ISO — runs generate-proxmox-answer automatically (PVE_ISO_VERSION=9.1-1)"
@@ -41,6 +45,15 @@ else
 	pipx uninstall ansible-core
 endif
 
+bootstrap:
+	cd ansible && ansible-playbook lab_bootstrap.yml
+
+play:
+	cd ansible && ansible-playbook playbook.yml
+
+verify:
+	cd ansible && ansible-playbook verify.yml
+
 lint:
 	cd ansible && ansible-lint
 	cd tofu/proxmox && tflint --recursive --config "$(PWD)/tofu/proxmox/.tflint.hcl"
@@ -53,8 +66,12 @@ tofu-proxmox:
 	cd tofu/proxmox && ../tofu.sh $(ARGS)
 
 COMMA := ,
-tofu-recreate:
+tofu-recreate-vm:
 	cd tofu/proxmox && ../tofu.sh apply $(addprefix -replace=proxmox_virtual_environment_vm.,$(subst $(COMMA), ,$(HOSTS)))
+
+COMMA := ,
+tofu-recreate-container:
+	cd tofu/proxmox && ../tofu.sh apply $(addprefix -replace=proxmox_virtual_environment_container.,$(subst $(COMMA), ,$(HOSTS)))
 
 sync-pihole:
 	cd ansible && ansible -m ansible.builtin.systemd -b -a "name=nebula-sync state=started" centaurus

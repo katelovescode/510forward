@@ -1,7 +1,7 @@
 # nesting=true is required for systemd 255 (Ubuntu 24.04) and enables port 53
 # binding for Pi-hole in an unprivileged container.
-# SSH keys are injected to root; first_run_user=root in host_vars triggers
-# the ansible role to create the ansible user on first host-bootstrap run.
+# SSH keys are injected to root; the remote-exec provisioner bootstraps the
+# ansible user so Ansible can connect
 resource "proxmox_virtual_environment_container" "centaurus" {
   node_name     = "enterprise"
   start_on_boot = true
@@ -51,31 +51,34 @@ resource "proxmox_virtual_environment_container" "centaurus" {
     template_file_id = module.ubuntu_noble_lxc_template.template_file_id
     type             = "ubuntu"
   }
-}
-
-resource "null_resource" "centaurus_lxc_ssh_setup" {
-  depends_on = [proxmox_virtual_environment_container.centaurus]
-
-  triggers = {
-    container_id = proxmox_virtual_environment_container.centaurus.id
-  }
-
-  connection {
-    type        = "ssh"
-    host        = "enterprise.510forward.space"
-    user        = "opentofu"
-    private_key = var.opentofu_ssh_private_key
-  }
 
   provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "root"
+      host        = "192.168.30.77"
+      private_key = var.ansible_private_key
+    }
+
     inline = [
-      "sudo pct exec ${proxmox_virtual_environment_container.centaurus.id} -- mkdir -p /root/.ssh",
-      "sudo pct exec ${proxmox_virtual_environment_container.centaurus.id} -- chmod 700 /root/.ssh",
-      "sudo pct exec ${proxmox_virtual_environment_container.centaurus.id} -- bash -c 'echo \"${var.sysadmin_public_key}\" >> /root/.ssh/authorized_keys'",
-      "sudo pct exec ${proxmox_virtual_environment_container.centaurus.id} -- bash -c 'echo \"${var.ansible_public_key}\" >> /root/.ssh/authorized_keys'",
-      "sudo pct exec ${proxmox_virtual_environment_container.centaurus.id} -- chmod 600 /root/.ssh/authorized_keys",
-      "sudo pct exec ${proxmox_virtual_environment_container.centaurus.id} -- sed -i 's/PermitRootLogin no/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config",
-      "sudo pct exec ${proxmox_virtual_environment_container.centaurus.id} -- systemctl restart ssh",
+      "apt-get install -y -qq sudo",
+      # ansible user
+      "useradd -m -s /bin/bash ansible",
+      "mkdir -p /home/ansible/.ssh",
+      "chmod 700 /home/ansible/.ssh",
+      "echo '${var.ansible_public_key}' > /home/ansible/.ssh/authorized_keys",
+      "chmod 600 /home/ansible/.ssh/authorized_keys",
+      "chown -R ansible:ansible /home/ansible/.ssh",
+      "mkdir -p /etc/sudoers.d",
+      "printf 'Defaults !fqdn\\nansible ALL=(ALL:ALL) NOPASSWD: ALL\\n' > /etc/sudoers.d/ansible",
+      "chmod 440 /etc/sudoers.d/ansible",
+      # kate user
+      "useradd -m -s /bin/bash -G sudo kate",
+      "mkdir -p /home/kate/.ssh",
+      "chmod 700 /home/kate/.ssh",
+      "echo '${var.sysadmin_public_key}' > /home/kate/.ssh/authorized_keys",
+      "chmod 600 /home/kate/.ssh/authorized_keys",
+      "chown -R kate:kate /home/kate/.ssh",
     ]
   }
 }

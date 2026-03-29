@@ -1,3 +1,0 @@
----
-- name: Configure qemu-guest-agent service
-  ansible.builtin.import_tasks: vms/guest_agent_service.yml

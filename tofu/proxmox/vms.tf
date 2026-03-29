@@ -80,6 +80,10 @@ resource "proxmox_virtual_environment_vm" "codsworth" {
   bios      = "ovmf"
   machine   = "q35"
 
+  agent {
+    enabled = true
+  }
+
   cpu {
     cores = 2
     type  = "host"

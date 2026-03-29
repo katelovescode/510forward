@@ -1,4 +1,1 @@
 ---
-# LXC containers inject SSH keys to root at provisioning time; the ansible
-# user doesn't exist until after the first host-bootstrap run.
-first_run_user: root

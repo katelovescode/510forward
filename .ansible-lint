@@ -29,12 +29,13 @@ enable_list:
 task_name_prefix: "{stem} | "
 
 exclude_paths:
-  - .git/
-  - .venv/
-  - node_modules/
-  - collections/
-  - roles/external/
-  - .cache/
+  - "**/.git/"
+  - "**/.venv/"
+  - "**/node_modules/"
+  - "**/collections/"
+  - "**/roles/external/"
+  - "**/.cache/"
+  - "**/tofu"
   - "**/secrets.yml"
 
 # Parsing + safety

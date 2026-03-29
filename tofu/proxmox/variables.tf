@@ -20,6 +20,12 @@ variable "ansible_public_key" {
   type        = string
 }
 
+variable "ansible_private_key" {
+  description = "SSH private key for the ansible user, used to bootstrap LXC containers via remote-exec"
+  type        = string
+  sensitive   = true
+}
+
 variable "haos_version" {
   description = "Home Assistant OS version to deploy (check github.com/home-assistant/operating-system/releases)"
   type        = string
