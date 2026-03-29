@@ -7,16 +7,11 @@ help:
 	@echo "  install                  Install dependencies and set up pre-commit hooks"
 	@echo "  uninstall                Remove installed dependencies"
 	@echo "  lab-bootstrap            One-time Proxmox host bootstrap (enterprise only — disaster recovery)"
-	@echo "  host-bootstrap           Bootstrap a single VM/LXC: make host-bootstrap HOST=centaurus"
-	@echo "                           Elevates VM RAM for provisioning, runs Ansible, restores runtime RAM"
-	@echo "  dr-bootstrap             Bootstrap all hosts in DR order (centaurus first, then the rest)"
 	@echo "  play                     Run the main Ansible playbook against all hosts (idempotent): make play [LIMIT=host_or_group]"
 	@echo "  verify                   Run the verify playbook against live infrastructure: make verify [LIMIT=host_or_group] [SKIP_TAGS=tag1,tag2]"
-	@echo "  upgrade                  Interactively upgrade apt packages (excludes self_managed_os hosts): make upgrade [LIMIT=host_or_group]"
 	@echo "  lint                     Run ansible-lint and tflint"
 	@echo "  tofu-proxmox             Run OpenTofu for Proxmox: make tofu-proxmox ARGS='plan'"
 	@echo "  tofu-recreate            Recreate VMs by name: make tofu-recreate HOSTS=centaurus,norville"
-	@echo "  reboot-vms               Reboot all QEMU VMs (centaurus, norville, dorothy)"
 	@echo "  sync-pihole              Manually trigger nebula-sync on centaurus"
 	@echo "  generate-proxmox-answer  Generate proxmox_installer/answer.toml from template + 1Password"
 	@echo "  build-proxmox-iso        Build auto-install ISO — runs generate-proxmox-answer automatically (PVE_ISO_VERSION=9.1-1)"
@@ -51,29 +46,8 @@ endif
 lab-bootstrap:
 	cd ansible && ansible-playbook lab_bootstrap.yml
 
-host-bootstrap:
-ifndef HOST
-	$(error HOST is required: make host-bootstrap HOST=centaurus)
-endif
-	cd tofu/proxmox && ../tofu.sh apply -auto-approve -var 'bootstrapping_vms=["$(HOST)"]'
-	cd ansible && ansible-playbook playbook.yml --limit $(HOST); \
-		ret=$$?; \
-		[ $$ret -eq 0 ] || { cd $(CURDIR)/tofu/proxmox && ../tofu.sh apply -auto-approve; exit 1; }
-	cd tofu/proxmox && ../tofu.sh apply -auto-approve
-
-dr-bootstrap:
-	$(MAKE) host-bootstrap HOST=centaurus
-	$(MAKE) host-bootstrap HOST=dorothy
-	$(MAKE) host-bootstrap HOST=norville
-	$(MAKE) host-bootstrap HOST=codsworth
-	# memory-alpha is intentionally unmanaged — bootstrap manually when ready
-	# $(MAKE) host-bootstrap HOST=memory-alpha
-
 play:
 	cd ansible && ansible-playbook playbook.yml $(if $(LIMIT),--limit $(LIMIT),)
-
-upgrade:
-	cd ansible && ansible-playbook upgrade.yml $(if $(LIMIT),--limit $(LIMIT),)
 
 verify:
 	cd ansible && ansible-playbook verify.yml $(if $(LIMIT),--limit $(LIMIT),) $(if $(SKIP_TAGS),--skip-tags $(SKIP_TAGS),)
@@ -92,9 +66,6 @@ tofu-proxmox:
 COMMA := ,
 tofu-recreate:
 	cd tofu/proxmox && ../tofu.sh apply $(addprefix -replace=proxmox_virtual_environment_vm.,$(subst $(COMMA), ,$(HOSTS)))
-
-reboot-vms:
-	cd ansible && ansible -b -m ansible.builtin.reboot -a "reboot_timeout=300" qemu_vms
 
 sync-pihole:
 	cd ansible && ansible -m ansible.builtin.systemd -b -a "name=nebula-sync state=started" centaurus
