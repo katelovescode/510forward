@@ -25,19 +25,15 @@ nginx_proxy_manager_proxy_hosts:
   - subdomain: norville
     host: 127.0.0.1
     port: 81
-  - subdomain: dorothy
-    host: "{{ hostvars['dorothy'].ip_address }}"
-    port: 3000
-    scheme: http
   - subdomain: codsworth
     host: "{{ hostvars['codsworth'].ip_address }}"
     port: 8123
     scheme: http
     allow_websocket_upgrade: true
-  # - subdomain: memory-alpha  # intentionally unmanaged — pending Forgejo migration
-  #   host: "{{ hostvars['memory-alpha'].ip_address }}"
-  #   port: 80
-  #   scheme: http
+  - subdomain: memory-alpha
+    host: "{{ hostvars['memory-alpha'].ip_address }}"
+    port: 80
+    scheme: http
   - subdomain: holodeck
     host: "{{ hostvars['alexandria'].ip_address }}"
     port: 30013

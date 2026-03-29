@@ -193,67 +193,7 @@ resource "proxmox_virtual_environment_vm" "memory_alpha" {
     mac_address = "42:17:01:FD:A1:FA"
     firewall    = true
   }
-
-  # Prevent tofu from starting memory_alpha during applies while it is
-  # intentionally shut down (e.g. during Forgejo migration / OOM recovery).
-  lifecycle {
-    ignore_changes = [started]
-  }
 }
-
-# hermes: GitLab Runner — on hold pending executor decision (shell vs Docker affects LXC eligibility)
-# Uncomment and restore memory/phase entries in locals when ready to provision.
-#
-# resource "proxmox_virtual_environment_vm" "hermes" {
-#   name      = "hermes"
-#   node_name = "enterprise"
-#   on_boot   = true
-#
-#   clone {
-#     vm_id = module.ubuntu_noble_vm_template.vm_id
-#     full  = true
-#   }
-#
-#   cpu {
-#     cores = 2
-#     type  = "host"
-#   }
-#
-#   memory {
-#     dedicated = local.vm_memory.hermes[local.vm_phase.hermes]
-#     floating  = local.vm_memory.hermes.balloon
-#   }
-#
-#   disk {
-#     datastore_id = "local-lvm"
-#     interface    = "scsi0"
-#     size         = 20
-#     discard      = "on"
-#     ssd          = true
-#   }
-#
-#   initialization {
-#     ip_config {
-#       ipv4 {
-#         address = "dhcp"
-#       }
-#     }
-#
-#     user_account {
-#       username = "ansible"
-#       keys     = [var.ansible_public_key]
-#     }
-#
-#     user_data_file_id = proxmox_virtual_environment_file.cloud_init_config_hermes.id
-#   }
-#
-#   network_device {
-#     bridge      = "vmbr0"
-#     model       = "virtio"
-#     mac_address = "42:17:01:FD:E4:3D"
-#     firewall    = true
-#   }
-# }
 
 resource "proxmox_virtual_environment_file" "cloud_init_config_memory_alpha" {
   content_type = "snippets"
@@ -268,17 +208,3 @@ resource "proxmox_virtual_environment_file" "cloud_init_config_memory_alpha" {
     file_name = "cloud-init-config-memory-alpha.yml"
   }
 }
-
-# resource "proxmox_virtual_environment_file" "cloud_init_config_hermes" {
-#   content_type = "snippets"
-#   datastore_id = "local"
-#   node_name    = "enterprise"
-#   source_raw {
-#     data = templatefile("${path.module}/templates/ubuntu-noble-vm/cloud-init.yml.tftpl", {
-#       hostname            = "hermes"
-#       sysadmin_public_key = var.sysadmin_public_key
-#       ansible_public_key  = var.ansible_public_key
-#     })
-#     file_name = "cloud-init-config-hermes.yml"
-#   }
-# }

@@ -24,10 +24,8 @@ Ansible verify    →  post-install verification
 | andromeda    | Pi-hole secondary, HomeAssistant kiosk | Physical (Raspberry Pi 5, touchscreen case) |
 | centaurus    | Pi-hole primary + nebula-sync          | LXC container                               |
 | norville     | NGINX Proxy Manager (Docker)           | QEMU VM                                     |
-| dorothy      | Homepage dashboard                     | LXC container                               |
 | codsworth    | Home Assistant                         | QEMU VM (HAOS)                              |
 | memory-alpha | GitLab CE                              | QEMU VM                                     |
-| hermes       | GitLab Runner (executor TBD)           | QEMU VM (on hold)                           |
 | alexandria   | NAS                                    | Physical (Tower, TrueNAS installed)         |
 
 **DNS + reverse proxy pattern:** Pi-hole returns norville's IP for all `*.510forward.space` subdomains. NPM on norville handles TLS termination and proxies to backends. Pi-hole nodes resolve directly to their own IPs (FTL self-protection) and are accessed via HTTP by IP.

@@ -27,18 +27,3 @@
         fail_msg: "pihole-FTL is not running on centaurus"
         success_msg: "pihole-FTL is active on centaurus"
       tags: [verify, lxc]
-
-- name: LXC | homepage is running on dorothy
-  hosts: dorothy
-  gather_facts: false
-  tasks:
-    - name: Gather service facts
-      ansible.builtin.service_facts:
-      tags: [verify, lxc]
-
-    - name: Assert homepage is running
-      ansible.builtin.assert:
-        that: ansible_facts.services['homepage.service'].state == 'running'
-        fail_msg: "homepage is not running on dorothy"
-        success_msg: "homepage is active on dorothy"
-      tags: [verify, lxc]

@@ -52,11 +52,6 @@
   roles:
     - nginx_proxy_manager
 
-- name: Homepage
-  hosts: dorothy
-  roles:
-    - homepage
-
 - name: Home Assistant
   hosts: codsworth
   roles:
