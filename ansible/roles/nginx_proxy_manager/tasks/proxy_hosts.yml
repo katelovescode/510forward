@@ -12,6 +12,17 @@
   no_log: true
   tags: nginx_proxy_manager
 
+- name: Build combined proxy host list
+  ansible.builtin.set_fact:
+    nginx_proxy_manager_all_proxy_hosts: >-
+      {{
+        nginx_proxy_manager_all_proxy_hosts | default([]) +
+        (hostvars[item].proxied_services | default([]) |
+         map('combine', {'forward_host': hostvars[item].ip_address}) | list)
+      }}
+  loop: "{{ groups['hosts_with_proxied_services'] }}"
+  tags: nginx_proxy_manager
+
 - name: Get existing proxy hosts
   ansible.builtin.uri:
     url: "http://localhost:81/api/nginx/proxy-hosts"
@@ -31,7 +42,7 @@
   loop: "{{ nginx_proxy_manager_existing_hosts.json }}"
   when: >-
     (item.domain_names | first | replace('.' ~ domain, '')) not in
-    (nginx_proxy_manager_proxy_hosts | map(attribute='subdomain') | list)
+    (nginx_proxy_manager_all_proxy_hosts | map(attribute='subdomain') | list)
   changed_when: true
   tags: nginx_proxy_manager
 
@@ -45,7 +56,7 @@
     body:
       domain_names:
         - "{{ item.subdomain }}.{{ domain }}"
-      forward_host: "{{ item.host }}"
+      forward_host: "{{ item.forward_host }}"
       forward_port: "{{ item.port }}"
       forward_scheme: "{{ item.scheme | default('http') }}"
       block_exploits: true
@@ -58,7 +69,7 @@
         letsencrypt_agree: true
         dns_challenge: false
     status_code: 201
-  loop: "{{ nginx_proxy_manager_proxy_hosts }}"
+  loop: "{{ nginx_proxy_manager_all_proxy_hosts }}"
   when: >-
     (item.subdomain + '.' + domain) not in
     (nginx_proxy_manager_existing_hosts.json | map(attribute='domain_names') | flatten)
@@ -79,13 +90,13 @@
       forward_scheme: "{{ item.forward_scheme }}"
       block_exploits: "{{ item.block_exploits }}"
       allow_websocket_upgrade: >-
-        {{ (nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+        {{ (nginx_proxy_manager_all_proxy_hosts | selectattr('subdomain', 'equalto',
         item.domain_names | first | replace('.' ~ domain, '')) | first).allow_websocket_upgrade | default(false) }}
       advanced_config: >-
-        {{ (nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+        {{ (nginx_proxy_manager_all_proxy_hosts | selectattr('subdomain', 'equalto',
         item.domain_names | first | replace('.' ~ domain, '')) | first).advanced_config | default('') }}
       access_list_id: >-
-        {{ (nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+        {{ (nginx_proxy_manager_all_proxy_hosts | selectattr('subdomain', 'equalto',
         item.domain_names | first | replace('.' ~ domain, '')) | first).access_list_id
         | default(nginx_proxy_manager_default_access_list_id | default(0)) }}
       certificate_id: "{{ nginx_proxy_manager_certificate_id }}"
@@ -97,14 +108,14 @@
   loop: "{{ nginx_proxy_manager_existing_hosts.json }}"
   when: >-
     (item.domain_names | first | replace('.' ~ domain, '')) in
-    (nginx_proxy_manager_proxy_hosts | map(attribute='subdomain') | list)
+    (nginx_proxy_manager_all_proxy_hosts | map(attribute='subdomain') | list)
     and (item.certificate_id | int != nginx_proxy_manager_certificate_id | int
     or not item.ssl_forced
-    or item.allow_websocket_upgrade != ((nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+    or item.allow_websocket_upgrade != ((nginx_proxy_manager_all_proxy_hosts | selectattr('subdomain', 'equalto',
     item.domain_names | first | replace('.' ~ domain, '')) | first).allow_websocket_upgrade | default(false))
-    or item.advanced_config | default('') != ((nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+    or item.advanced_config | default('') != ((nginx_proxy_manager_all_proxy_hosts | selectattr('subdomain', 'equalto',
     item.domain_names | first | replace('.' ~ domain, '')) | first).advanced_config | default(''))
-    or item.access_list_id | int != ((nginx_proxy_manager_proxy_hosts | selectattr('subdomain', 'equalto',
+    or item.access_list_id | int != ((nginx_proxy_manager_all_proxy_hosts | selectattr('subdomain', 'equalto',
     item.domain_names | first | replace('.' ~ domain, '')) | first).access_list_id
     | default(nginx_proxy_manager_default_access_list_id | default(0)) | int))
   changed_when: true

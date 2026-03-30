@@ -72,13 +72,13 @@ argument_specs:
           `address` (IP/CIDR or "all") and `directive` ("allow" or "deny").
           Only used when nginx_proxy_manager_default_access_list_name is set.
 
-      nginx_proxy_manager_proxy_hosts:
+      proxied_services:
         type: list
-        required: true
+        required: false
         description: >
-          List of proxy host definitions to configure via the NPM API.
-          Each entry requires: subdomain (str), host (str), port (int).
-          Optional: scheme (str, default 'http'),
+          Defined per host in the hosts_with_proxied_services inventory group. List of proxy
+          host definitions for that host. Each entry requires: subdomain (str),
+          port (int). Optional: scheme (str, default 'http'),
           allow_websocket_upgrade (bool, default false),
           advanced_config (str, default '') — raw nginx directives injected into the server block,
           access_list_id (int) — overrides the default access list; use 0 to disable restriction.

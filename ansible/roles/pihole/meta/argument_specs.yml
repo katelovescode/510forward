@@ -114,14 +114,6 @@ argument_specs:
           SHA256 checksum for the nebula-sync binary tarball.
           Required when pihole_primary is true.
 
-      pihole_service_dns:
-        type: list
-        required: false
-        description: >
-          Service alias DNS entries that don't map to inventory hosts — e.g.
-          subdomains for apps proxied through NPM. Each entry needs a `subdomain`
-          and a `target` (inventory hostname whose IP to resolve to).
-
       pihole_adlists:
         type: list
         required: false

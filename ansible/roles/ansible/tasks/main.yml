@@ -39,12 +39,10 @@
         line: PasswordAuthentication no
       notify: Restart sshd
 
-- name: Secure SSH (disabled on proxmox and raspbian hosts)
-  when:
-    - '"proxmox_nodes" not in group_names'
-    - '"raspbian_nodes" not in group_names'
+- name: Secure SSH
   block:
-    - name: Lock root user password
+    - name: Upsert a 1Password entry for the root user
+    - name: Set root user password
       become: true
       ansible.builtin.user:
         name: root

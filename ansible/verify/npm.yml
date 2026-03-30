@@ -3,8 +3,6 @@
 #
 # Two layers of checks:
 #
-# Two layers of checks:
-#
 # 1. Backend reachability — runs from norville directly to each backend IP,
 #    bypassing DNS and NPM entirely. Isolates the NPM → backend leg.
 #    Proxmox uses HTTPS with validate_certs: false (connecting by IP, no IP SANs).
@@ -46,7 +44,7 @@
   gather_facts: false
   connection: local
   vars:
-    npm_proxied_hosts:
+    npm_subdomain_checks:
       - subdomain: norville
         expected_status: 200
       - subdomain: enterprise
@@ -60,7 +58,7 @@
       ansible.builtin.uri:
         url: "https://{{ item.subdomain }}.{{ domain }}"
         status_code: "{{ item.expected_status }}"
-      loop: "{{ npm_proxied_hosts }}"
+      loop: "{{ npm_subdomain_checks }}"
       loop_control:
         label: "{{ item.subdomain }}.{{ domain }}"
       tags: [verify, npm]

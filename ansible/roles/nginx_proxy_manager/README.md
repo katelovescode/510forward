@@ -26,7 +26,7 @@ Cert creation has `timeout: 120` because DNS propagation takes 30–60 seconds. 
 
 ## Proxy host management
 
-Proxy hosts are defined in `nginx_proxy_manager_proxy_hosts` in norville's `host_vars`. Each entry specifies subdomain, backend host, port, scheme, and optionally `allow_websocket_upgrade`.
+Proxy hosts are defined per-host via `proxied_services` in each host's `host_vars`. The `hosts_with_proxied_services` inventory group is the authoritative list of what gets proxied. Each entry specifies subdomain, port, scheme, and optionally `allow_websocket_upgrade` — the backend IP is derived from `ip_address` at runtime.
 
 **WebSocket** must be enabled per-host for services that use it:
 

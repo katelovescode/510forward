@@ -13,33 +13,38 @@
   hosts: proxmox_nodes
   gather_facts: false
   vars:
-    expected_resolutions:
-      - hostname: "centaurus.{{ domain }}"
-        ip: "{{ hostvars['centaurus']['ip_address'] }}"
-      - hostname: "norville.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
-      - hostname: "codsworth.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
-      - hostname: "memory-alpha.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
+    expected_resolutions: >-
+      {{
+        groups['hosts_with_proxied_services'] |
+        map('extract', hostvars, 'proxied_services') |
+        flatten |
+        map('combine', {'ip': hostvars['norville']['ip_address']}) |
+        map(attribute_map={'hostname': 'subdomain'}) |
+        list
+      }}
   tasks:
     - name: Resolve internal hostname from enterprise
-      ansible.builtin.command: "dig +short {{ item.hostname }}"
+      ansible.builtin.command: "dig +short {{ item.subdomain }}.{{ domain }}"
       register: dig_results
       changed_when: false
-      loop: "{{ expected_resolutions }}"
+      loop: >-
+        {{
+          groups['hosts_with_proxied_services'] |
+          map('extract', hostvars, 'proxied_services') |
+          flatten
+        }}
       loop_control:
-        label: "{{ item.hostname }}"
+        label: "{{ item.subdomain }}.{{ domain }}"
       tags: [verify, dns]
 
-    - name: Assert internal hostnames resolve to expected IPs
+    - name: Assert internal hostnames resolve to norville
       ansible.builtin.assert:
-        that: item.item.ip in item.stdout
-        fail_msg: "{{ item.item.hostname }} did not resolve to {{ item.item.ip }} from enterprise (got: '{{ item.stdout | default('(empty)') }}')"
-        success_msg: "{{ item.item.hostname }} → {{ item.item.ip }}"
+        that: hostvars['norville']['ip_address'] in item.stdout
+        fail_msg: "{{ item.item.subdomain }}.{{ domain }} did not resolve to norville (got: '{{ item.stdout | default('(empty)') }}')"
+        success_msg: "{{ item.item.subdomain }}.{{ domain }} → {{ hostvars['norville']['ip_address'] }}"
       loop: "{{ dig_results.results }}"
       loop_control:
-        label: "{{ item.item.hostname }}"
+        label: "{{ item.item.subdomain }}.{{ domain }}"
       tags: [verify, dns]
 
 - name: DNS | Pi-hole primary (centaurus) resolves internal hostnames correctly
@@ -48,35 +53,30 @@
   connection: local
   vars:
     pihole_primary_ip: "{{ hostvars['centaurus']['ip_address'] }}"
-    expected_resolutions:
-      - hostname: "enterprise.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
-      - hostname: "centaurus.{{ domain }}"
-        ip: "{{ hostvars['centaurus']['ip_address'] }}"
-      - hostname: "norville.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
-      - hostname: "codsworth.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
-      - hostname: "memory-alpha.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
   tasks:
     - name: Query Pi-hole primary for internal hostname
-      ansible.builtin.command: "dig +short {{ item.hostname }} @{{ pihole_primary_ip }}"
+      ansible.builtin.command: >-
+        dig +short {{ item.subdomain }}.{{ domain }} @{{ pihole_primary_ip }}
       register: dig_results
       changed_when: false
-      loop: "{{ expected_resolutions }}"
+      loop: >-
+        {{
+          groups['hosts_with_proxied_services'] |
+          map('extract', hostvars, 'proxied_services') |
+          flatten
+        }}
       loop_control:
-        label: "{{ item.hostname }}"
+        label: "{{ item.subdomain }}.{{ domain }}"
       tags: [verify, dns]
 
-    - name: Assert internal hostnames resolve to expected IPs
+    - name: Assert internal hostnames resolve to norville via Pi-hole primary
       ansible.builtin.assert:
-        that: "item.item.ip in item.stdout"
-        fail_msg: "{{ item.item.hostname }} did not resolve to {{ item.item.ip }} via Pi-hole primary (got: '{{ item.stdout | default('(empty)') }}')"
-        success_msg: "{{ item.item.hostname }} → {{ item.item.ip }}"
+        that: hostvars['norville']['ip_address'] in item.stdout
+        fail_msg: "{{ item.item.subdomain }}.{{ domain }} did not resolve to norville via Pi-hole primary (got: '{{ item.stdout | default('(empty)') }}')"
+        success_msg: "{{ item.item.subdomain }}.{{ domain }} → {{ hostvars['norville']['ip_address'] }}"
       loop: "{{ dig_results.results }}"
       loop_control:
-        label: "{{ item.item.hostname }}"
+        label: "{{ item.item.subdomain }}.{{ domain }}"
       tags: [verify, dns]
 
 - name: DNS | Pi-hole secondary (andromeda) resolves internal hostnames correctly
@@ -85,33 +85,30 @@
   connection: local
   vars:
     pihole_secondary_ip: "{{ hostvars['andromeda']['ip_address'] }}"
-    expected_resolutions:
-      - hostname: "enterprise.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
-      - hostname: "norville.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
-      - hostname: "codsworth.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
-      - hostname: "memory-alpha.{{ domain }}"
-        ip: "{{ hostvars['norville']['ip_address'] }}"
   tasks:
     - name: Query Pi-hole secondary for internal hostname
-      ansible.builtin.command: "dig +short {{ item.hostname }} @{{ pihole_secondary_ip }}"
+      ansible.builtin.command: >-
+        dig +short {{ item.subdomain }}.{{ domain }} @{{ pihole_secondary_ip }}
       register: dig_results
       changed_when: false
-      loop: "{{ expected_resolutions }}"
+      loop: >-
+        {{
+          groups['hosts_with_proxied_services'] |
+          map('extract', hostvars, 'proxied_services') |
+          flatten
+        }}
       loop_control:
-        label: "{{ item.hostname }}"
+        label: "{{ item.subdomain }}.{{ domain }}"
       tags: [verify, dns]
 
-    - name: Assert andromeda resolves internal hostnames to expected IPs
+    - name: Assert andromeda resolves internal hostnames to norville
       ansible.builtin.assert:
-        that: "item.item.ip in item.stdout"
-        fail_msg: "{{ item.item.hostname }} did not resolve to {{ item.item.ip }} via andromeda (got: '{{ item.stdout | default('(empty)') }}')"
-        success_msg: "{{ item.item.hostname }} → {{ item.item.ip }}"
+        that: hostvars['norville']['ip_address'] in item.stdout
+        fail_msg: "{{ item.item.subdomain }}.{{ domain }} did not resolve to norville via andromeda (got: '{{ item.stdout | default('(empty)') }}')"
+        success_msg: "{{ item.item.subdomain }}.{{ domain }} → {{ hostvars['norville']['ip_address'] }}"
       loop: "{{ dig_results.results }}"
       loop_control:
-        label: "{{ item.item.hostname }}"
+        label: "{{ item.item.subdomain }}.{{ domain }}"
       tags: [verify, dns]
 
 - name: DNS | pihole-FTL is running on all Pi-hole nodes

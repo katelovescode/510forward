@@ -4,8 +4,6 @@ admin_email: kate@510forward.space
 domain: 510forward.space
 proxmox_api_node: enterprise
 
-upgrade_risk: "high risk - unknown"
-
 onepassword_vault: "{{ lookup('ansible.builtin.env', 'OP_VAULT_ID') }}"
 sysadmin_public_key: "{{ lookup('ansible.builtin.env', 'SYSADMIN_PUBLIC_KEY') }}"
 onepassword_become_user: "{{ lookup('ansible.builtin.env', 'USER') }}"

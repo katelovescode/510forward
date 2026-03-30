@@ -1,6 +1,5 @@
 ---
 ansible_host: 192.168.30.58
-upgrade_risk: "moderate risk — Docker upgrade restarts daemon, takes NPM and all HTTPS hostnames down briefly"
 ip_address: 192.168.30.58
 fqdn: norville.510forward.space
 mac_address: "42:17:01:FD:72:77"
@@ -16,31 +15,6 @@ nginx_proxy_manager_default_access_list_clients:
   - address: 0.0.0.0/0
     directive: deny
 
-nginx_proxy_manager_proxy_hosts:
-  - subdomain: enterprise
-    host: "{{ hostvars['enterprise'].ip_address }}"
-    port: 8006
-    scheme: https
-    allow_websocket_upgrade: true
+proxied_services:
   - subdomain: norville
-    host: 127.0.0.1
     port: 81
-  - subdomain: codsworth
-    host: "{{ hostvars['codsworth'].ip_address }}"
-    port: 8123
-    scheme: http
-    allow_websocket_upgrade: true
-  - subdomain: memory-alpha
-    host: "{{ hostvars['memory-alpha'].ip_address }}"
-    port: 80
-    scheme: http
-  - subdomain: holodeck
-    host: "{{ hostvars['alexandria'].ip_address }}"
-    port: 30013
-    scheme: http
-    allow_websocket_upgrade: true
-    access_list_id: 0
-  - subdomain: arch
-    host: "{{ hostvars['alexandria'].ip_address }}"
-    port: 30234
-    scheme: http

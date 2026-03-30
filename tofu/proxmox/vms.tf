@@ -14,8 +14,8 @@ resource "proxmox_virtual_environment_vm" "norville" {
   }
 
   memory {
-    dedicated = 768
-    floating  = 256
+    dedicated = 2048
+    floating  = 2048
   }
 
   disk {
@@ -91,7 +91,7 @@ resource "proxmox_virtual_environment_vm" "codsworth" {
 
   memory {
     dedicated = 4096
-    floating  = 1024
+    floating  = 4096
   }
 
   efi_disk {

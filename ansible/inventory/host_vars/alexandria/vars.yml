@@ -2,4 +2,12 @@
 ansible_host: 192.168.30.216
 ip_address: 192.168.30.216
 fqdn: alexandria.510forward.space
-npm_proxied: false
+
+proxied_services:
+  - subdomain: holodeck
+    port: 30013
+    scheme: http
+    allow_websocket_upgrade: true
+  - subdomain: arch
+    port: 30234
+    scheme: http
