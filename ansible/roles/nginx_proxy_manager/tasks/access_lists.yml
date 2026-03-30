@@ -14,7 +14,7 @@
 
 - name: Get existing access lists
   ansible.builtin.uri:
-    url: "http://localhost:81/api/nginx/access-lists"
+    url: "http://localhost:81/api/nginx/access-lists?expand=clients"
     headers:
       Authorization: "Bearer {{ nginx_proxy_manager_token.json.token }}"
     status_code: 200
@@ -62,8 +62,14 @@
     status_code: 200
   when: >-
     nginx_proxy_manager_existing_default_access_list != {}
-    and (nginx_proxy_manager_existing_default_access_list.clients | default([]) | map(attribute='address') | sort | list) !=
-        (nginx_proxy_manager_default_access_list_clients | map(attribute='address') | sort | list)
+    and (nginx_proxy_manager_existing_default_access_list.clients | default([]) |
+         map(attribute='address') | list | zip(
+           nginx_proxy_manager_existing_default_access_list.clients | default([]) | map(attribute='directive') | list
+         ) | map('join', ' ') | sort | list) !=
+        (nginx_proxy_manager_default_access_list_clients |
+         map(attribute='address') | list | zip(
+           nginx_proxy_manager_default_access_list_clients | map(attribute='directive') | list
+         ) | map('join', ' ') | sort | list)
   changed_when: true
   tags: nginx_proxy_manager
 

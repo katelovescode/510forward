@@ -165,7 +165,6 @@ resource "proxmox_virtual_environment_vm" "memory_alpha" {
 
   memory {
     dedicated = 8192
-    floating  = 1024
   }
 
   disk {
