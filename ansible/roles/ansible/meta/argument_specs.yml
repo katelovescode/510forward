@@ -1,9 +1,0 @@
----
-argument_specs:
-  main:
-    short_description: Create ansible user and harden SSH
-    description: >
-      Creates the ansible OS user with passwordless sudo and an SSH key
-      managed in 1Password. On hosts that are not in proxmox_nodes or
-      raspbian_nodes, also locks the root account and disables root SSH login.
-    options: {}

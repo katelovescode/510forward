@@ -1,8 +1,0 @@
-# requirements.yml
----
-collections:
-  - name: community.proxmox
-    version: ">=1.6.0"
-  - name: ansible.posix
-    version: ">=2.1.0"
-  - name: community.general

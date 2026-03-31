@@ -1,3 +1,0 @@
----
-- name: "1Password {{ onepassword_action }}"
-  ansible.builtin.include_tasks: "{{ onepassword_action }}.yml"

@@ -1,2 +1,0 @@
-Defaults !fqdn
-ansible ALL=(ALL:ALL) NOPASSWD: ALL

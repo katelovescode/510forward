@@ -1,6 +1,0 @@
----
-- name: Install GitLab CE
-  ansible.builtin.import_tasks: install.yml
-
-- name: Configure GitLab
-  ansible.builtin.import_tasks: configure.yml

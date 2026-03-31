@@ -1,7 +1,0 @@
----
-raspbian_desktop_user: kate
-raspbian_clock_time_format: "%-l:%M %p"
-raspbian_kiosk_enabled: true
-raspbian_kiosk_user: kiosk
-raspbian_kiosk_url: https://codsworth.510forward.space
-raspbian_kiosk_ha_token_op_item: "Home Assistant LCARS User"

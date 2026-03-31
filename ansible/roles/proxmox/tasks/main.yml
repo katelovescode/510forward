@@ -1,3 +1,0 @@
----
-- name: Configure Proxmox node
-  ansible.builtin.import_tasks: nodes/main.yml

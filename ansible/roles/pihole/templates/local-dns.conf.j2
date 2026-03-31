@@ -1,6 +1,0 @@
-# Managed by Ansible — do not edit manually
-{% for host in groups['hosts_with_proxied_services'] %}
-{% for entry in hostvars[host].proxied_services | default([]) %}
-address=/{{ entry.subdomain }}.{{ domain }}/{{ hostvars['norville'].ip_address }}
-{% endfor %}
-{% endfor %}
